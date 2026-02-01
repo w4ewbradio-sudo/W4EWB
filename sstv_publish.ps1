@@ -63,7 +63,7 @@ foreach ($bmp in $bmps) {
   & magick "$($bmp.FullName)" -auto-orient -strip -thumbnail "${ThumbSize}x${ThumbSize}^" -gravity center -extent "${ThumbSize}x${ThumbSize}" -quality 82 "$thumbOut"
 
   # Mark processed
-  $state.processed.$key = $true
+$state.processed[$key] = $true
   $publishedCount++
 }
 
