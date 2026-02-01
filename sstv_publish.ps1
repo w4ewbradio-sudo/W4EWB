@@ -31,10 +31,28 @@ if (-not $magick) {
 }
 
 # ---- load state (tracks already-published BMP writes) ----
+# We store a simple dictionary: processed[key] = true
+# NOTE: ConvertFrom-Json returns PSCustomObject, so we normalize to a hashtable so keys like
+# "Hist29.bmp|..." work reliably (dot-property access will break).
 $state = @{ processed = @{} }
+
 if (Test-Path $StateFile) {
-  try { $state = (Get-Content $StateFile -Raw | ConvertFrom-Json) } catch { }
-  if (-not $state.processed) { $state | Add-Member -NotePropertyName processed -NotePropertyValue @{} -Force }
+  try {
+    $raw = Get-Content $StateFile -Raw
+    $loaded = $raw | ConvertFrom-Json
+
+    # Normalize processed -> hashtable
+    $processed = @{}
+    if ($loaded -and $loaded.processed) {
+      foreach ($p in $loaded.processed.PSObject.Properties) {
+        $processed[$p.Name] = [bool]$p.Value
+      }
+    }
+    $state = @{ processed = $processed }
+  } catch {
+    # If state is corrupt, start fresh
+    $state = @{ processed = @{} }
+  }
 }
 
 # ---- find candidate BMPs ----
@@ -46,7 +64,7 @@ $publishedCount = 0
 
 foreach ($bmp in $bmps) {
   $key = "$($bmp.Name)|$($bmp.LastWriteTimeUtc.Ticks)|$($bmp.Length)"
-  if ($state.processed.$key) { continue }
+  if ($state.processed.ContainsKey($key)) { continue }
 
   # Create a unique filename in /full so overwrites never happen
   $stamp = $bmp.LastWriteTime.ToString("yyyyMMdd_HHmmss")
