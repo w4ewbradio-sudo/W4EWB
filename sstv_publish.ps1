@@ -384,9 +384,6 @@ $foot = @"
 $htmlContent = $head + "`n" + ($monthButtons -join "`n") + "`n" + $navClose + "`n" + ($cards -join "`n") + "`n" + $foot
 $htmlContent | Set-Content -Encoding UTF8 $IndexFile
 
-# ---- save state ----
-($state | ConvertTo-Json -Depth 5) | Set-Content -Encoding UTF8 $StateFile
-
 # ---- git commit + push if anything changed ----
 Set-Location $RepoRoot
 git add . | Out-Null
@@ -400,6 +397,16 @@ if (-not $diff) {
 
 $ts = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
 git commit -m "Auto SSTV RX update $ts" | Out-Null
-git push | Out-Null
+
+# Attempt git push and check for errors
+$pushResult = git push 2>&1
+if ($LASTEXITCODE -ne 0) {
+  Write-Host "ERROR: git push failed: $pushResult"
+  Write-Host "State file NOT updated - images will be retried on next run."
+  exit 1
+}
+
+# ---- save state ONLY after successful push ----
+($state | ConvertTo-Json -Depth 5) | Set-Content -Encoding UTF8 $StateFile
 
 Write-Host "Published $publishedCount new image(s)."
