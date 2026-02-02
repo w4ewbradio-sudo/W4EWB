@@ -291,7 +291,7 @@ $head = @"
         A collection of SSTV images received on my Yaesu FT-710 in Louisville, KY.<br>
         <a href="https://www.qrz.com/db/W4EWB" target="_blank" rel="noopener">View my QRZ profile &rarr;</a>
       </p>
-      <a href="latest.jpg" class="latest-link">📡 View Latest RX</a>
+      <a href="latest.jpg" class="latest-link">View Latest RX</a>
     </header>
     
     <nav class="month-nav">
