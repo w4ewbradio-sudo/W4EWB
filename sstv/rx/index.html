@@ -1,591 +1,800 @@
 ﻿<!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SSTV RX Gallery</title>
+  <title>W4EWB's SSTV RX Gallery</title>
   <style>
-    body{font-family:system-ui,Segoe UI,Arial,sans-serif;margin:20px;line-height:1.3}
-    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
-    .card{border:1px solid #ddd;border-radius:10px;overflow:hidden;background:#fff}
-    .card img{display:block;width:100%;height:auto}
-    .meta{padding:8px 10px;font-size:12px;color:#222}
-    .meta div{opacity:.7}
-    a{color:inherit;text-decoration:none}
-    .top{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}
+    :root {
+      --bg: #0d1117;
+      --card-bg: #161b22;
+      --border: #30363d;
+      --text: #c9d1d9;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --accent-hover: #79b8ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .container { max-width: 1400px; margin: 0 auto; }
+    
+    /* Header */
+    .header { margin-bottom: 24px; }
+    .header h1 {
+      margin: 0 0 8px 0;
+      font-size: 1.8rem;
+      font-weight: 600;
+      color: #fff;
+    }
+    .header .callsign { color: var(--accent); }
+    .header .subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-bottom: 12px;
+    }
+    .header .subtitle a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .header .subtitle a:hover { text-decoration: underline; }
+    .header .latest-link {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 6px 14px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.85rem;
+    }
+    .header .latest-link:hover {
+      background: #21262d;
+      border-color: var(--accent);
+    }
+    
+    /* Month Navigation */
+    .month-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .month-btn {
+      padding: 6px 14px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .month-btn:hover {
+      border-color: var(--accent);
+      color: var(--text);
+    }
+    .month-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #0d1117;
+      font-weight: 500;
+    }
+    
+    /* Stats bar */
+    .stats {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+    .stats span { color: var(--text); font-weight: 500; }
+    
+    /* Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent);
+    }
+    .card a { display: block; text-decoration: none; color: inherit; }
+    .card img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      background: #000;
+    }
+    .card .meta {
+      padding: 10px 12px;
+    }
+    .card .filename {
+      font-size: 0.8rem;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 2px;
+    }
+    .card .timestamp {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+    .card.hidden { display: none; }
+    
+    /* No results */
+    .no-results {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+    
+    /* Footer */
+    .footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .footer a { color: var(--accent); text-decoration: none; }
+    .footer a:hover { text-decoration: underline; }
+    
+    @media (max-width: 600px) {
+      body { padding: 12px; }
+      .header h1 { font-size: 1.4rem; }
+      .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+      .month-btn { padding: 5px 10px; font-size: 0.8rem; }
+    }
   </style>
 </head>
 <body>
-  <div class="top">
-    <h2 style="margin:0">SSTV RX Gallery</h2>
-    <div>Newest first â€¢ Latest RX: <a href="../latest.jpg">latest.jpg</a></div>
+  <div class="container">
+    <header class="header">
+      <h1><span class="callsign">W4EWB</span>'s SSTV RX Gallery</h1>
+      <p class="subtitle">
+        A collection of SSTV images received on my Yaesu FT-710 in Louisville, KY.<br>
+        <a href="https://www.qrz.com/db/W4EWB" target="_blank" rel="noopener">View my QRZ profile &rarr;</a>
+      </p>
+      <a href="latest.jpg" class="latest-link">ðŸ“¡ View Latest RX</a>
+    </header>
+    
+    <nav class="month-nav">
+      <button class="month-btn active" data-month="all">All Images</button>
+      <button class="month-btn" data-month="2026-02">FEB 2026</button>
+    </nav>
+    
+    <div class="stats">
+      Showing <span id="visible-count">63</span> of <span>63</span> images
+    </div>
+    
+    <div class="grid" id="gallery">
+      <div class="card" data-month="2026-02">
+        <a href="full/20260201_181048_Hist13.jpg" target="_blank">
+          <img src="thumbs/20260201_181048_Hist13.jpg" loading="lazy" alt="SSTV image received 2026-02-01 18:15">
+          <div class="meta">
+            <div class="filename">20260201_181048_Hist13.jpg</div>
+            <div class="timestamp">2026-02-01 18:15</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260201_180547_Hist12.jpg" target="_blank">
+          <img src="thumbs/20260201_180547_Hist12.jpg" loading="lazy" alt="SSTV image received 2026-02-01 18:10">
+          <div class="meta">
+            <div class="filename">20260201_180547_Hist12.jpg</div>
+            <div class="timestamp">2026-02-01 18:10</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260201_175727_Hist11.jpg" target="_blank">
+          <img src="thumbs/20260201_175727_Hist11.jpg" loading="lazy" alt="SSTV image received 2026-02-01 18:00">
+          <div class="meta">
+            <div class="filename">20260201_175727_Hist11.jpg</div>
+            <div class="timestamp">2026-02-01 18:00</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260201_175342_Hist10.jpg" target="_blank">
+          <img src="thumbs/20260201_175342_Hist10.jpg" loading="lazy" alt="SSTV image received 2026-02-01 17:55">
+          <div class="meta">
+            <div class="filename">20260201_175342_Hist10.jpg</div>
+            <div class="timestamp">2026-02-01 17:55</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260201_175028_Hist9.jpg" target="_blank">
+          <img src="thumbs/20260201_175028_Hist9.jpg" loading="lazy" alt="SSTV image received 2026-02-01 17:55">
+          <div class="meta">
+            <div class="filename">20260201_175028_Hist9.jpg</div>
+            <div class="timestamp">2026-02-01 17:55</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260201_174834_Hist8.jpg" target="_blank">
+          <img src="thumbs/20260201_174834_Hist8.jpg" loading="lazy" alt="SSTV image received 2026-02-01 17:50">
+          <div class="meta">
+            <div class="filename">20260201_174834_Hist8.jpg</div>
+            <div class="timestamp">2026-02-01 17:50</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260201_174220_Hist7.jpg" target="_blank">
+          <img src="thumbs/20260201_174220_Hist7.jpg" loading="lazy" alt="SSTV image received 2026-02-01 17:44">
+          <div class="meta">
+            <div class="filename">20260201_174220_Hist7.jpg</div>
+            <div class="timestamp">2026-02-01 17:44</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260201_173735_Hist6.jpg" target="_blank">
+          <img src="thumbs/20260201_173735_Hist6.jpg" loading="lazy" alt="SSTV image received 2026-02-01 17:39">
+          <div class="meta">
+            <div class="filename">20260201_173735_Hist6.jpg</div>
+            <div class="timestamp">2026-02-01 17:39</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260201_172902_Hist5.jpg" target="_blank">
+          <img src="thumbs/20260201_172902_Hist5.jpg" loading="lazy" alt="SSTV image received 2026-02-01 17:29">
+          <div class="meta">
+            <div class="filename">20260201_172902_Hist5.jpg</div>
+            <div class="timestamp">2026-02-01 17:29</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260201_171221_Hist4.jpg" target="_blank">
+          <img src="thumbs/20260201_171221_Hist4.jpg" loading="lazy" alt="SSTV image received 2026-02-01 17:14">
+          <div class="meta">
+            <div class="filename">20260201_171221_Hist4.jpg</div>
+            <div class="timestamp">2026-02-01 17:14</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260201_170134_Hist3.jpg" target="_blank">
+          <img src="thumbs/20260201_170134_Hist3.jpg" loading="lazy" alt="SSTV image received 2026-02-01 17:04">
+          <div class="meta">
+            <div class="filename">20260201_170134_Hist3.jpg</div>
+            <div class="timestamp">2026-02-01 17:04</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260201_165930_Hist2.jpg" target="_blank">
+          <img src="thumbs/20260201_165930_Hist2.jpg" loading="lazy" alt="SSTV image received 2026-02-01 17:04">
+          <div class="meta">
+            <div class="filename">20260201_165930_Hist2.jpg</div>
+            <div class="timestamp">2026-02-01 17:04</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260201_165711_Hist1.jpg" target="_blank">
+          <img src="thumbs/20260201_165711_Hist1.jpg" loading="lazy" alt="SSTV image received 2026-02-01 16:59">
+          <div class="meta">
+            <div class="filename">20260201_165711_Hist1.jpg</div>
+            <div class="timestamp">2026-02-01 16:59</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260201_165410_Hist32.jpg" target="_blank">
+          <img src="thumbs/20260201_165410_Hist32.jpg" loading="lazy" alt="SSTV image received 2026-02-01 16:54">
+          <div class="meta">
+            <div class="filename">20260201_165410_Hist32.jpg</div>
+            <div class="timestamp">2026-02-01 16:54</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260201_164612_Hist31.jpg" target="_blank">
+          <img src="thumbs/20260201_164612_Hist31.jpg" loading="lazy" alt="SSTV image received 2026-02-01 16:53">
+          <div class="meta">
+            <div class="filename">20260201_164612_Hist31.jpg</div>
+            <div class="timestamp">2026-02-01 16:53</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260201_164302_Hist30.jpg" target="_blank">
+          <img src="thumbs/20260201_164302_Hist30.jpg" loading="lazy" alt="SSTV image received 2026-02-01 16:53">
+          <div class="meta">
+            <div class="filename">20260201_164302_Hist30.jpg</div>
+            <div class="timestamp">2026-02-01 16:53</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260201_163148_Hist29.jpg" target="_blank">
+          <img src="thumbs/20260201_163148_Hist29.jpg" loading="lazy" alt="SSTV image received 2026-02-01 16:53">
+          <div class="meta">
+            <div class="filename">20260201_163148_Hist29.jpg</div>
+            <div class="timestamp">2026-02-01 16:53</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260201_161428_Hist28.jpg" target="_blank">
+          <img src="thumbs/20260201_161428_Hist28.jpg" loading="lazy" alt="SSTV image received 2026-02-01 16:53">
+          <div class="meta">
+            <div class="filename">20260201_161428_Hist28.jpg</div>
+            <div class="timestamp">2026-02-01 16:53</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260201_161050_Hist27.jpg" target="_blank">
+          <img src="thumbs/20260201_161050_Hist27.jpg" loading="lazy" alt="SSTV image received 2026-02-01 16:53">
+          <div class="meta">
+            <div class="filename">20260201_161050_Hist27.jpg</div>
+            <div class="timestamp">2026-02-01 16:53</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260201_160312_Hist26.jpg" target="_blank">
+          <img src="thumbs/20260201_160312_Hist26.jpg" loading="lazy" alt="SSTV image received 2026-02-01 16:53">
+          <div class="meta">
+            <div class="filename">20260201_160312_Hist26.jpg</div>
+            <div class="timestamp">2026-02-01 16:53</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260201_155952_Hist25.jpg" target="_blank">
+          <img src="thumbs/20260201_155952_Hist25.jpg" loading="lazy" alt="SSTV image received 2026-02-01 16:53">
+          <div class="meta">
+            <div class="filename">20260201_155952_Hist25.jpg</div>
+            <div class="timestamp">2026-02-01 16:53</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260201_155722_Hist24.jpg" target="_blank">
+          <img src="thumbs/20260201_155722_Hist24.jpg" loading="lazy" alt="SSTV image received 2026-02-01 16:53">
+          <div class="meta">
+            <div class="filename">20260201_155722_Hist24.jpg</div>
+            <div class="timestamp">2026-02-01 16:53</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260201_155445_Hist23.jpg" target="_blank">
+          <img src="thumbs/20260201_155445_Hist23.jpg" loading="lazy" alt="SSTV image received 2026-02-01 16:53">
+          <div class="meta">
+            <div class="filename">20260201_155445_Hist23.jpg</div>
+            <div class="timestamp">2026-02-01 16:53</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260201_154844_Hist22.jpg" target="_blank">
+          <img src="thumbs/20260201_154844_Hist22.jpg" loading="lazy" alt="SSTV image received 2026-02-01 16:53">
+          <div class="meta">
+            <div class="filename">20260201_154844_Hist22.jpg</div>
+            <div class="timestamp">2026-02-01 16:53</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260201_154702_Hist21.jpg" target="_blank">
+          <img src="thumbs/20260201_154702_Hist21.jpg" loading="lazy" alt="SSTV image received 2026-02-01 16:53">
+          <div class="meta">
+            <div class="filename">20260201_154702_Hist21.jpg</div>
+            <div class="timestamp">2026-02-01 16:53</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260201_154409_Hist20.jpg" target="_blank">
+          <img src="thumbs/20260201_154409_Hist20.jpg" loading="lazy" alt="SSTV image received 2026-02-01 16:53">
+          <div class="meta">
+            <div class="filename">20260201_154409_Hist20.jpg</div>
+            <div class="timestamp">2026-02-01 16:53</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260201_154205_Hist19.jpg" target="_blank">
+          <img src="thumbs/20260201_154205_Hist19.jpg" loading="lazy" alt="SSTV image received 2026-02-01 16:53">
+          <div class="meta">
+            <div class="filename">20260201_154205_Hist19.jpg</div>
+            <div class="timestamp">2026-02-01 16:53</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260201_153217_Hist18.jpg" target="_blank">
+          <img src="thumbs/20260201_153217_Hist18.jpg" loading="lazy" alt="SSTV image received 2026-02-01 16:53">
+          <div class="meta">
+            <div class="filename">20260201_153217_Hist18.jpg</div>
+            <div class="timestamp">2026-02-01 16:53</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260201_152940_Hist17.jpg" target="_blank">
+          <img src="thumbs/20260201_152940_Hist17.jpg" loading="lazy" alt="SSTV image received 2026-02-01 16:53">
+          <div class="meta">
+            <div class="filename">20260201_152940_Hist17.jpg</div>
+            <div class="timestamp">2026-02-01 16:53</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260201_151441_Hist16.jpg" target="_blank">
+          <img src="thumbs/20260201_151441_Hist16.jpg" loading="lazy" alt="SSTV image received 2026-02-01 16:53">
+          <div class="meta">
+            <div class="filename">20260201_151441_Hist16.jpg</div>
+            <div class="timestamp">2026-02-01 16:53</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260201_151224_Hist15.jpg" target="_blank">
+          <img src="thumbs/20260201_151224_Hist15.jpg" loading="lazy" alt="SSTV image received 2026-02-01 16:53">
+          <div class="meta">
+            <div class="filename">20260201_151224_Hist15.jpg</div>
+            <div class="timestamp">2026-02-01 16:53</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260131_183259_Hist14.jpg" target="_blank">
+          <img src="thumbs/20260131_183259_Hist14.jpg" loading="lazy" alt="SSTV image received 2026-02-01 13:24">
+          <div class="meta">
+            <div class="filename">20260131_183259_Hist14.jpg</div>
+            <div class="timestamp">2026-02-01 13:24</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260131_182925_Hist13.jpg" target="_blank">
+          <img src="thumbs/20260131_182925_Hist13.jpg" loading="lazy" alt="SSTV image received 2026-02-01 13:24">
+          <div class="meta">
+            <div class="filename">20260131_182925_Hist13.jpg</div>
+            <div class="timestamp">2026-02-01 13:24</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260131_182307_Hist12.jpg" target="_blank">
+          <img src="thumbs/20260131_182307_Hist12.jpg" loading="lazy" alt="SSTV image received 2026-02-01 13:24">
+          <div class="meta">
+            <div class="filename">20260131_182307_Hist12.jpg</div>
+            <div class="timestamp">2026-02-01 13:24</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260131_181832_Hist11.jpg" target="_blank">
+          <img src="thumbs/20260131_181832_Hist11.jpg" loading="lazy" alt="SSTV image received 2026-02-01 13:24">
+          <div class="meta">
+            <div class="filename">20260131_181832_Hist11.jpg</div>
+            <div class="timestamp">2026-02-01 13:24</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260131_180528_Hist10.jpg" target="_blank">
+          <img src="thumbs/20260131_180528_Hist10.jpg" loading="lazy" alt="SSTV image received 2026-02-01 13:24">
+          <div class="meta">
+            <div class="filename">20260131_180528_Hist10.jpg</div>
+            <div class="timestamp">2026-02-01 13:24</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260131_180317_Hist9.jpg" target="_blank">
+          <img src="thumbs/20260131_180317_Hist9.jpg" loading="lazy" alt="SSTV image received 2026-02-01 13:24">
+          <div class="meta">
+            <div class="filename">20260131_180317_Hist9.jpg</div>
+            <div class="timestamp">2026-02-01 13:24</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260131_175324_Hist8.jpg" target="_blank">
+          <img src="thumbs/20260131_175324_Hist8.jpg" loading="lazy" alt="SSTV image received 2026-02-01 13:24">
+          <div class="meta">
+            <div class="filename">20260131_175324_Hist8.jpg</div>
+            <div class="timestamp">2026-02-01 13:24</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260131_174917_Hist7.jpg" target="_blank">
+          <img src="thumbs/20260131_174917_Hist7.jpg" loading="lazy" alt="SSTV image received 2026-02-01 13:24">
+          <div class="meta">
+            <div class="filename">20260131_174917_Hist7.jpg</div>
+            <div class="timestamp">2026-02-01 13:24</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260131_174550_Hist6.jpg" target="_blank">
+          <img src="thumbs/20260131_174550_Hist6.jpg" loading="lazy" alt="SSTV image received 2026-02-01 13:24">
+          <div class="meta">
+            <div class="filename">20260131_174550_Hist6.jpg</div>
+            <div class="timestamp">2026-02-01 13:24</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260131_171448_Hist5.jpg" target="_blank">
+          <img src="thumbs/20260131_171448_Hist5.jpg" loading="lazy" alt="SSTV image received 2026-02-01 13:24">
+          <div class="meta">
+            <div class="filename">20260131_171448_Hist5.jpg</div>
+            <div class="timestamp">2026-02-01 13:24</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260131_171251_Hist4.jpg" target="_blank">
+          <img src="thumbs/20260131_171251_Hist4.jpg" loading="lazy" alt="SSTV image received 2026-02-01 13:24">
+          <div class="meta">
+            <div class="filename">20260131_171251_Hist4.jpg</div>
+            <div class="timestamp">2026-02-01 13:24</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260131_171101_Hist3.jpg" target="_blank">
+          <img src="thumbs/20260131_171101_Hist3.jpg" loading="lazy" alt="SSTV image received 2026-02-01 13:23">
+          <div class="meta">
+            <div class="filename">20260131_171101_Hist3.jpg</div>
+            <div class="timestamp">2026-02-01 13:23</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260131_170928_Hist2.jpg" target="_blank">
+          <img src="thumbs/20260131_170928_Hist2.jpg" loading="lazy" alt="SSTV image received 2026-02-01 13:23">
+          <div class="meta">
+            <div class="filename">20260131_170928_Hist2.jpg</div>
+            <div class="timestamp">2026-02-01 13:23</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260131_170349_Hist1.jpg" target="_blank">
+          <img src="thumbs/20260131_170349_Hist1.jpg" loading="lazy" alt="SSTV image received 2026-02-01 13:23">
+          <div class="meta">
+            <div class="filename">20260131_170349_Hist1.jpg</div>
+            <div class="timestamp">2026-02-01 13:23</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260131_165942_Hist32.jpg" target="_blank">
+          <img src="thumbs/20260131_165942_Hist32.jpg" loading="lazy" alt="SSTV image received 2026-02-01 13:23">
+          <div class="meta">
+            <div class="filename">20260131_165942_Hist32.jpg</div>
+            <div class="timestamp">2026-02-01 13:23</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260131_165117_Hist31.jpg" target="_blank">
+          <img src="thumbs/20260131_165117_Hist31.jpg" loading="lazy" alt="SSTV image received 2026-02-01 13:23">
+          <div class="meta">
+            <div class="filename">20260131_165117_Hist31.jpg</div>
+            <div class="timestamp">2026-02-01 13:23</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260131_164936_Hist30.jpg" target="_blank">
+          <img src="thumbs/20260131_164936_Hist30.jpg" loading="lazy" alt="SSTV image received 2026-02-01 13:23">
+          <div class="meta">
+            <div class="filename">20260131_164936_Hist30.jpg</div>
+            <div class="timestamp">2026-02-01 13:23</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260131_164614_Hist29.jpg" target="_blank">
+          <img src="thumbs/20260131_164614_Hist29.jpg" loading="lazy" alt="SSTV image received 2026-02-01 13:23">
+          <div class="meta">
+            <div class="filename">20260131_164614_Hist29.jpg</div>
+            <div class="timestamp">2026-02-01 13:23</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260131_164252_Hist28.jpg" target="_blank">
+          <img src="thumbs/20260131_164252_Hist28.jpg" loading="lazy" alt="SSTV image received 2026-02-01 13:23">
+          <div class="meta">
+            <div class="filename">20260131_164252_Hist28.jpg</div>
+            <div class="timestamp">2026-02-01 13:23</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260131_163116_Hist27.jpg" target="_blank">
+          <img src="thumbs/20260131_163116_Hist27.jpg" loading="lazy" alt="SSTV image received 2026-02-01 13:23">
+          <div class="meta">
+            <div class="filename">20260131_163116_Hist27.jpg</div>
+            <div class="timestamp">2026-02-01 13:23</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260131_161939_Hist26.jpg" target="_blank">
+          <img src="thumbs/20260131_161939_Hist26.jpg" loading="lazy" alt="SSTV image received 2026-02-01 13:23">
+          <div class="meta">
+            <div class="filename">20260131_161939_Hist26.jpg</div>
+            <div class="timestamp">2026-02-01 13:23</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260131_161816_Hist25.jpg" target="_blank">
+          <img src="thumbs/20260131_161816_Hist25.jpg" loading="lazy" alt="SSTV image received 2026-02-01 13:23">
+          <div class="meta">
+            <div class="filename">20260131_161816_Hist25.jpg</div>
+            <div class="timestamp">2026-02-01 13:23</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260131_161506_Hist24.jpg" target="_blank">
+          <img src="thumbs/20260131_161506_Hist24.jpg" loading="lazy" alt="SSTV image received 2026-02-01 13:23">
+          <div class="meta">
+            <div class="filename">20260131_161506_Hist24.jpg</div>
+            <div class="timestamp">2026-02-01 13:23</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260131_160750_Hist23.jpg" target="_blank">
+          <img src="thumbs/20260131_160750_Hist23.jpg" loading="lazy" alt="SSTV image received 2026-02-01 13:23">
+          <div class="meta">
+            <div class="filename">20260131_160750_Hist23.jpg</div>
+            <div class="timestamp">2026-02-01 13:23</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260131_160353_Hist22.jpg" target="_blank">
+          <img src="thumbs/20260131_160353_Hist22.jpg" loading="lazy" alt="SSTV image received 2026-02-01 13:23">
+          <div class="meta">
+            <div class="filename">20260131_160353_Hist22.jpg</div>
+            <div class="timestamp">2026-02-01 13:23</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260131_155801_Hist21.jpg" target="_blank">
+          <img src="thumbs/20260131_155801_Hist21.jpg" loading="lazy" alt="SSTV image received 2026-02-01 13:23">
+          <div class="meta">
+            <div class="filename">20260131_155801_Hist21.jpg</div>
+            <div class="timestamp">2026-02-01 13:23</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260131_155732_Hist20.jpg" target="_blank">
+          <img src="thumbs/20260131_155732_Hist20.jpg" loading="lazy" alt="SSTV image received 2026-02-01 13:23">
+          <div class="meta">
+            <div class="filename">20260131_155732_Hist20.jpg</div>
+            <div class="timestamp">2026-02-01 13:23</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20260131_155518_Hist19.jpg" target="_blank">
+          <img src="thumbs/20260131_155518_Hist19.jpg" loading="lazy" alt="SSTV image received 2026-02-01 13:23">
+          <div class="meta">
+            <div class="filename">20260131_155518_Hist19.jpg</div>
+            <div class="timestamp">2026-02-01 13:23</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20250921_200901_Hist18.jpg" target="_blank">
+          <img src="thumbs/20250921_200901_Hist18.jpg" loading="lazy" alt="SSTV image received 2026-02-01 13:23">
+          <div class="meta">
+            <div class="filename">20250921_200901_Hist18.jpg</div>
+            <div class="timestamp">2026-02-01 13:23</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20250921_200736_Hist17.jpg" target="_blank">
+          <img src="thumbs/20250921_200736_Hist17.jpg" loading="lazy" alt="SSTV image received 2026-02-01 13:23">
+          <div class="meta">
+            <div class="filename">20250921_200736_Hist17.jpg</div>
+            <div class="timestamp">2026-02-01 13:23</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20250921_200622_Hist16.jpg" target="_blank">
+          <img src="thumbs/20250921_200622_Hist16.jpg" loading="lazy" alt="SSTV image received 2026-02-01 13:23">
+          <div class="meta">
+            <div class="filename">20250921_200622_Hist16.jpg</div>
+            <div class="timestamp">2026-02-01 13:23</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-02">
+        <a href="full/20250921_200501_Hist15.jpg" target="_blank">
+          <img src="thumbs/20250921_200501_Hist15.jpg" loading="lazy" alt="SSTV image received 2026-02-01 13:23">
+          <div class="meta">
+            <div class="filename">20250921_200501_Hist15.jpg</div>
+            <div class="timestamp">2026-02-01 13:23</div>
+          </div>
+        </a>
+      </div>
+      <div class="no-results" id="no-results" style="display:none;">
+        No images found for this month.
+      </div>
+    </div>
+    
+    <footer class="footer">
+      73 de W4EWB &bull; 
+      <a href="https://www.qrz.com/db/W4EWB">QRZ</a> &bull;
+      Gallery auto-updated via MMSSTV
+    </footer>
   </div>
-  <div class="grid">    <div class="card">
-      <a href="full/20260201_181048_Hist13.jpg">
-        <img src="thumbs/20260201_181048_Hist13.jpg" loading="lazy" alt="20260201_181048_Hist13.jpg">
-        <div class="meta">
-          <strong>20260201_181048_Hist13.jpg</strong>
-          <div>2026-02-01 18:15</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260201_180547_Hist12.jpg">
-        <img src="thumbs/20260201_180547_Hist12.jpg" loading="lazy" alt="20260201_180547_Hist12.jpg">
-        <div class="meta">
-          <strong>20260201_180547_Hist12.jpg</strong>
-          <div>2026-02-01 18:10</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260201_175727_Hist11.jpg">
-        <img src="thumbs/20260201_175727_Hist11.jpg" loading="lazy" alt="20260201_175727_Hist11.jpg">
-        <div class="meta">
-          <strong>20260201_175727_Hist11.jpg</strong>
-          <div>2026-02-01 18:00</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260201_175342_Hist10.jpg">
-        <img src="thumbs/20260201_175342_Hist10.jpg" loading="lazy" alt="20260201_175342_Hist10.jpg">
-        <div class="meta">
-          <strong>20260201_175342_Hist10.jpg</strong>
-          <div>2026-02-01 17:55</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260201_175028_Hist9.jpg">
-        <img src="thumbs/20260201_175028_Hist9.jpg" loading="lazy" alt="20260201_175028_Hist9.jpg">
-        <div class="meta">
-          <strong>20260201_175028_Hist9.jpg</strong>
-          <div>2026-02-01 17:55</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260201_174834_Hist8.jpg">
-        <img src="thumbs/20260201_174834_Hist8.jpg" loading="lazy" alt="20260201_174834_Hist8.jpg">
-        <div class="meta">
-          <strong>20260201_174834_Hist8.jpg</strong>
-          <div>2026-02-01 17:50</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260201_174220_Hist7.jpg">
-        <img src="thumbs/20260201_174220_Hist7.jpg" loading="lazy" alt="20260201_174220_Hist7.jpg">
-        <div class="meta">
-          <strong>20260201_174220_Hist7.jpg</strong>
-          <div>2026-02-01 17:44</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260201_173735_Hist6.jpg">
-        <img src="thumbs/20260201_173735_Hist6.jpg" loading="lazy" alt="20260201_173735_Hist6.jpg">
-        <div class="meta">
-          <strong>20260201_173735_Hist6.jpg</strong>
-          <div>2026-02-01 17:39</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260201_172902_Hist5.jpg">
-        <img src="thumbs/20260201_172902_Hist5.jpg" loading="lazy" alt="20260201_172902_Hist5.jpg">
-        <div class="meta">
-          <strong>20260201_172902_Hist5.jpg</strong>
-          <div>2026-02-01 17:29</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260201_171221_Hist4.jpg">
-        <img src="thumbs/20260201_171221_Hist4.jpg" loading="lazy" alt="20260201_171221_Hist4.jpg">
-        <div class="meta">
-          <strong>20260201_171221_Hist4.jpg</strong>
-          <div>2026-02-01 17:14</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260201_170134_Hist3.jpg">
-        <img src="thumbs/20260201_170134_Hist3.jpg" loading="lazy" alt="20260201_170134_Hist3.jpg">
-        <div class="meta">
-          <strong>20260201_170134_Hist3.jpg</strong>
-          <div>2026-02-01 17:04</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260201_165930_Hist2.jpg">
-        <img src="thumbs/20260201_165930_Hist2.jpg" loading="lazy" alt="20260201_165930_Hist2.jpg">
-        <div class="meta">
-          <strong>20260201_165930_Hist2.jpg</strong>
-          <div>2026-02-01 17:04</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260201_165711_Hist1.jpg">
-        <img src="thumbs/20260201_165711_Hist1.jpg" loading="lazy" alt="20260201_165711_Hist1.jpg">
-        <div class="meta">
-          <strong>20260201_165711_Hist1.jpg</strong>
-          <div>2026-02-01 16:59</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260201_165410_Hist32.jpg">
-        <img src="thumbs/20260201_165410_Hist32.jpg" loading="lazy" alt="20260201_165410_Hist32.jpg">
-        <div class="meta">
-          <strong>20260201_165410_Hist32.jpg</strong>
-          <div>2026-02-01 16:54</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260201_164612_Hist31.jpg">
-        <img src="thumbs/20260201_164612_Hist31.jpg" loading="lazy" alt="20260201_164612_Hist31.jpg">
-        <div class="meta">
-          <strong>20260201_164612_Hist31.jpg</strong>
-          <div>2026-02-01 16:53</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260201_164302_Hist30.jpg">
-        <img src="thumbs/20260201_164302_Hist30.jpg" loading="lazy" alt="20260201_164302_Hist30.jpg">
-        <div class="meta">
-          <strong>20260201_164302_Hist30.jpg</strong>
-          <div>2026-02-01 16:53</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260201_163148_Hist29.jpg">
-        <img src="thumbs/20260201_163148_Hist29.jpg" loading="lazy" alt="20260201_163148_Hist29.jpg">
-        <div class="meta">
-          <strong>20260201_163148_Hist29.jpg</strong>
-          <div>2026-02-01 16:53</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260201_161428_Hist28.jpg">
-        <img src="thumbs/20260201_161428_Hist28.jpg" loading="lazy" alt="20260201_161428_Hist28.jpg">
-        <div class="meta">
-          <strong>20260201_161428_Hist28.jpg</strong>
-          <div>2026-02-01 16:53</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260201_161050_Hist27.jpg">
-        <img src="thumbs/20260201_161050_Hist27.jpg" loading="lazy" alt="20260201_161050_Hist27.jpg">
-        <div class="meta">
-          <strong>20260201_161050_Hist27.jpg</strong>
-          <div>2026-02-01 16:53</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260201_160312_Hist26.jpg">
-        <img src="thumbs/20260201_160312_Hist26.jpg" loading="lazy" alt="20260201_160312_Hist26.jpg">
-        <div class="meta">
-          <strong>20260201_160312_Hist26.jpg</strong>
-          <div>2026-02-01 16:53</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260201_155952_Hist25.jpg">
-        <img src="thumbs/20260201_155952_Hist25.jpg" loading="lazy" alt="20260201_155952_Hist25.jpg">
-        <div class="meta">
-          <strong>20260201_155952_Hist25.jpg</strong>
-          <div>2026-02-01 16:53</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260201_155722_Hist24.jpg">
-        <img src="thumbs/20260201_155722_Hist24.jpg" loading="lazy" alt="20260201_155722_Hist24.jpg">
-        <div class="meta">
-          <strong>20260201_155722_Hist24.jpg</strong>
-          <div>2026-02-01 16:53</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260201_155445_Hist23.jpg">
-        <img src="thumbs/20260201_155445_Hist23.jpg" loading="lazy" alt="20260201_155445_Hist23.jpg">
-        <div class="meta">
-          <strong>20260201_155445_Hist23.jpg</strong>
-          <div>2026-02-01 16:53</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260201_154844_Hist22.jpg">
-        <img src="thumbs/20260201_154844_Hist22.jpg" loading="lazy" alt="20260201_154844_Hist22.jpg">
-        <div class="meta">
-          <strong>20260201_154844_Hist22.jpg</strong>
-          <div>2026-02-01 16:53</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260201_154702_Hist21.jpg">
-        <img src="thumbs/20260201_154702_Hist21.jpg" loading="lazy" alt="20260201_154702_Hist21.jpg">
-        <div class="meta">
-          <strong>20260201_154702_Hist21.jpg</strong>
-          <div>2026-02-01 16:53</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260201_154409_Hist20.jpg">
-        <img src="thumbs/20260201_154409_Hist20.jpg" loading="lazy" alt="20260201_154409_Hist20.jpg">
-        <div class="meta">
-          <strong>20260201_154409_Hist20.jpg</strong>
-          <div>2026-02-01 16:53</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260201_154205_Hist19.jpg">
-        <img src="thumbs/20260201_154205_Hist19.jpg" loading="lazy" alt="20260201_154205_Hist19.jpg">
-        <div class="meta">
-          <strong>20260201_154205_Hist19.jpg</strong>
-          <div>2026-02-01 16:53</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260201_153217_Hist18.jpg">
-        <img src="thumbs/20260201_153217_Hist18.jpg" loading="lazy" alt="20260201_153217_Hist18.jpg">
-        <div class="meta">
-          <strong>20260201_153217_Hist18.jpg</strong>
-          <div>2026-02-01 16:53</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260201_152940_Hist17.jpg">
-        <img src="thumbs/20260201_152940_Hist17.jpg" loading="lazy" alt="20260201_152940_Hist17.jpg">
-        <div class="meta">
-          <strong>20260201_152940_Hist17.jpg</strong>
-          <div>2026-02-01 16:53</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260201_151441_Hist16.jpg">
-        <img src="thumbs/20260201_151441_Hist16.jpg" loading="lazy" alt="20260201_151441_Hist16.jpg">
-        <div class="meta">
-          <strong>20260201_151441_Hist16.jpg</strong>
-          <div>2026-02-01 16:53</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260201_151224_Hist15.jpg">
-        <img src="thumbs/20260201_151224_Hist15.jpg" loading="lazy" alt="20260201_151224_Hist15.jpg">
-        <div class="meta">
-          <strong>20260201_151224_Hist15.jpg</strong>
-          <div>2026-02-01 16:53</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260131_183259_Hist14.jpg">
-        <img src="thumbs/20260131_183259_Hist14.jpg" loading="lazy" alt="20260131_183259_Hist14.jpg">
-        <div class="meta">
-          <strong>20260131_183259_Hist14.jpg</strong>
-          <div>2026-02-01 13:24</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260131_182925_Hist13.jpg">
-        <img src="thumbs/20260131_182925_Hist13.jpg" loading="lazy" alt="20260131_182925_Hist13.jpg">
-        <div class="meta">
-          <strong>20260131_182925_Hist13.jpg</strong>
-          <div>2026-02-01 13:24</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260131_182307_Hist12.jpg">
-        <img src="thumbs/20260131_182307_Hist12.jpg" loading="lazy" alt="20260131_182307_Hist12.jpg">
-        <div class="meta">
-          <strong>20260131_182307_Hist12.jpg</strong>
-          <div>2026-02-01 13:24</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260131_181832_Hist11.jpg">
-        <img src="thumbs/20260131_181832_Hist11.jpg" loading="lazy" alt="20260131_181832_Hist11.jpg">
-        <div class="meta">
-          <strong>20260131_181832_Hist11.jpg</strong>
-          <div>2026-02-01 13:24</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260131_180528_Hist10.jpg">
-        <img src="thumbs/20260131_180528_Hist10.jpg" loading="lazy" alt="20260131_180528_Hist10.jpg">
-        <div class="meta">
-          <strong>20260131_180528_Hist10.jpg</strong>
-          <div>2026-02-01 13:24</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260131_180317_Hist9.jpg">
-        <img src="thumbs/20260131_180317_Hist9.jpg" loading="lazy" alt="20260131_180317_Hist9.jpg">
-        <div class="meta">
-          <strong>20260131_180317_Hist9.jpg</strong>
-          <div>2026-02-01 13:24</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260131_175324_Hist8.jpg">
-        <img src="thumbs/20260131_175324_Hist8.jpg" loading="lazy" alt="20260131_175324_Hist8.jpg">
-        <div class="meta">
-          <strong>20260131_175324_Hist8.jpg</strong>
-          <div>2026-02-01 13:24</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260131_174917_Hist7.jpg">
-        <img src="thumbs/20260131_174917_Hist7.jpg" loading="lazy" alt="20260131_174917_Hist7.jpg">
-        <div class="meta">
-          <strong>20260131_174917_Hist7.jpg</strong>
-          <div>2026-02-01 13:24</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260131_174550_Hist6.jpg">
-        <img src="thumbs/20260131_174550_Hist6.jpg" loading="lazy" alt="20260131_174550_Hist6.jpg">
-        <div class="meta">
-          <strong>20260131_174550_Hist6.jpg</strong>
-          <div>2026-02-01 13:24</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260131_171448_Hist5.jpg">
-        <img src="thumbs/20260131_171448_Hist5.jpg" loading="lazy" alt="20260131_171448_Hist5.jpg">
-        <div class="meta">
-          <strong>20260131_171448_Hist5.jpg</strong>
-          <div>2026-02-01 13:24</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260131_171251_Hist4.jpg">
-        <img src="thumbs/20260131_171251_Hist4.jpg" loading="lazy" alt="20260131_171251_Hist4.jpg">
-        <div class="meta">
-          <strong>20260131_171251_Hist4.jpg</strong>
-          <div>2026-02-01 13:24</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260131_171101_Hist3.jpg">
-        <img src="thumbs/20260131_171101_Hist3.jpg" loading="lazy" alt="20260131_171101_Hist3.jpg">
-        <div class="meta">
-          <strong>20260131_171101_Hist3.jpg</strong>
-          <div>2026-02-01 13:23</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260131_170928_Hist2.jpg">
-        <img src="thumbs/20260131_170928_Hist2.jpg" loading="lazy" alt="20260131_170928_Hist2.jpg">
-        <div class="meta">
-          <strong>20260131_170928_Hist2.jpg</strong>
-          <div>2026-02-01 13:23</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260131_170349_Hist1.jpg">
-        <img src="thumbs/20260131_170349_Hist1.jpg" loading="lazy" alt="20260131_170349_Hist1.jpg">
-        <div class="meta">
-          <strong>20260131_170349_Hist1.jpg</strong>
-          <div>2026-02-01 13:23</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260131_165942_Hist32.jpg">
-        <img src="thumbs/20260131_165942_Hist32.jpg" loading="lazy" alt="20260131_165942_Hist32.jpg">
-        <div class="meta">
-          <strong>20260131_165942_Hist32.jpg</strong>
-          <div>2026-02-01 13:23</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260131_165117_Hist31.jpg">
-        <img src="thumbs/20260131_165117_Hist31.jpg" loading="lazy" alt="20260131_165117_Hist31.jpg">
-        <div class="meta">
-          <strong>20260131_165117_Hist31.jpg</strong>
-          <div>2026-02-01 13:23</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260131_164936_Hist30.jpg">
-        <img src="thumbs/20260131_164936_Hist30.jpg" loading="lazy" alt="20260131_164936_Hist30.jpg">
-        <div class="meta">
-          <strong>20260131_164936_Hist30.jpg</strong>
-          <div>2026-02-01 13:23</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260131_164614_Hist29.jpg">
-        <img src="thumbs/20260131_164614_Hist29.jpg" loading="lazy" alt="20260131_164614_Hist29.jpg">
-        <div class="meta">
-          <strong>20260131_164614_Hist29.jpg</strong>
-          <div>2026-02-01 13:23</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260131_164252_Hist28.jpg">
-        <img src="thumbs/20260131_164252_Hist28.jpg" loading="lazy" alt="20260131_164252_Hist28.jpg">
-        <div class="meta">
-          <strong>20260131_164252_Hist28.jpg</strong>
-          <div>2026-02-01 13:23</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260131_163116_Hist27.jpg">
-        <img src="thumbs/20260131_163116_Hist27.jpg" loading="lazy" alt="20260131_163116_Hist27.jpg">
-        <div class="meta">
-          <strong>20260131_163116_Hist27.jpg</strong>
-          <div>2026-02-01 13:23</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260131_161939_Hist26.jpg">
-        <img src="thumbs/20260131_161939_Hist26.jpg" loading="lazy" alt="20260131_161939_Hist26.jpg">
-        <div class="meta">
-          <strong>20260131_161939_Hist26.jpg</strong>
-          <div>2026-02-01 13:23</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260131_161816_Hist25.jpg">
-        <img src="thumbs/20260131_161816_Hist25.jpg" loading="lazy" alt="20260131_161816_Hist25.jpg">
-        <div class="meta">
-          <strong>20260131_161816_Hist25.jpg</strong>
-          <div>2026-02-01 13:23</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260131_161506_Hist24.jpg">
-        <img src="thumbs/20260131_161506_Hist24.jpg" loading="lazy" alt="20260131_161506_Hist24.jpg">
-        <div class="meta">
-          <strong>20260131_161506_Hist24.jpg</strong>
-          <div>2026-02-01 13:23</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260131_160750_Hist23.jpg">
-        <img src="thumbs/20260131_160750_Hist23.jpg" loading="lazy" alt="20260131_160750_Hist23.jpg">
-        <div class="meta">
-          <strong>20260131_160750_Hist23.jpg</strong>
-          <div>2026-02-01 13:23</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260131_160353_Hist22.jpg">
-        <img src="thumbs/20260131_160353_Hist22.jpg" loading="lazy" alt="20260131_160353_Hist22.jpg">
-        <div class="meta">
-          <strong>20260131_160353_Hist22.jpg</strong>
-          <div>2026-02-01 13:23</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260131_155801_Hist21.jpg">
-        <img src="thumbs/20260131_155801_Hist21.jpg" loading="lazy" alt="20260131_155801_Hist21.jpg">
-        <div class="meta">
-          <strong>20260131_155801_Hist21.jpg</strong>
-          <div>2026-02-01 13:23</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260131_155732_Hist20.jpg">
-        <img src="thumbs/20260131_155732_Hist20.jpg" loading="lazy" alt="20260131_155732_Hist20.jpg">
-        <div class="meta">
-          <strong>20260131_155732_Hist20.jpg</strong>
-          <div>2026-02-01 13:23</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20260131_155518_Hist19.jpg">
-        <img src="thumbs/20260131_155518_Hist19.jpg" loading="lazy" alt="20260131_155518_Hist19.jpg">
-        <div class="meta">
-          <strong>20260131_155518_Hist19.jpg</strong>
-          <div>2026-02-01 13:23</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20250921_200901_Hist18.jpg">
-        <img src="thumbs/20250921_200901_Hist18.jpg" loading="lazy" alt="20250921_200901_Hist18.jpg">
-        <div class="meta">
-          <strong>20250921_200901_Hist18.jpg</strong>
-          <div>2026-02-01 13:23</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20250921_200736_Hist17.jpg">
-        <img src="thumbs/20250921_200736_Hist17.jpg" loading="lazy" alt="20250921_200736_Hist17.jpg">
-        <div class="meta">
-          <strong>20250921_200736_Hist17.jpg</strong>
-          <div>2026-02-01 13:23</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20250921_200622_Hist16.jpg">
-        <img src="thumbs/20250921_200622_Hist16.jpg" loading="lazy" alt="20250921_200622_Hist16.jpg">
-        <div class="meta">
-          <strong>20250921_200622_Hist16.jpg</strong>
-          <div>2026-02-01 13:23</div>
-        </div>
-      </a>
-    </div>
-    <div class="card">
-      <a href="full/20250921_200501_Hist15.jpg">
-        <img src="thumbs/20250921_200501_Hist15.jpg" loading="lazy" alt="20250921_200501_Hist15.jpg">
-        <div class="meta">
-          <strong>20250921_200501_Hist15.jpg</strong>
-          <div>2026-02-01 13:23</div>
-        </div>
-      </a>
-    </div>  </div>
+  
+  <script>
+    (function() {
+      const buttons = document.querySelectorAll('.month-btn');
+      const cards = document.querySelectorAll('.card');
+      const countEl = document.getElementById('visible-count');
+      const noResults = document.getElementById('no-results');
+      
+      function filterByMonth(month) {
+        let visible = 0;
+        cards.forEach(card => {
+          const cardMonth = card.getAttribute('data-month');
+          const show = (month === 'all' || cardMonth === month);
+          card.classList.toggle('hidden', !show);
+          if (show) visible++;
+        });
+        countEl.textContent = visible;
+        noResults.style.display = visible === 0 ? 'block' : 'none';
+      }
+      
+      buttons.forEach(btn => {
+        btn.addEventListener('click', function() {
+          buttons.forEach(b => b.classList.remove('active'));
+          this.classList.add('active');
+          filterByMonth(this.getAttribute('data-month'));
+        });
+      });
+    })();
+  </script>
 </body>
 </html>
