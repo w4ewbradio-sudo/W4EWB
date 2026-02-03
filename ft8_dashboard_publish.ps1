@@ -987,7 +987,7 @@ $html = @"
         container.innerHTML = '<div class="empty-state">' +
           '<h3>No Propagation Data Available</h3>' +
           '<p>Propagation data requires parsing your WSJT-X ALL.TXT file. ' +
-          'Edit the PowerShell script and set <code>$SkipAllTxt = $false</code> to enable this feature.</p>' +
+          'Edit the PowerShell script and set <code>`$SkipAllTxt = `$false</code> to enable this feature.</p>' +
           '</div>';
         return;
       }

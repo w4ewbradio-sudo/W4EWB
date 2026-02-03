@@ -290,7 +290,7 @@ $head = @"
       <p class="subtitle">
         A collection of SSTV images received on my Yaesu FT-710 in Louisville, KY.<br>
         <a href="https://www.qrz.com/db/W4EWB" target="_blank" rel="noopener">QRZ Profile</a> &#8226;
-        <a href="../ft8/">FT8 Dashboard</a>
+        <a href="../../ft8/">FT8 Dashboard</a>
       </p>
       <a href="latest.jpg" class="latest-link">&#128225; View Latest RX</a>
     </header>
@@ -345,7 +345,7 @@ $foot = @"
     <footer class="footer">
       73 de W4EWB &bull; 
       <a href="https://www.qrz.com/db/W4EWB">QRZ</a> &#8226;
-      <a href="../ft8/">FT8 Dashboard</a> &#8226;
+      <a href="../../ft8/">FT8 Dashboard</a> &#8226;
       Gallery auto-updated via MMSSTV
     </footer>
   </div>
