@@ -14,7 +14,6 @@ $SkipAllTxt    = $true                          # Set to $false to parse ALL.TXT
 
 # Check if WSJT-X directory exists, try alternate locations
 if (-not (Test-Path $WsjtxDir)) {
-  # Try other common locations
   $altPaths = @(
     "C:\Users\$env:USERNAME\AppData\Local\WSJT-X",
     "C:\WSJT-X",
@@ -89,7 +88,7 @@ function Parse-AdifLog {
   foreach ($record in $records) {
     $qso = @{}
     
-    # Extract fields with regex: <FIELD:length>value
+    # Extract fields with regex
     $matches = [regex]::Matches($record, "<(\w+):(\d+)(?::\w+)?>([^<]*)")
     
     foreach ($match in $matches) {
@@ -109,17 +108,15 @@ function Parse-AdifLog {
 
 # ---- Parse ALL.TXT for decode statistics ----
 function Parse-AllTxt {
-  param([string]$FilePath, [int]$MaxLines = 50000)
+  param([string]$FilePath, [int]$MaxLines = 10000)
   
   if (-not (Test-Path $FilePath)) { return @() }
   
-  # Read last N lines for performance
   $lines = Get-Content $FilePath -Tail $MaxLines -ErrorAction SilentlyContinue
   
   $decodes = @()
   
   foreach ($line in $lines) {
-    # Format: 231215_234500    14.074 Rx FT8    -10  0.2 1523 CQ DX K1ABC FN42
     if ($line -match "^(\d{6})_(\d{6})\s+(\d+\.\d+)\s+Rx\s+(\w+)\s+(-?\d+)\s+[\d.]+\s+\d+\s+(.*)$") {
       $dateStr = $matches[1]
       $timeStr = $matches[2]
@@ -128,7 +125,6 @@ function Parse-AllTxt {
       $snr = [int]$matches[5]
       $message = $matches[6]
       
-      # Determine band from frequency
       $band = switch -Regex ($freq.ToString()) {
         "^1\."    { "160m" }
         "^3\."    { "80m" }
@@ -145,13 +141,11 @@ function Parse-AllTxt {
         default   { "other" }
       }
       
-      # Extract grid from message if present
       $grid = ""
       if ($message -match "\b([A-R]{2}\d{2}[a-x]{0,2})\b") {
         $grid = $matches[1]
       }
       
-      # Extract callsign (rough parse)
       $call = ""
       $parts = $message -split "\s+"
       foreach ($part in $parts) {
@@ -161,7 +155,6 @@ function Parse-AllTxt {
         }
       }
       
-      # Parse date
       try {
         $year = "20" + $dateStr.Substring(0,2)
         $month = $dateStr.Substring(2,2)
@@ -210,7 +203,6 @@ foreach ($qso in $qsos) {
   $rstSent = if ($qso.ContainsKey("RST_SENT")) { $qso["RST_SENT"] } else { "" }
   $rstRcvd = if ($qso.ContainsKey("RST_RCVD")) { $qso["RST_RCVD"] } else { "" }
   
-  # Format date nicely
   $dateFormatted = ""
   if ($date.Length -eq 8) {
     $dateFormatted = "$($date.Substring(0,4))-$($date.Substring(4,2))-$($date.Substring(6,2))"
@@ -251,11 +243,11 @@ if ($SkipAllTxt) {
     $decodes = Parse-AllTxt -FilePath $allTxtFile -MaxLines 10000
     Write-Host "Parsed $($decodes.Count) decodes"
   } else {
-    Write-Host "ALL.TXT not found - propagation data will be empty (this is OK)"
+    Write-Host "ALL.TXT not found - propagation data will be empty"
   }
 }
 
-# Aggregate decode stats by band and hour (last 7 days)
+# Aggregate decode stats
 $now = Get-Date
 $weekAgo = $now.AddDays(-7)
 
@@ -279,7 +271,6 @@ foreach ($decode in $decodes) {
         $bandStats[$band][$hourKey].count++
         $bandStats[$band][$hourKey].snrSum += $decode.snr
         
-        # Keep last 1000 decodes with grids for map
         if ($decode.grid -and $recentDecodes.Count -lt 1000) {
           $coords = Convert-GridToLatLon -Grid $decode.grid
           if ($coords) {
@@ -299,7 +290,6 @@ foreach ($decode in $decodes) {
   }
 }
 
-# Convert band stats to array format for JSON
 $propData = @{
   generated = $now.ToString("yyyy-MM-dd HH:mm:ss")
   bands = @{}
@@ -357,7 +347,6 @@ $html = @"
       --green: #3fb950;
       --yellow: #d29922;
       --red: #f85149;
-      --purple: #a371f7;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -368,7 +357,6 @@ $html = @"
     }
     .container { max-width: 1600px; margin: 0 auto; padding: 20px; }
     
-    /* Header */
     header {
       display: flex;
       justify-content: space-between;
@@ -379,25 +367,13 @@ $html = @"
       padding-bottom: 20px;
       border-bottom: 1px solid var(--border);
     }
-    .title-section h1 {
-      font-size: 1.8rem;
-      font-weight: 600;
-      color: #fff;
-    }
+    .title-section h1 { font-size: 1.8rem; font-weight: 600; color: #fff; }
     .title-section h1 .call { color: var(--accent); }
-    .title-section .subtitle {
-      color: var(--text-muted);
-      font-size: 0.95rem;
-      margin-top: 4px;
-    }
+    .title-section .subtitle { color: var(--text-muted); font-size: 0.95rem; margin-top: 4px; }
     .title-section .subtitle a { color: var(--accent); text-decoration: none; }
     .title-section .subtitle a:hover { text-decoration: underline; }
     
-    .stats-row {
-      display: flex;
-      gap: 20px;
-      flex-wrap: wrap;
-    }
+    .stats-row { display: flex; gap: 20px; flex-wrap: wrap; }
     .stat-box {
       background: var(--card-bg);
       border: 1px solid var(--border);
@@ -405,25 +381,10 @@ $html = @"
       padding: 12px 20px;
       text-align: center;
     }
-    .stat-box .value {
-      font-size: 1.8rem;
-      font-weight: 600;
-      color: var(--accent);
-    }
-    .stat-box .label {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      text-transform: uppercase;
-    }
+    .stat-box .value { font-size: 1.8rem; font-weight: 600; color: var(--accent); }
+    .stat-box .label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; }
     
-    /* Tabs */
-    .tabs {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 20px;
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 12px;
-    }
+    .tabs { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
     .tab {
       padding: 8px 20px;
       background: var(--card-bg);
@@ -435,38 +396,22 @@ $html = @"
       transition: all 0.15s;
     }
     .tab:hover { border-color: var(--accent); color: var(--text); }
-    .tab.active {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: #0d1117;
-      font-weight: 500;
-    }
+    .tab.active { background: var(--accent); border-color: var(--accent); color: #0d1117; font-weight: 500; }
     
-    /* Panels */
     .panel { display: none; }
     .panel.active { display: block; }
     
-    /* Map */
-    #map {
-      height: 500px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      margin-bottom: 20px;
-    }
+    #map { height: 500px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 20px; }
     
-    /* Map controls */
-    .map-controls {
+    .map-controls, .filter-controls {
       display: flex;
       gap: 12px;
       margin-bottom: 16px;
       flex-wrap: wrap;
       align-items: center;
     }
-    .map-controls label {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-    }
-    .map-controls select, .map-controls input {
+    .map-controls label, .filter-controls label { font-size: 0.85rem; color: var(--text-muted); }
+    .map-controls select, .filter-controls select {
       background: var(--card-bg);
       border: 1px solid var(--border);
       border-radius: 4px;
@@ -474,34 +419,25 @@ $html = @"
       color: var(--text);
       font-size: 0.85rem;
     }
-    .band-toggle {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 10px;
+    
+    .filter-btn {
+      padding: 6px 12px;
       background: var(--card-bg);
       border: 1px solid var(--border);
       border-radius: 4px;
+      color: var(--text-muted);
       font-size: 0.8rem;
       cursor: pointer;
+      transition: all 0.15s;
     }
-    .band-toggle input { margin: 0; }
-    .band-toggle.active { border-color: var(--accent); }
+    .filter-btn:hover { border-color: var(--accent); color: var(--text); }
+    .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #0d1117; }
     
-    /* Band colors */
-    .band-160m { color: #ff6b6b; }
-    .band-80m { color: #ffa94d; }
-    .band-60m { color: #ffd43b; }
-    .band-40m { color: #69db7c; }
-    .band-30m { color: #38d9a9; }
-    .band-20m { color: #4dabf7; }
-    .band-17m { color: #748ffc; }
-    .band-15m { color: #9775fa; }
-    .band-12m { color: #da77f2; }
-    .band-10m { color: #f783ac; }
-    .band-6m { color: #e599f7; }
+    .band-160m { color: #ff6b6b; } .band-80m { color: #ffa94d; } .band-60m { color: #ffd43b; }
+    .band-40m { color: #69db7c; } .band-30m { color: #38d9a9; } .band-20m { color: #4dabf7; }
+    .band-17m { color: #748ffc; } .band-15m { color: #9775fa; } .band-12m { color: #da77f2; }
+    .band-10m { color: #f783ac; } .band-6m { color: #e599f7; }
     
-    /* Propagation heatmap */
     .prop-grid {
       display: grid;
       grid-template-columns: 60px repeat(24, 1fr);
@@ -509,58 +445,26 @@ $html = @"
       font-size: 0.7rem;
       margin-bottom: 20px;
     }
-    .prop-cell {
-      aspect-ratio: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 3px;
-      font-weight: 500;
-    }
-    .prop-label {
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      padding-right: 8px;
-      font-weight: 500;
-    }
-    .prop-hour {
-      text-align: center;
-      color: var(--text-muted);
-      font-size: 0.65rem;
-    }
+    .prop-cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 3px; }
+    .prop-label { display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; font-weight: 500; }
+    .prop-hour { text-align: center; color: var(--text-muted); font-size: 0.65rem; }
     
-    /* PSK Reporter section */
-    .psk-section {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-    }
-    @media (max-width: 900px) {
-      .psk-section { grid-template-columns: 1fr; }
-    }
+    .psk-section { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 900px) { .psk-section { grid-template-columns: 1fr; } }
     .psk-card {
       background: var(--card-bg);
       border: 1px solid var(--border);
       border-radius: 10px;
       padding: 16px;
     }
-    .psk-card h3 {
-      font-size: 1rem;
-      margin-bottom: 12px;
-      color: var(--text);
-    }
-    .psk-card h3 .count {
-      font-weight: normal;
-      color: var(--text-muted);
-    }
-    .spot-list {
-      max-height: 400px;
-      overflow-y: auto;
-    }
+    .psk-card h3 { font-size: 1rem; margin-bottom: 12px; color: var(--text); }
+    .psk-card h3 .count { font-weight: normal; color: var(--text-muted); }
+    .spot-list { max-height: 400px; overflow-y: auto; }
     .spot {
-      display: flex;
-      justify-content: space-between;
+      display: grid;
+      grid-template-columns: 1fr auto auto auto;
+      gap: 12px;
+      align-items: center;
       padding: 8px 0;
       border-bottom: 1px solid var(--border);
       font-size: 0.85rem;
@@ -568,38 +472,29 @@ $html = @"
     .spot:last-child { border-bottom: none; }
     .spot .call { font-weight: 500; color: var(--accent); }
     .spot .info { color: var(--text-muted); }
+    .spot .country { font-size: 0.8rem; }
+    .spot .flag { font-size: 1.1rem; margin-right: 4px; }
     .spot .snr { font-weight: 500; }
     .spot .snr.good { color: var(--green); }
     .spot .snr.ok { color: var(--yellow); }
     .spot .snr.weak { color: var(--red); }
     
-    /* QSO Log table */
-    .qso-table-wrap {
-      overflow-x: auto;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-    }
-    .qso-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.85rem;
-    }
-    .qso-table th, .qso-table td {
-      padding: 10px 14px;
-      text-align: left;
-      border-bottom: 1px solid var(--border);
-    }
-    .qso-table th {
-      background: var(--card-bg);
-      font-weight: 500;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      font-size: 0.75rem;
-    }
+    .qso-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; }
+    .qso-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .qso-table th, .qso-table td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+    .qso-table th { background: var(--card-bg); font-weight: 500; color: var(--text-muted); text-transform: uppercase; font-size: 0.75rem; }
     .qso-table tr:hover { background: rgba(88, 166, 255, 0.05); }
     .qso-table .call { color: var(--accent); font-weight: 500; }
+    .qso-table .flag { font-size: 1rem; margin-right: 6px; }
     
-    /* Footer */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+    .empty-state h3 { color: var(--text); margin-bottom: 8px; }
+    .empty-state p { max-width: 400px; margin: 0 auto; }
+    
     footer {
       margin-top: 40px;
       padding-top: 20px;
@@ -611,33 +506,11 @@ $html = @"
     footer a { color: var(--accent); text-decoration: none; }
     footer a:hover { text-decoration: underline; }
     
-    /* Loading */
-    .loading {
-      text-align: center;
-      padding: 40px;
-      color: var(--text-muted);
-    }
-    .loading::after {
-      content: '';
-      display: inline-block;
-      width: 20px;
-      height: 20px;
-      border: 2px solid var(--border);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin-left: 10px;
-      vertical-align: middle;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    
-    /* Responsive */
     @media (max-width: 768px) {
       .container { padding: 12px; }
       header { flex-direction: column; }
       .title-section h1 { font-size: 1.4rem; }
       #map { height: 350px; }
-      .prop-grid { font-size: 0.6rem; }
     }
   </style>
 </head>
@@ -648,7 +521,7 @@ $html = @"
         <h1><span class="call">$MyCallsign</span> FT8 Dashboard</h1>
         <p class="subtitle">
           Digital modes activity from my Yaesu FT-710 in Louisville, KY ($MyGrid)<br>
-          <a href="https://www.qrz.com/db/$MyCallsign" target="_blank">QRZ Profile</a> &bull;
+          <a href="https://www.qrz.com/db/$MyCallsign" target="_blank">QRZ Profile</a> &#8226;
           <a href="../sstv/rx/">SSTV Gallery</a>
         </p>
       </div>
@@ -678,7 +551,7 @@ $html = @"
     <!-- QSO Map Panel -->
     <div id="map-panel" class="panel active">
       <div class="map-controls">
-        <label>Filter by band:</label>
+        <label>Band:</label>
         <select id="band-filter">
           <option value="all">All Bands</option>
           <option value="160m">160m</option>
@@ -692,11 +565,16 @@ $html = @"
           <option value="10m">10m</option>
           <option value="6m">6m</option>
         </select>
-        <label>
-          <input type="checkbox" id="show-lines" checked> Show path lines
-        </label>
-        <label>
-          <input type="checkbox" id="show-decodes"> Show recent decodes
+        <label>Time:</label>
+        <select id="time-filter">
+          <option value="all">All Time</option>
+          <option value="7">Last 7 Days</option>
+          <option value="30">Last 30 Days</option>
+          <option value="90">Last 90 Days</option>
+          <option value="365">Last Year</option>
+        </select>
+        <label style="display: flex; align-items: center; gap: 6px;">
+          <input type="checkbox" id="show-lines" checked> Path lines
         </label>
       </div>
       <div id="map"></div>
@@ -705,10 +583,7 @@ $html = @"
     <!-- Propagation Panel -->
     <div id="prop-panel" class="panel">
       <h3 style="margin-bottom: 16px;">Band Activity Heatmap (Last 7 Days)</h3>
-      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">
-        Based on FT8 decodes from your station. Brighter = more activity.
-      </p>
-      <div id="prop-heatmap" class="loading">Loading propagation data...</div>
+      <div id="prop-heatmap"></div>
     </div>
     
     <!-- PSK Reporter Panel -->
@@ -719,18 +594,26 @@ $html = @"
       </p>
       <div class="psk-section">
         <div class="psk-card">
-          <h3>📡 Where I'm Being Heard <span class="count" id="tx-count"></span></h3>
-          <div id="tx-spots" class="spot-list loading">Loading TX spots...</div>
+          <h3>&#128225; Where I'm Being Heard <span class="count" id="tx-count"></span></h3>
+          <div id="tx-spots" class="spot-list">Loading...</div>
         </div>
         <div class="psk-card">
-          <h3>📻 What I'm Hearing <span class="count" id="rx-count"></span></h3>
-          <div id="rx-spots" class="spot-list loading">Loading RX spots...</div>
+          <h3>&#128251; What I'm Hearing <span class="count" id="rx-count"></span></h3>
+          <div id="rx-spots" class="spot-list">Loading...</div>
         </div>
       </div>
     </div>
     
     <!-- QSO Log Panel -->
     <div id="log-panel" class="panel">
+      <div class="filter-controls">
+        <label>Show:</label>
+        <button class="filter-btn active" data-days="all">All</button>
+        <button class="filter-btn" data-days="7">7 Days</button>
+        <button class="filter-btn" data-days="30">30 Days</button>
+        <button class="filter-btn" data-days="90">90 Days</button>
+        <button class="filter-btn" data-days="365">1 Year</button>
+      </div>
       <div class="qso-table-wrap">
         <table class="qso-table">
           <thead>
@@ -738,35 +621,33 @@ $html = @"
               <th>Date</th>
               <th>Time</th>
               <th>Callsign</th>
+              <th>Country</th>
               <th>Grid</th>
               <th>Band</th>
               <th>Mode</th>
-              <th>RST Sent</th>
-              <th>RST Rcvd</th>
+              <th>RST S/R</th>
             </tr>
           </thead>
-          <tbody id="qso-tbody">
-          </tbody>
+          <tbody id="qso-tbody"></tbody>
         </table>
       </div>
+      <div id="log-stats" style="margin-top: 12px; font-size: 0.85rem; color: var(--text-muted);"></div>
     </div>
     
     <footer>
-      73 de $MyCallsign &bull;
-      <a href="https://www.qrz.com/db/$MyCallsign">QRZ</a> &bull;
-      <a href="../sstv/rx/">SSTV Gallery</a> &bull;
+      73 de $MyCallsign &#8226;
+      <a href="https://www.qrz.com/db/$MyCallsign">QRZ</a> &#8226;
+      <a href="../sstv/rx/">SSTV Gallery</a> &#8226;
       Dashboard auto-generated from WSJT-X logs
     </footer>
   </div>
   
   <script>
-    // Configuration
     const MY_CALL = '$MyCallsign';
     const MY_GRID = '$MyGrid';
     const MY_LAT = $MyLat;
     const MY_LON = $MyLon;
     
-    // Band colors
     const BAND_COLORS = {
       '160m': '#ff6b6b', '80m': '#ffa94d', '60m': '#ffd43b',
       '40m': '#69db7c', '30m': '#38d9a9', '20m': '#4dabf7',
@@ -774,20 +655,179 @@ $html = @"
       '10m': '#f783ac', '6m': '#e599f7', '2m': '#fcc419'
     };
     
-    // State
+    // Callsign prefix to country/flag mapping
+    const PREFIXES = {
+      'A': {f:'&#127462;&#127467;',c:'Afghanistan'}, 'AP': {f:'&#127477;&#127472;',c:'Pakistan'},
+      'BV': {f:'&#127481;&#127484;',c:'Taiwan'}, 'BY': {f:'&#127464;&#127475;',c:'China'},
+      'CE': {f:'&#127464;&#127473;',c:'Chile'}, 'CM': {f:'&#127464;&#127482;',c:'Cuba'}, 'CO': {f:'&#127464;&#127482;',c:'Cuba'},
+      'CT': {f:'&#127477;&#127481;',c:'Portugal'}, 'CU': {f:'&#127477;&#127481;',c:'Portugal'},
+      'CX': {f:'&#127482;&#127486;',c:'Uruguay'},
+      'DA': {f:'&#127465;&#127466;',c:'Germany'}, 'DB': {f:'&#127465;&#127466;',c:'Germany'}, 
+      'DC': {f:'&#127465;&#127466;',c:'Germany'}, 'DD': {f:'&#127465;&#127466;',c:'Germany'},
+      'DF': {f:'&#127465;&#127466;',c:'Germany'}, 'DG': {f:'&#127465;&#127466;',c:'Germany'},
+      'DH': {f:'&#127465;&#127466;',c:'Germany'}, 'DJ': {f:'&#127465;&#127466;',c:'Germany'},
+      'DK': {f:'&#127465;&#127466;',c:'Germany'}, 'DL': {f:'&#127465;&#127466;',c:'Germany'},
+      'DM': {f:'&#127465;&#127466;',c:'Germany'}, 'DO': {f:'&#127465;&#127466;',c:'Germany'},
+      'DP': {f:'&#127465;&#127466;',c:'Germany'}, 'DQ': {f:'&#127465;&#127466;',c:'Germany'},
+      'DR': {f:'&#127465;&#127466;',c:'Germany'},
+      'E5': {f:'&#127464;&#127472;',c:'Cook Is.'}, 'E7': {f:'&#127463;&#127462;',c:'Bosnia'},
+      'EA': {f:'&#127466;&#127480;',c:'Spain'}, 'EB': {f:'&#127466;&#127480;',c:'Spain'},
+      'EC': {f:'&#127466;&#127480;',c:'Spain'}, 'ED': {f:'&#127466;&#127480;',c:'Spain'},
+      'EI': {f:'&#127470;&#127466;',c:'Ireland'}, 'EJ': {f:'&#127470;&#127466;',c:'Ireland'},
+      'EK': {f:'&#127462;&#127474;',c:'Armenia'}, 'ER': {f:'&#127474;&#127465;',c:'Moldova'},
+      'ES': {f:'&#127466;&#127466;',c:'Estonia'}, 'EU': {f:'&#127463;&#127486;',c:'Belarus'},
+      'EW': {f:'&#127463;&#127486;',c:'Belarus'},
+      'F': {f:'&#127467;&#127479;',c:'France'},
+      'G': {f:'&#127468;&#127463;',c:'England'}, 'GB': {f:'&#127468;&#127463;',c:'UK'},
+      'GD': {f:'&#127470;&#127474;',c:'Isle of Man'}, 'GI': {f:'&#127468;&#127463;',c:'N. Ireland'},
+      'GJ': {f:'&#127468;&#127463;',c:'Jersey'}, 'GM': {f:'&#127468;&#127463;',c:'Scotland'},
+      'GU': {f:'&#127468;&#127463;',c:'Guernsey'}, 'GW': {f:'&#127468;&#127463;',c:'Wales'},
+      'HA': {f:'&#127469;&#127482;',c:'Hungary'}, 'HB': {f:'&#127464;&#127469;',c:'Switzerland'},
+      'HB0': {f:'&#127473;&#127470;',c:'Liechtenstein'},
+      'HC': {f:'&#127466;&#127464;',c:'Ecuador'}, 'HI': {f:'&#127465;&#127476;',c:'Dom. Rep.'},
+      'HK': {f:'&#127464;&#127476;',c:'Colombia'}, 'HL': {f:'&#127472;&#127479;',c:'South Korea'},
+      'HP': {f:'&#127477;&#127462;',c:'Panama'}, 'HR': {f:'&#127469;&#127475;',c:'Honduras'},
+      'HS': {f:'&#127481;&#127469;',c:'Thailand'}, 'HZ': {f:'&#127480;&#127462;',c:'Saudi Arabia'},
+      'I': {f:'&#127470;&#127481;',c:'Italy'},
+      'JA': {f:'&#127471;&#127477;',c:'Japan'}, 'JE': {f:'&#127471;&#127477;',c:'Japan'},
+      'JF': {f:'&#127471;&#127477;',c:'Japan'}, 'JG': {f:'&#127471;&#127477;',c:'Japan'},
+      'JH': {f:'&#127471;&#127477;',c:'Japan'}, 'JI': {f:'&#127471;&#127477;',c:'Japan'},
+      'JJ': {f:'&#127471;&#127477;',c:'Japan'}, 'JK': {f:'&#127471;&#127477;',c:'Japan'},
+      'JL': {f:'&#127471;&#127477;',c:'Japan'}, 'JM': {f:'&#127471;&#127477;',c:'Japan'},
+      'JN': {f:'&#127471;&#127477;',c:'Japan'}, 'JO': {f:'&#127471;&#127477;',c:'Japan'},
+      'JP': {f:'&#127471;&#127477;',c:'Japan'}, 'JQ': {f:'&#127471;&#127477;',c:'Japan'},
+      'JR': {f:'&#127471;&#127477;',c:'Japan'}, 'JS': {f:'&#127471;&#127477;',c:'Japan'},
+      'JT': {f:'&#127474;&#127475;',c:'Mongolia'}, 'JY': {f:'&#127471;&#127476;',c:'Jordan'},
+      'K': {f:'&#127482;&#127480;',c:'USA'}, 'KA': {f:'&#127482;&#127480;',c:'USA'},
+      'KB': {f:'&#127482;&#127480;',c:'USA'}, 'KC': {f:'&#127482;&#127480;',c:'USA'},
+      'KD': {f:'&#127482;&#127480;',c:'USA'}, 'KE': {f:'&#127482;&#127480;',c:'USA'},
+      'KF': {f:'&#127482;&#127480;',c:'USA'}, 'KG': {f:'&#127482;&#127480;',c:'USA'},
+      'KH6': {f:'&#127482;&#127480;',c:'Hawaii'}, 'KI': {f:'&#127482;&#127480;',c:'USA'},
+      'KJ': {f:'&#127482;&#127480;',c:'USA'}, 'KK': {f:'&#127482;&#127480;',c:'USA'},
+      'KL7': {f:'&#127482;&#127480;',c:'Alaska'}, 'KM': {f:'&#127482;&#127480;',c:'USA'},
+      'KN': {f:'&#127482;&#127480;',c:'USA'}, 'KO': {f:'&#127482;&#127480;',c:'USA'},
+      'KP': {f:'&#127477;&#127479;',c:'Puerto Rico'}, 'KQ': {f:'&#127482;&#127480;',c:'USA'},
+      'KR': {f:'&#127482;&#127480;',c:'USA'}, 'KS': {f:'&#127482;&#127480;',c:'USA'},
+      'KT': {f:'&#127482;&#127480;',c:'USA'}, 'KU': {f:'&#127482;&#127480;',c:'USA'},
+      'KV': {f:'&#127482;&#127480;',c:'USA'}, 'KW': {f:'&#127482;&#127480;',c:'USA'},
+      'KX': {f:'&#127482;&#127480;',c:'USA'}, 'KY': {f:'&#127482;&#127480;',c:'USA'},
+      'KZ': {f:'&#127482;&#127480;',c:'USA'},
+      'LA': {f:'&#127475;&#127476;',c:'Norway'}, 'LB': {f:'&#127475;&#127476;',c:'Norway'},
+      'LU': {f:'&#127462;&#127479;',c:'Argentina'}, 'LW': {f:'&#127462;&#127479;',c:'Argentina'},
+      'LX': {f:'&#127473;&#127482;',c:'Luxembourg'}, 'LY': {f:'&#127473;&#127481;',c:'Lithuania'},
+      'LZ': {f:'&#127463;&#127468;',c:'Bulgaria'},
+      'N': {f:'&#127482;&#127480;',c:'USA'}, 'NH': {f:'&#127482;&#127480;',c:'Hawaii'},
+      'NL7': {f:'&#127482;&#127480;',c:'Alaska'}, 'NP': {f:'&#127477;&#127479;',c:'Puerto Rico'},
+      'OA': {f:'&#127477;&#127466;',c:'Peru'}, 'OE': {f:'&#127462;&#127481;',c:'Austria'},
+      'OF': {f:'&#127467;&#127470;',c:'Finland'}, 'OG': {f:'&#127467;&#127470;',c:'Finland'},
+      'OH': {f:'&#127467;&#127470;',c:'Finland'}, 'OI': {f:'&#127467;&#127470;',c:'Finland'},
+      'OK': {f:'&#127464;&#127487;',c:'Czechia'}, 'OL': {f:'&#127464;&#127487;',c:'Czechia'},
+      'OM': {f:'&#127480;&#127472;',c:'Slovakia'}, 'ON': {f:'&#127463;&#127466;',c:'Belgium'},
+      'OO': {f:'&#127463;&#127466;',c:'Belgium'}, 'OP': {f:'&#127463;&#127466;',c:'Belgium'},
+      'OQ': {f:'&#127463;&#127466;',c:'Belgium'}, 'OR': {f:'&#127463;&#127466;',c:'Belgium'},
+      'OS': {f:'&#127463;&#127466;',c:'Belgium'}, 'OT': {f:'&#127463;&#127466;',c:'Belgium'},
+      'OZ': {f:'&#127465;&#127472;',c:'Denmark'},
+      'P4': {f:'&#127462;&#127484;',c:'Aruba'}, 'PA': {f:'&#127475;&#127473;',c:'Netherlands'},
+      'PB': {f:'&#127475;&#127473;',c:'Netherlands'}, 'PC': {f:'&#127475;&#127473;',c:'Netherlands'},
+      'PD': {f:'&#127475;&#127473;',c:'Netherlands'}, 'PE': {f:'&#127475;&#127473;',c:'Netherlands'},
+      'PF': {f:'&#127475;&#127473;',c:'Netherlands'}, 'PG': {f:'&#127475;&#127473;',c:'Netherlands'},
+      'PH': {f:'&#127475;&#127473;',c:'Netherlands'}, 'PI': {f:'&#127475;&#127473;',c:'Netherlands'},
+      'PJ': {f:'&#127475;&#127473;',c:'Neth. Antilles'}, 
+      'PP': {f:'&#127463;&#127479;',c:'Brazil'}, 'PQ': {f:'&#127463;&#127479;',c:'Brazil'},
+      'PR': {f:'&#127463;&#127479;',c:'Brazil'}, 'PS': {f:'&#127463;&#127479;',c:'Brazil'},
+      'PT': {f:'&#127463;&#127479;',c:'Brazil'}, 'PU': {f:'&#127463;&#127479;',c:'Brazil'},
+      'PV': {f:'&#127463;&#127479;',c:'Brazil'}, 'PW': {f:'&#127463;&#127479;',c:'Brazil'},
+      'PX': {f:'&#127463;&#127479;',c:'Brazil'}, 'PY': {f:'&#127463;&#127479;',c:'Brazil'},
+      'R': {f:'&#127479;&#127482;',c:'Russia'}, 'RA': {f:'&#127479;&#127482;',c:'Russia'},
+      'RK': {f:'&#127479;&#127482;',c:'Russia'}, 'RN': {f:'&#127479;&#127482;',c:'Russia'},
+      'RU': {f:'&#127479;&#127482;',c:'Russia'}, 'RV': {f:'&#127479;&#127482;',c:'Russia'},
+      'RW': {f:'&#127479;&#127482;',c:'Russia'}, 'RX': {f:'&#127479;&#127482;',c:'Russia'},
+      'RZ': {f:'&#127479;&#127482;',c:'Russia'},
+      'S5': {f:'&#127480;&#127470;',c:'Slovenia'}, 'SA': {f:'&#127480;&#127466;',c:'Sweden'},
+      'SB': {f:'&#127480;&#127466;',c:'Sweden'}, 'SC': {f:'&#127480;&#127466;',c:'Sweden'},
+      'SD': {f:'&#127480;&#127466;',c:'Sweden'}, 'SE': {f:'&#127480;&#127466;',c:'Sweden'},
+      'SF': {f:'&#127480;&#127466;',c:'Sweden'}, 'SG': {f:'&#127480;&#127466;',c:'Sweden'},
+      'SH': {f:'&#127480;&#127466;',c:'Sweden'}, 'SI': {f:'&#127480;&#127466;',c:'Sweden'},
+      'SJ': {f:'&#127480;&#127466;',c:'Sweden'}, 'SK': {f:'&#127480;&#127466;',c:'Sweden'},
+      'SL': {f:'&#127480;&#127466;',c:'Sweden'}, 'SM': {f:'&#127480;&#127466;',c:'Sweden'},
+      'SN': {f:'&#127477;&#127473;',c:'Poland'}, 'SO': {f:'&#127477;&#127473;',c:'Poland'},
+      'SP': {f:'&#127477;&#127473;',c:'Poland'}, 'SQ': {f:'&#127477;&#127473;',c:'Poland'},
+      'SR': {f:'&#127477;&#127473;',c:'Poland'}, 'SU': {f:'&#127466;&#127468;',c:'Egypt'},
+      'SV': {f:'&#127468;&#127479;',c:'Greece'}, 'SW': {f:'&#127468;&#127479;',c:'Greece'},
+      'SX': {f:'&#127468;&#127479;',c:'Greece'}, 'SY': {f:'&#127468;&#127479;',c:'Greece'},
+      'SZ': {f:'&#127468;&#127479;',c:'Greece'},
+      'T7': {f:'&#127480;&#127474;',c:'San Marino'}, 'TA': {f:'&#127481;&#127479;',c:'Turkey'},
+      'TC': {f:'&#127481;&#127479;',c:'Turkey'}, 'TF': {f:'&#127470;&#127480;',c:'Iceland'},
+      'TG': {f:'&#127468;&#127481;',c:'Guatemala'}, 'TI': {f:'&#127464;&#127479;',c:'Costa Rica'},
+      'TK': {f:'&#127467;&#127479;',c:'Corsica'},
+      'UA': {f:'&#127479;&#127482;',c:'Russia'}, 'UB': {f:'&#127479;&#127482;',c:'Russia'},
+      'UK': {f:'&#127482;&#127487;',c:'Uzbekistan'}, 'UN': {f:'&#127472;&#127487;',c:'Kazakhstan'},
+      'UR': {f:'&#127482;&#127462;',c:'Ukraine'}, 'US': {f:'&#127482;&#127462;',c:'Ukraine'},
+      'UT': {f:'&#127482;&#127462;',c:'Ukraine'}, 'UU': {f:'&#127482;&#127462;',c:'Ukraine'},
+      'UV': {f:'&#127482;&#127462;',c:'Ukraine'}, 'UW': {f:'&#127482;&#127462;',c:'Ukraine'},
+      'UX': {f:'&#127482;&#127462;',c:'Ukraine'}, 'UY': {f:'&#127482;&#127462;',c:'Ukraine'},
+      'UZ': {f:'&#127482;&#127462;',c:'Ukraine'},
+      'V3': {f:'&#127463;&#127487;',c:'Belize'}, 'V5': {f:'&#127475;&#127462;',c:'Namibia'},
+      'VA': {f:'&#127464;&#127462;',c:'Canada'}, 'VE': {f:'&#127464;&#127462;',c:'Canada'},
+      'VK': {f:'&#127462;&#127482;',c:'Australia'}, 'VP': {f:'&#127468;&#127463;',c:'UK Territories'},
+      'VR': {f:'&#127469;&#127472;',c:'Hong Kong'}, 'VU': {f:'&#127470;&#127475;',c:'India'},
+      'W': {f:'&#127482;&#127480;',c:'USA'}, 'WA': {f:'&#127482;&#127480;',c:'USA'},
+      'WB': {f:'&#127482;&#127480;',c:'USA'}, 'WC': {f:'&#127482;&#127480;',c:'USA'},
+      'WD': {f:'&#127482;&#127480;',c:'USA'}, 'WE': {f:'&#127482;&#127480;',c:'USA'},
+      'WF': {f:'&#127482;&#127480;',c:'USA'}, 'WG': {f:'&#127482;&#127480;',c:'USA'},
+      'WH6': {f:'&#127482;&#127480;',c:'Hawaii'}, 'WI': {f:'&#127482;&#127480;',c:'USA'},
+      'WJ': {f:'&#127482;&#127480;',c:'USA'}, 'WK': {f:'&#127482;&#127480;',c:'USA'},
+      'WL7': {f:'&#127482;&#127480;',c:'Alaska'}, 'WM': {f:'&#127482;&#127480;',c:'USA'},
+      'WN': {f:'&#127482;&#127480;',c:'USA'}, 'WO': {f:'&#127482;&#127480;',c:'USA'},
+      'WP': {f:'&#127477;&#127479;',c:'Puerto Rico'}, 'WQ': {f:'&#127482;&#127480;',c:'USA'},
+      'WR': {f:'&#127482;&#127480;',c:'USA'}, 'WS': {f:'&#127482;&#127480;',c:'USA'},
+      'WT': {f:'&#127482;&#127480;',c:'USA'}, 'WU': {f:'&#127482;&#127480;',c:'USA'},
+      'WV': {f:'&#127482;&#127480;',c:'USA'}, 'WW': {f:'&#127482;&#127480;',c:'USA'},
+      'WX': {f:'&#127482;&#127480;',c:'USA'}, 'WY': {f:'&#127482;&#127480;',c:'USA'},
+      'WZ': {f:'&#127482;&#127480;',c:'USA'},
+      'XE': {f:'&#127474;&#127485;',c:'Mexico'}, 'XF': {f:'&#127474;&#127485;',c:'Mexico'},
+      'YB': {f:'&#127470;&#127465;',c:'Indonesia'}, 'YC': {f:'&#127470;&#127465;',c:'Indonesia'},
+      'YL': {f:'&#127473;&#127483;',c:'Latvia'}, 'YO': {f:'&#127479;&#127476;',c:'Romania'},
+      'YP': {f:'&#127479;&#127476;',c:'Romania'}, 'YQ': {f:'&#127479;&#127476;',c:'Romania'},
+      'YR': {f:'&#127479;&#127476;',c:'Romania'}, 'YS': {f:'&#127480;&#127483;',c:'El Salvador'},
+      'YT': {f:'&#127479;&#127480;',c:'Serbia'}, 'YU': {f:'&#127479;&#127480;',c:'Serbia'},
+      'YV': {f:'&#127483;&#127466;',c:'Venezuela'},
+      'Z3': {f:'&#127474;&#127472;',c:'N. Macedonia'}, 'ZA': {f:'&#127462;&#127473;',c:'Albania'},
+      'ZL': {f:'&#127475;&#127487;',c:'New Zealand'}, 'ZP': {f:'&#127477;&#127486;',c:'Paraguay'},
+      'ZR': {f:'&#127487;&#127462;',c:'South Africa'}, 'ZS': {f:'&#127487;&#127462;',c:'South Africa'},
+      '3D2': {f:'&#127467;&#127471;',c:'Fiji'}, '4X': {f:'&#127470;&#127473;',c:'Israel'},
+      '4Z': {f:'&#127470;&#127473;',c:'Israel'}, '5B': {f:'&#127464;&#127486;',c:'Cyprus'},
+      '9A': {f:'&#127469;&#127479;',c:'Croatia'}, '9H': {f:'&#127474;&#127481;',c:'Malta'},
+      '9K': {f:'&#127472;&#127484;',c:'Kuwait'}, '9M': {f:'&#127474;&#127486;',c:'Malaysia'},
+      '9V': {f:'&#127480;&#127468;',c:'Singapore'}, '9Y': {f:'&#127481;&#127481;',c:'Trinidad'}
+    };
+    
+    function getCountryInfo(call) {
+      if (!call) return { flag: '', country: '' };
+      call = call.toUpperCase();
+      // Try longest prefix first
+      for (let len = 4; len >= 1; len--) {
+        const prefix = call.substring(0, len);
+        if (PREFIXES[prefix]) return PREFIXES[prefix];
+      }
+      // Fallback: try first char
+      const first = call.charAt(0);
+      if (PREFIXES[first]) return PREFIXES[first];
+      return { f: '&#127760;', c: 'Unknown' };
+    }
+    
     let qsoData = [];
     let decodeData = {};
-    let map, markersLayer, linesLayer, decodesLayer;
+    let map, markersLayer, linesLayer;
     
-    // Initialize
     document.addEventListener('DOMContentLoaded', async () => {
       initTabs();
       initMap();
       await loadData();
       initPskReporter();
+      initLogFilters();
     });
     
-    // Tab switching
     function initTabs() {
       document.querySelectorAll('.tab').forEach(tab => {
         tab.addEventListener('click', () => {
@@ -795,21 +835,19 @@ $html = @"
           document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
           tab.classList.add('active');
           document.getElementById(tab.dataset.panel).classList.add('active');
-          if (map) map.invalidateSize();
+          if (map) setTimeout(() => map.invalidateSize(), 100);
         });
       });
     }
     
-    // Map initialization
     function initMap() {
-      map = L.map('map').setView([MY_LAT, MY_LON], 3);
+      map = L.map('map').setView([MY_LAT, MY_LON], 2);
       
       L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; OpenStreetMap, &copy; CartoDB',
         maxZoom: 19
       }).addTo(map);
       
-      // Add home marker
       L.circleMarker([MY_LAT, MY_LON], {
         radius: 10, fillColor: '#58a6ff', color: '#fff',
         weight: 2, fillOpacity: 1
@@ -817,21 +855,12 @@ $html = @"
       
       markersLayer = L.layerGroup().addTo(map);
       linesLayer = L.layerGroup().addTo(map);
-      decodesLayer = L.layerGroup();
       
-      // Controls
       document.getElementById('band-filter').addEventListener('change', updateMapMarkers);
+      document.getElementById('time-filter').addEventListener('change', updateMapMarkers);
       document.getElementById('show-lines').addEventListener('change', updateMapMarkers);
-      document.getElementById('show-decodes').addEventListener('change', () => {
-        if (document.getElementById('show-decodes').checked) {
-          decodesLayer.addTo(map);
-        } else {
-          decodesLayer.remove();
-        }
-      });
     }
     
-    // Load QSO and decode data
     async function loadData() {
       try {
         const [qsoRes, decodeRes] = await Promise.all([
@@ -846,41 +875,52 @@ $html = @"
         updateMapMarkers();
         updateQsoTable();
         updatePropHeatmap();
-        updateDecodeMarkers();
       } catch (e) {
         console.error('Error loading data:', e);
       }
     }
     
-    // Update statistics
     function updateStats() {
       document.getElementById('total-qsos').textContent = qsoData.length;
       
       const grids = new Set(qsoData.map(q => q.grid).filter(g => g));
       document.getElementById('total-grids').textContent = grids.size;
       
-      // Rough DXCC count from callsign prefixes
-      const prefixes = new Set();
+      const countries = new Set();
       qsoData.forEach(q => {
-        const match = q.call.match(/^([A-Z0-9]{1,2})/);
-        if (match) prefixes.add(match[1]);
+        const info = getCountryInfo(q.call);
+        if (info.c && info.c !== 'Unknown') countries.add(info.c);
       });
-      document.getElementById('total-dxcc').textContent = prefixes.size;
+      document.getElementById('total-dxcc').textContent = countries.size;
     }
     
-    // Update map markers
+    function filterByTime(data, days) {
+      if (days === 'all') return data;
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - parseInt(days));
+      return data.filter(q => {
+        if (!q.date) return false;
+        const qsoDate = new Date(q.date);
+        return qsoDate >= cutoff;
+      });
+    }
+    
     function updateMapMarkers() {
       markersLayer.clearLayers();
       linesLayer.clearLayers();
       
       const bandFilter = document.getElementById('band-filter').value;
+      const timeFilter = document.getElementById('time-filter').value;
       const showLines = document.getElementById('show-lines').checked;
       
-      qsoData.forEach(qso => {
+      let filtered = filterByTime(qsoData, timeFilter);
+      
+      filtered.forEach(qso => {
         if (!qso.lat || !qso.lon) return;
         if (bandFilter !== 'all' && qso.band !== bandFilter) return;
         
         const color = BAND_COLORS[qso.band] || '#888';
+        const info = getCountryInfo(qso.call);
         
         const marker = L.circleMarker([qso.lat, qso.lon], {
           radius: 6, fillColor: color, color: '#fff',
@@ -888,8 +928,9 @@ $html = @"
         });
         
         marker.bindPopup(
-          '<strong class="band-' + qso.band + '">' + qso.call + '</strong><br>' +
-          qso.grid + ' • ' + qso.band + ' ' + qso.mode + '<br>' +
+          '<strong style="color:' + color + '">' + qso.call + '</strong><br>' +
+          info.c + '<br>' +
+          qso.grid + ' &bull; ' + qso.band + ' ' + qso.mode + '<br>' +
           qso.date + ' ' + qso.time + ' UTC'
         );
         
@@ -904,57 +945,54 @@ $html = @"
       });
     }
     
-    // Update decode markers (for recent RX)
-    function updateDecodeMarkers() {
-      if (!decodeData.recentDecodes) return;
-      
-      decodeData.recentDecodes.forEach(dec => {
-        if (!dec.lat || !dec.lon) return;
-        
-        const color = BAND_COLORS[dec.band] || '#888';
-        
-        const marker = L.circleMarker([dec.lat, dec.lon], {
-          radius: 4, fillColor: color, color: color,
-          weight: 1, fillOpacity: 0.4
+    function initLogFilters() {
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+          this.classList.add('active');
+          updateQsoTable(this.dataset.days);
         });
-        
-        marker.bindPopup(
-          dec.call + '<br>' + dec.grid + ' • ' + dec.band + '<br>' +
-          'SNR: ' + dec.snr + ' dB'
-        );
-        
-        decodesLayer.addLayer(marker);
       });
     }
     
-    // Update QSO table
-    function updateQsoTable() {
+    function updateQsoTable(days = 'all') {
+      const filtered = filterByTime(qsoData, days);
       const tbody = document.getElementById('qso-tbody');
-      tbody.innerHTML = qsoData.slice(0, 500).map(qso => 
-        '<tr>' +
-        '<td>' + qso.date + '</td>' +
-        '<td>' + qso.time + '</td>' +
-        '<td class="call">' + qso.call + '</td>' +
-        '<td>' + qso.grid + '</td>' +
-        '<td class="band-' + qso.band + '">' + qso.band + '</td>' +
-        '<td>' + qso.mode + '</td>' +
-        '<td>' + qso.rstSent + '</td>' +
-        '<td>' + qso.rstRcvd + '</td>' +
-        '</tr>'
-      ).join('');
+      
+      tbody.innerHTML = filtered.slice(0, 500).map(qso => {
+        const info = getCountryInfo(qso.call);
+        return '<tr>' +
+          '<td>' + qso.date + '</td>' +
+          '<td>' + qso.time + '</td>' +
+          '<td class="call">' + qso.call + '</td>' +
+          '<td><span class="flag">' + info.f + '</span>' + info.c + '</td>' +
+          '<td>' + qso.grid + '</td>' +
+          '<td class="band-' + qso.band + '">' + qso.band + '</td>' +
+          '<td>' + qso.mode + '</td>' +
+          '<td>' + qso.rstSent + ' / ' + qso.rstRcvd + '</td>' +
+          '</tr>';
+      }).join('');
+      
+      document.getElementById('log-stats').textContent = 
+        'Showing ' + Math.min(filtered.length, 500) + ' of ' + filtered.length + ' QSOs' +
+        (days !== 'all' ? ' (last ' + days + ' days)' : '');
     }
     
-    // Propagation heatmap
     function updatePropHeatmap() {
-      if (!decodeData.bands) {
-        document.getElementById('prop-heatmap').innerHTML = '<p>No propagation data available.</p>';
+      const container = document.getElementById('prop-heatmap');
+      
+      if (!decodeData.bands || Object.keys(decodeData.bands).length === 0) {
+        container.innerHTML = '<div class="empty-state">' +
+          '<h3>No Propagation Data Available</h3>' +
+          '<p>Propagation data requires parsing your WSJT-X ALL.TXT file. ' +
+          'Edit the PowerShell script and set <code>$SkipAllTxt = $false</code> to enable this feature.</p>' +
+          '</div>';
         return;
       }
       
       const bands = ['6m', '10m', '12m', '15m', '17m', '20m', '30m', '40m', '80m', '160m'];
       const hours = Array.from({length: 24}, (_, i) => i);
       
-      // Get last 7 days of data, aggregated by hour of day
       const bandHourCounts = {};
       bands.forEach(band => {
         bandHourCounts[band] = Array(24).fill(0);
@@ -966,21 +1004,17 @@ $html = @"
         }
       });
       
-      // Find max for scaling
       let maxCount = 1;
       Object.values(bandHourCounts).forEach(arr => {
         arr.forEach(c => { if (c > maxCount) maxCount = c; });
       });
       
       let html = '<div class="prop-grid">';
-      
-      // Header row
       html += '<div class="prop-label"></div>';
       hours.forEach(h => {
         html += '<div class="prop-hour">' + h.toString().padStart(2, '0') + '</div>';
       });
       
-      // Band rows
       bands.forEach(band => {
         html += '<div class="prop-label band-' + band + '">' + band + '</div>';
         hours.forEach(h => {
@@ -993,39 +1027,27 @@ $html = @"
       });
       
       html += '</div>';
-      html += '<p style="font-size: 0.75rem; color: var(--text-muted); text-align: center;">Hours are in UTC. Data from the last 7 days.</p>';
+      html += '<p style="font-size: 0.75rem; color: var(--text-muted); text-align: center;">Hours in UTC</p>';
       
-      document.getElementById('prop-heatmap').innerHTML = html;
+      container.innerHTML = html;
     }
     
-    // PSK Reporter integration
     function initPskReporter() {
       loadPskData();
       document.getElementById('refresh-psk').addEventListener('click', loadPskData);
     }
     
     async function loadPskData() {
-      document.getElementById('tx-spots').innerHTML = '<div class="loading">Loading TX spots...</div>';
-      document.getElementById('rx-spots').innerHTML = '<div class="loading">Loading RX spots...</div>';
+      document.getElementById('tx-spots').innerHTML = 'Loading...';
+      document.getElementById('rx-spots').innerHTML = 'Loading...';
       
-      try {
-        // TX spots (where I'm being heard)
-        const txUrl = 'https://pskreporter.info/cgi-bin/pskquery5.pl?' +
-          'encap=0&callback=processTx&statistics=0&noactive=1&nolocator=0&senderCallsign=' + MY_CALL;
-        
-        // RX spots (what I'm hearing)
-        const rxUrl = 'https://pskreporter.info/cgi-bin/pskquery5.pl?' +
-          'encap=0&callback=processRx&statistics=0&noactive=1&nolocator=0&receiverCallsign=' + MY_CALL;
-        
-        // Use JSONP via script injection
-        loadJsonp(txUrl, 'processTx');
-        loadJsonp(rxUrl, 'processRx');
-        
-      } catch (e) {
-        console.error('PSK Reporter error:', e);
-        document.getElementById('tx-spots').innerHTML = '<p>Error loading PSK Reporter data.</p>';
-        document.getElementById('rx-spots').innerHTML = '<p>Error loading PSK Reporter data.</p>';
-      }
+      const txUrl = 'https://pskreporter.info/cgi-bin/pskquery5.pl?' +
+        'encap=0&callback=processTx&statistics=0&noactive=1&nolocator=0&senderCallsign=' + MY_CALL;
+      const rxUrl = 'https://pskreporter.info/cgi-bin/pskquery5.pl?' +
+        'encap=0&callback=processRx&statistics=0&noactive=1&nolocator=0&receiverCallsign=' + MY_CALL;
+      
+      loadJsonp(txUrl, 'processTx');
+      loadJsonp(rxUrl, 'processRx');
     }
     
     function loadJsonp(url, callbackName) {
@@ -1035,12 +1057,11 @@ $html = @"
       script.onload = () => script.remove();
       script.onerror = () => {
         script.remove();
-        document.getElementById(callbackName === 'processTx' ? 'tx-spots' : 'rx-spots')
-          .innerHTML = '<p>Could not load PSK Reporter data. Try refreshing.</p>';
+        const el = document.getElementById(callbackName === 'processTx' ? 'tx-spots' : 'rx-spots');
+        el.innerHTML = '<p style="color: var(--text-muted);">Could not load data. Try refreshing.</p>';
       };
     }
     
-    // JSONP callbacks
     window.processTx = function(data) {
       const spots = parseReceptionReports(data, 'tx');
       renderSpots('tx-spots', spots, 'tx');
@@ -1072,9 +1093,7 @@ $html = @"
         });
       });
       
-      // Sort by time descending
       spots.sort((a, b) => b.time.localeCompare(a.time));
-      
       return spots.slice(0, 100);
     }
     
@@ -1089,12 +1108,13 @@ $html = @"
       el.innerHTML = spots.map(s => {
         const call = type === 'tx' ? s.receiverCall : s.senderCall;
         const loc = type === 'tx' ? s.receiverLoc : s.senderLoc;
+        const info = getCountryInfo(call);
         const snrNum = parseInt(s.snr);
         const snrClass = snrNum >= 0 ? 'good' : (snrNum >= -10 ? 'ok' : 'weak');
         
         return '<div class="spot">' +
-          '<div><span class="call">' + call + '</span> <span class="info">' + loc + '</span></div>' +
-          '<div class="info">' + s.frequency + ' MHz ' + s.mode + '</div>' +
+          '<div><span class="call">' + call + '</span><br><span class="country"><span class="flag">' + info.f + '</span>' + info.c + '</span></div>' +
+          '<div class="info">' + s.frequency + ' MHz<br>' + s.mode + '</div>' +
           '<div class="snr ' + snrClass + '">' + s.snr + ' dB</div>' +
           '<div class="info">' + s.time + 'z</div>' +
           '</div>';
@@ -1109,7 +1129,6 @@ $html | Set-Content -Encoding UTF8 $IndexFile
 
 Write-Host "Dashboard generated at $IndexFile"
 
-# Verify the file was created
 if (Test-Path $IndexFile) {
   Write-Host "SUCCESS: index.html created successfully!"
 } else {

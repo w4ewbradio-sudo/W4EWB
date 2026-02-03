@@ -289,9 +289,10 @@ $head = @"
       <h1><span class="callsign">W4EWB</span>'s SSTV RX Gallery</h1>
       <p class="subtitle">
         A collection of SSTV images received on my Yaesu FT-710 in Louisville, KY.<br>
-        <a href="https://www.qrz.com/db/W4EWB" target="_blank" rel="noopener">View my QRZ profile &rarr;</a>
+        <a href="https://www.qrz.com/db/W4EWB" target="_blank" rel="noopener">QRZ Profile</a> &#8226;
+        <a href="../ft8/">FT8 Dashboard</a>
       </p>
-      <a href="latest.jpg" class="latest-link">View Latest RX</a>
+      <a href="latest.jpg" class="latest-link">📡 View Latest RX</a>
     </header>
     
     <nav class="month-nav">
@@ -343,7 +344,8 @@ $foot = @"
     
     <footer class="footer">
       73 de W4EWB &bull; 
-      <a href="https://www.qrz.com/db/W4EWB">QRZ</a> &bull;
+      <a href="https://www.qrz.com/db/W4EWB">QRZ</a> &#8226;
+      <a href="../ft8/">FT8 Dashboard</a> &#8226;
       Gallery auto-updated via MMSSTV
     </footer>
   </div>
@@ -384,6 +386,9 @@ $foot = @"
 $htmlContent = $head + "`n" + ($monthButtons -join "`n") + "`n" + $navClose + "`n" + ($cards -join "`n") + "`n" + $foot
 $htmlContent | Set-Content -Encoding UTF8 $IndexFile
 
+# ---- save state ----
+($state | ConvertTo-Json -Depth 5) | Set-Content -Encoding UTF8 $StateFile
+
 # ---- git commit + push if anything changed ----
 Set-Location $RepoRoot
 git add . | Out-Null
@@ -397,16 +402,6 @@ if (-not $diff) {
 
 $ts = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
 git commit -m "Auto SSTV RX update $ts" | Out-Null
-
-# Attempt git push and check for errors
-$pushResult = git push 2>&1
-if ($LASTEXITCODE -ne 0) {
-  Write-Host "ERROR: git push failed: $pushResult"
-  Write-Host "State file NOT updated - images will be retried on next run."
-  exit 1
-}
-
-# ---- save state ONLY after successful push ----
-($state | ConvertTo-Json -Depth 5) | Set-Content -Encoding UTF8 $StateFile
+git push | Out-Null
 
 Write-Host "Published $publishedCount new image(s)."
