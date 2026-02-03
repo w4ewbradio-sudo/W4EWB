@@ -11,6 +11,25 @@ $WsjtxDir      = "$env:LOCALAPPDATA\WSJT-X"    # Standard WSJT-X location
 $MyCallsign    = "W4EWB"
 $MyGrid        = "EM78"                         # Your 4 or 6 char grid
 
+# Check if WSJT-X directory exists, try alternate locations
+if (-not (Test-Path $WsjtxDir)) {
+  # Try other common locations
+  $altPaths = @(
+    "C:\Users\$env:USERNAME\AppData\Local\WSJT-X",
+    "C:\WSJT-X",
+    "$env:USERPROFILE\WSJT-X"
+  )
+  foreach ($alt in $altPaths) {
+    if (Test-Path $alt) {
+      $WsjtxDir = $alt
+      Write-Host "Found WSJT-X data at: $WsjtxDir"
+      break
+    }
+  }
+}
+
+Write-Host "Using WSJT-X directory: $WsjtxDir"
+
 $Ft8Dir        = Join-Path $RepoRoot "ft8"
 $DataDir       = Join-Path $Ft8Dir "data"
 $IndexFile     = Join-Path $Ft8Dir "index.html"
@@ -219,7 +238,16 @@ foreach ($qso in $qsos) {
 $qsoData | ConvertTo-Json -Depth 5 | Set-Content -Encoding UTF8 $QsoDataFile
 
 # ---- Process ALL.TXT for propagation data ----
-$decodes = Parse-AllTxt -FilePath $allTxtFile -MaxLines 100000
+Write-Host "Looking for ALL.TXT at $allTxtFile"
+
+$decodes = @()
+if (Test-Path $allTxtFile) {
+  Write-Host "Found ALL.TXT, parsing decodes..."
+  $decodes = Parse-AllTxt -FilePath $allTxtFile -MaxLines 100000
+  Write-Host "Parsed $($decodes.Count) decodes"
+} else {
+  Write-Host "ALL.TXT not found - propagation data will be empty (this is OK)"
+}
 
 # Aggregate decode stats by band and hour (last 7 days)
 $now = Get-Date
@@ -286,12 +314,21 @@ foreach ($band in $bandStats.Keys) {
 
 $propData["recentDecodes"] = $recentDecodes
 
-$propData | ConvertTo-Json -Depth 10 | Set-Content -Encoding UTF8 $DecodeDataFile
+try {
+  $propData | ConvertTo-Json -Depth 10 | Set-Content -Encoding UTF8 $DecodeDataFile
+  Write-Host "Saved propagation data to $DecodeDataFile"
+} catch {
+  Write-Host "Warning: Could not save decodes.json - $_"
+}
 
 Write-Host "Processed $($decodes.Count) decodes, kept $($recentDecodes.Count) with grid info"
 
 # ---- My grid coordinates ----
 $myCoords = Convert-GridToLatLon -Grid $MyGrid
+$MyLat = if ($myCoords) { $myCoords.lat } else { 38.25 }
+$MyLon = if ($myCoords) { $myCoords.lon } else { -85.75 }
+
+Write-Host "My coordinates: $MyLat, $MyLon"
 
 # ---- Generate Dashboard HTML ----
 $html = @"
@@ -720,8 +757,8 @@ $html = @"
     // Configuration
     const MY_CALL = '$MyCallsign';
     const MY_GRID = '$MyGrid';
-    const MY_LAT = $($myCoords.lat);
-    const MY_LON = $($myCoords.lon);
+    const MY_LAT = $MyLat;
+    const MY_LON = $MyLon;
     
     // Band colors
     const BAND_COLORS = {
@@ -1065,6 +1102,13 @@ $html = @"
 $html | Set-Content -Encoding UTF8 $IndexFile
 
 Write-Host "Dashboard generated at $IndexFile"
+
+# Verify the file was created
+if (Test-Path $IndexFile) {
+  Write-Host "SUCCESS: index.html created successfully!"
+} else {
+  Write-Host "ERROR: index.html was NOT created!"
+}
 
 # ---- git commit + push ----
 Set-Location $RepoRoot
