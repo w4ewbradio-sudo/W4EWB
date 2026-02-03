@@ -325,165 +325,167 @@
       '10m': '#f783ac', '6m': '#e599f7', '2m': '#fcc419'
     };
     
-    // Callsign prefix to country/flag mapping
+    // Callsign prefix to country code mapping (ISO 3166-1 alpha-2)
     const PREFIXES = {
-      'A': {f:'&#127462;&#127467;',c:'Afghanistan'}, 'AP': {f:'&#127477;&#127472;',c:'Pakistan'},
-      'BV': {f:'&#127481;&#127484;',c:'Taiwan'}, 'BY': {f:'&#127464;&#127475;',c:'China'},
-      'CE': {f:'&#127464;&#127473;',c:'Chile'}, 'CM': {f:'&#127464;&#127482;',c:'Cuba'}, 'CO': {f:'&#127464;&#127482;',c:'Cuba'},
-      'CT': {f:'&#127477;&#127481;',c:'Portugal'}, 'CU': {f:'&#127477;&#127481;',c:'Portugal'},
-      'CX': {f:'&#127482;&#127486;',c:'Uruguay'},
-      'DA': {f:'&#127465;&#127466;',c:'Germany'}, 'DB': {f:'&#127465;&#127466;',c:'Germany'}, 
-      'DC': {f:'&#127465;&#127466;',c:'Germany'}, 'DD': {f:'&#127465;&#127466;',c:'Germany'},
-      'DF': {f:'&#127465;&#127466;',c:'Germany'}, 'DG': {f:'&#127465;&#127466;',c:'Germany'},
-      'DH': {f:'&#127465;&#127466;',c:'Germany'}, 'DJ': {f:'&#127465;&#127466;',c:'Germany'},
-      'DK': {f:'&#127465;&#127466;',c:'Germany'}, 'DL': {f:'&#127465;&#127466;',c:'Germany'},
-      'DM': {f:'&#127465;&#127466;',c:'Germany'}, 'DO': {f:'&#127465;&#127466;',c:'Germany'},
-      'DP': {f:'&#127465;&#127466;',c:'Germany'}, 'DQ': {f:'&#127465;&#127466;',c:'Germany'},
-      'DR': {f:'&#127465;&#127466;',c:'Germany'},
-      'E5': {f:'&#127464;&#127472;',c:'Cook Is.'}, 'E7': {f:'&#127463;&#127462;',c:'Bosnia'},
-      'EA': {f:'&#127466;&#127480;',c:'Spain'}, 'EB': {f:'&#127466;&#127480;',c:'Spain'},
-      'EC': {f:'&#127466;&#127480;',c:'Spain'}, 'ED': {f:'&#127466;&#127480;',c:'Spain'},
-      'EI': {f:'&#127470;&#127466;',c:'Ireland'}, 'EJ': {f:'&#127470;&#127466;',c:'Ireland'},
-      'EK': {f:'&#127462;&#127474;',c:'Armenia'}, 'ER': {f:'&#127474;&#127465;',c:'Moldova'},
-      'ES': {f:'&#127466;&#127466;',c:'Estonia'}, 'EU': {f:'&#127463;&#127486;',c:'Belarus'},
-      'EW': {f:'&#127463;&#127486;',c:'Belarus'},
-      'F': {f:'&#127467;&#127479;',c:'France'},
-      'G': {f:'&#127468;&#127463;',c:'England'}, 'GB': {f:'&#127468;&#127463;',c:'UK'},
-      'GD': {f:'&#127470;&#127474;',c:'Isle of Man'}, 'GI': {f:'&#127468;&#127463;',c:'N. Ireland'},
-      'GJ': {f:'&#127468;&#127463;',c:'Jersey'}, 'GM': {f:'&#127468;&#127463;',c:'Scotland'},
-      'GU': {f:'&#127468;&#127463;',c:'Guernsey'}, 'GW': {f:'&#127468;&#127463;',c:'Wales'},
-      'HA': {f:'&#127469;&#127482;',c:'Hungary'}, 'HB': {f:'&#127464;&#127469;',c:'Switzerland'},
-      'HB0': {f:'&#127473;&#127470;',c:'Liechtenstein'},
-      'HC': {f:'&#127466;&#127464;',c:'Ecuador'}, 'HI': {f:'&#127465;&#127476;',c:'Dom. Rep.'},
-      'HK': {f:'&#127464;&#127476;',c:'Colombia'}, 'HL': {f:'&#127472;&#127479;',c:'South Korea'},
-      'HP': {f:'&#127477;&#127462;',c:'Panama'}, 'HR': {f:'&#127469;&#127475;',c:'Honduras'},
-      'HS': {f:'&#127481;&#127469;',c:'Thailand'}, 'HZ': {f:'&#127480;&#127462;',c:'Saudi Arabia'},
-      'I': {f:'&#127470;&#127481;',c:'Italy'},
-      'JA': {f:'&#127471;&#127477;',c:'Japan'}, 'JE': {f:'&#127471;&#127477;',c:'Japan'},
-      'JF': {f:'&#127471;&#127477;',c:'Japan'}, 'JG': {f:'&#127471;&#127477;',c:'Japan'},
-      'JH': {f:'&#127471;&#127477;',c:'Japan'}, 'JI': {f:'&#127471;&#127477;',c:'Japan'},
-      'JJ': {f:'&#127471;&#127477;',c:'Japan'}, 'JK': {f:'&#127471;&#127477;',c:'Japan'},
-      'JL': {f:'&#127471;&#127477;',c:'Japan'}, 'JM': {f:'&#127471;&#127477;',c:'Japan'},
-      'JN': {f:'&#127471;&#127477;',c:'Japan'}, 'JO': {f:'&#127471;&#127477;',c:'Japan'},
-      'JP': {f:'&#127471;&#127477;',c:'Japan'}, 'JQ': {f:'&#127471;&#127477;',c:'Japan'},
-      'JR': {f:'&#127471;&#127477;',c:'Japan'}, 'JS': {f:'&#127471;&#127477;',c:'Japan'},
-      'JT': {f:'&#127474;&#127475;',c:'Mongolia'}, 'JY': {f:'&#127471;&#127476;',c:'Jordan'},
-      'K': {f:'&#127482;&#127480;',c:'USA'}, 'KA': {f:'&#127482;&#127480;',c:'USA'},
-      'KB': {f:'&#127482;&#127480;',c:'USA'}, 'KC': {f:'&#127482;&#127480;',c:'USA'},
-      'KD': {f:'&#127482;&#127480;',c:'USA'}, 'KE': {f:'&#127482;&#127480;',c:'USA'},
-      'KF': {f:'&#127482;&#127480;',c:'USA'}, 'KG': {f:'&#127482;&#127480;',c:'USA'},
-      'KH6': {f:'&#127482;&#127480;',c:'Hawaii'}, 'KI': {f:'&#127482;&#127480;',c:'USA'},
-      'KJ': {f:'&#127482;&#127480;',c:'USA'}, 'KK': {f:'&#127482;&#127480;',c:'USA'},
-      'KL7': {f:'&#127482;&#127480;',c:'Alaska'}, 'KM': {f:'&#127482;&#127480;',c:'USA'},
-      'KN': {f:'&#127482;&#127480;',c:'USA'}, 'KO': {f:'&#127482;&#127480;',c:'USA'},
-      'KP': {f:'&#127477;&#127479;',c:'Puerto Rico'}, 'KQ': {f:'&#127482;&#127480;',c:'USA'},
-      'KR': {f:'&#127482;&#127480;',c:'USA'}, 'KS': {f:'&#127482;&#127480;',c:'USA'},
-      'KT': {f:'&#127482;&#127480;',c:'USA'}, 'KU': {f:'&#127482;&#127480;',c:'USA'},
-      'KV': {f:'&#127482;&#127480;',c:'USA'}, 'KW': {f:'&#127482;&#127480;',c:'USA'},
-      'KX': {f:'&#127482;&#127480;',c:'USA'}, 'KY': {f:'&#127482;&#127480;',c:'USA'},
-      'KZ': {f:'&#127482;&#127480;',c:'USA'},
-      'LA': {f:'&#127475;&#127476;',c:'Norway'}, 'LB': {f:'&#127475;&#127476;',c:'Norway'},
-      'LU': {f:'&#127462;&#127479;',c:'Argentina'}, 'LW': {f:'&#127462;&#127479;',c:'Argentina'},
-      'LX': {f:'&#127473;&#127482;',c:'Luxembourg'}, 'LY': {f:'&#127473;&#127481;',c:'Lithuania'},
-      'LZ': {f:'&#127463;&#127468;',c:'Bulgaria'},
-      'N': {f:'&#127482;&#127480;',c:'USA'}, 'NH': {f:'&#127482;&#127480;',c:'Hawaii'},
-      'NL7': {f:'&#127482;&#127480;',c:'Alaska'}, 'NP': {f:'&#127477;&#127479;',c:'Puerto Rico'},
-      'OA': {f:'&#127477;&#127466;',c:'Peru'}, 'OE': {f:'&#127462;&#127481;',c:'Austria'},
-      'OF': {f:'&#127467;&#127470;',c:'Finland'}, 'OG': {f:'&#127467;&#127470;',c:'Finland'},
-      'OH': {f:'&#127467;&#127470;',c:'Finland'}, 'OI': {f:'&#127467;&#127470;',c:'Finland'},
-      'OK': {f:'&#127464;&#127487;',c:'Czechia'}, 'OL': {f:'&#127464;&#127487;',c:'Czechia'},
-      'OM': {f:'&#127480;&#127472;',c:'Slovakia'}, 'ON': {f:'&#127463;&#127466;',c:'Belgium'},
-      'OO': {f:'&#127463;&#127466;',c:'Belgium'}, 'OP': {f:'&#127463;&#127466;',c:'Belgium'},
-      'OQ': {f:'&#127463;&#127466;',c:'Belgium'}, 'OR': {f:'&#127463;&#127466;',c:'Belgium'},
-      'OS': {f:'&#127463;&#127466;',c:'Belgium'}, 'OT': {f:'&#127463;&#127466;',c:'Belgium'},
-      'OZ': {f:'&#127465;&#127472;',c:'Denmark'},
-      'P4': {f:'&#127462;&#127484;',c:'Aruba'}, 'PA': {f:'&#127475;&#127473;',c:'Netherlands'},
-      'PB': {f:'&#127475;&#127473;',c:'Netherlands'}, 'PC': {f:'&#127475;&#127473;',c:'Netherlands'},
-      'PD': {f:'&#127475;&#127473;',c:'Netherlands'}, 'PE': {f:'&#127475;&#127473;',c:'Netherlands'},
-      'PF': {f:'&#127475;&#127473;',c:'Netherlands'}, 'PG': {f:'&#127475;&#127473;',c:'Netherlands'},
-      'PH': {f:'&#127475;&#127473;',c:'Netherlands'}, 'PI': {f:'&#127475;&#127473;',c:'Netherlands'},
-      'PJ': {f:'&#127475;&#127473;',c:'Neth. Antilles'}, 
-      'PP': {f:'&#127463;&#127479;',c:'Brazil'}, 'PQ': {f:'&#127463;&#127479;',c:'Brazil'},
-      'PR': {f:'&#127463;&#127479;',c:'Brazil'}, 'PS': {f:'&#127463;&#127479;',c:'Brazil'},
-      'PT': {f:'&#127463;&#127479;',c:'Brazil'}, 'PU': {f:'&#127463;&#127479;',c:'Brazil'},
-      'PV': {f:'&#127463;&#127479;',c:'Brazil'}, 'PW': {f:'&#127463;&#127479;',c:'Brazil'},
-      'PX': {f:'&#127463;&#127479;',c:'Brazil'}, 'PY': {f:'&#127463;&#127479;',c:'Brazil'},
-      'R': {f:'&#127479;&#127482;',c:'Russia'}, 'RA': {f:'&#127479;&#127482;',c:'Russia'},
-      'RK': {f:'&#127479;&#127482;',c:'Russia'}, 'RN': {f:'&#127479;&#127482;',c:'Russia'},
-      'RU': {f:'&#127479;&#127482;',c:'Russia'}, 'RV': {f:'&#127479;&#127482;',c:'Russia'},
-      'RW': {f:'&#127479;&#127482;',c:'Russia'}, 'RX': {f:'&#127479;&#127482;',c:'Russia'},
-      'RZ': {f:'&#127479;&#127482;',c:'Russia'},
-      'S5': {f:'&#127480;&#127470;',c:'Slovenia'}, 'SA': {f:'&#127480;&#127466;',c:'Sweden'},
-      'SB': {f:'&#127480;&#127466;',c:'Sweden'}, 'SC': {f:'&#127480;&#127466;',c:'Sweden'},
-      'SD': {f:'&#127480;&#127466;',c:'Sweden'}, 'SE': {f:'&#127480;&#127466;',c:'Sweden'},
-      'SF': {f:'&#127480;&#127466;',c:'Sweden'}, 'SG': {f:'&#127480;&#127466;',c:'Sweden'},
-      'SH': {f:'&#127480;&#127466;',c:'Sweden'}, 'SI': {f:'&#127480;&#127466;',c:'Sweden'},
-      'SJ': {f:'&#127480;&#127466;',c:'Sweden'}, 'SK': {f:'&#127480;&#127466;',c:'Sweden'},
-      'SL': {f:'&#127480;&#127466;',c:'Sweden'}, 'SM': {f:'&#127480;&#127466;',c:'Sweden'},
-      'SN': {f:'&#127477;&#127473;',c:'Poland'}, 'SO': {f:'&#127477;&#127473;',c:'Poland'},
-      'SP': {f:'&#127477;&#127473;',c:'Poland'}, 'SQ': {f:'&#127477;&#127473;',c:'Poland'},
-      'SR': {f:'&#127477;&#127473;',c:'Poland'}, 'SU': {f:'&#127466;&#127468;',c:'Egypt'},
-      'SV': {f:'&#127468;&#127479;',c:'Greece'}, 'SW': {f:'&#127468;&#127479;',c:'Greece'},
-      'SX': {f:'&#127468;&#127479;',c:'Greece'}, 'SY': {f:'&#127468;&#127479;',c:'Greece'},
-      'SZ': {f:'&#127468;&#127479;',c:'Greece'},
-      'T7': {f:'&#127480;&#127474;',c:'San Marino'}, 'TA': {f:'&#127481;&#127479;',c:'Turkey'},
-      'TC': {f:'&#127481;&#127479;',c:'Turkey'}, 'TF': {f:'&#127470;&#127480;',c:'Iceland'},
-      'TG': {f:'&#127468;&#127481;',c:'Guatemala'}, 'TI': {f:'&#127464;&#127479;',c:'Costa Rica'},
-      'TK': {f:'&#127467;&#127479;',c:'Corsica'},
-      'UA': {f:'&#127479;&#127482;',c:'Russia'}, 'UB': {f:'&#127479;&#127482;',c:'Russia'},
-      'UK': {f:'&#127482;&#127487;',c:'Uzbekistan'}, 'UN': {f:'&#127472;&#127487;',c:'Kazakhstan'},
-      'UR': {f:'&#127482;&#127462;',c:'Ukraine'}, 'US': {f:'&#127482;&#127462;',c:'Ukraine'},
-      'UT': {f:'&#127482;&#127462;',c:'Ukraine'}, 'UU': {f:'&#127482;&#127462;',c:'Ukraine'},
-      'UV': {f:'&#127482;&#127462;',c:'Ukraine'}, 'UW': {f:'&#127482;&#127462;',c:'Ukraine'},
-      'UX': {f:'&#127482;&#127462;',c:'Ukraine'}, 'UY': {f:'&#127482;&#127462;',c:'Ukraine'},
-      'UZ': {f:'&#127482;&#127462;',c:'Ukraine'},
-      'V3': {f:'&#127463;&#127487;',c:'Belize'}, 'V5': {f:'&#127475;&#127462;',c:'Namibia'},
-      'VA': {f:'&#127464;&#127462;',c:'Canada'}, 'VE': {f:'&#127464;&#127462;',c:'Canada'},
-      'VK': {f:'&#127462;&#127482;',c:'Australia'}, 'VP': {f:'&#127468;&#127463;',c:'UK Territories'},
-      'VR': {f:'&#127469;&#127472;',c:'Hong Kong'}, 'VU': {f:'&#127470;&#127475;',c:'India'},
-      'W': {f:'&#127482;&#127480;',c:'USA'}, 'WA': {f:'&#127482;&#127480;',c:'USA'},
-      'WB': {f:'&#127482;&#127480;',c:'USA'}, 'WC': {f:'&#127482;&#127480;',c:'USA'},
-      'WD': {f:'&#127482;&#127480;',c:'USA'}, 'WE': {f:'&#127482;&#127480;',c:'USA'},
-      'WF': {f:'&#127482;&#127480;',c:'USA'}, 'WG': {f:'&#127482;&#127480;',c:'USA'},
-      'WH6': {f:'&#127482;&#127480;',c:'Hawaii'}, 'WI': {f:'&#127482;&#127480;',c:'USA'},
-      'WJ': {f:'&#127482;&#127480;',c:'USA'}, 'WK': {f:'&#127482;&#127480;',c:'USA'},
-      'WL7': {f:'&#127482;&#127480;',c:'Alaska'}, 'WM': {f:'&#127482;&#127480;',c:'USA'},
-      'WN': {f:'&#127482;&#127480;',c:'USA'}, 'WO': {f:'&#127482;&#127480;',c:'USA'},
-      'WP': {f:'&#127477;&#127479;',c:'Puerto Rico'}, 'WQ': {f:'&#127482;&#127480;',c:'USA'},
-      'WR': {f:'&#127482;&#127480;',c:'USA'}, 'WS': {f:'&#127482;&#127480;',c:'USA'},
-      'WT': {f:'&#127482;&#127480;',c:'USA'}, 'WU': {f:'&#127482;&#127480;',c:'USA'},
-      'WV': {f:'&#127482;&#127480;',c:'USA'}, 'WW': {f:'&#127482;&#127480;',c:'USA'},
-      'WX': {f:'&#127482;&#127480;',c:'USA'}, 'WY': {f:'&#127482;&#127480;',c:'USA'},
-      'WZ': {f:'&#127482;&#127480;',c:'USA'},
-      'XE': {f:'&#127474;&#127485;',c:'Mexico'}, 'XF': {f:'&#127474;&#127485;',c:'Mexico'},
-      'YB': {f:'&#127470;&#127465;',c:'Indonesia'}, 'YC': {f:'&#127470;&#127465;',c:'Indonesia'},
-      'YL': {f:'&#127473;&#127483;',c:'Latvia'}, 'YO': {f:'&#127479;&#127476;',c:'Romania'},
-      'YP': {f:'&#127479;&#127476;',c:'Romania'}, 'YQ': {f:'&#127479;&#127476;',c:'Romania'},
-      'YR': {f:'&#127479;&#127476;',c:'Romania'}, 'YS': {f:'&#127480;&#127483;',c:'El Salvador'},
-      'YT': {f:'&#127479;&#127480;',c:'Serbia'}, 'YU': {f:'&#127479;&#127480;',c:'Serbia'},
-      'YV': {f:'&#127483;&#127466;',c:'Venezuela'},
-      'Z3': {f:'&#127474;&#127472;',c:'N. Macedonia'}, 'ZA': {f:'&#127462;&#127473;',c:'Albania'},
-      'ZL': {f:'&#127475;&#127487;',c:'New Zealand'}, 'ZP': {f:'&#127477;&#127486;',c:'Paraguay'},
-      'ZR': {f:'&#127487;&#127462;',c:'South Africa'}, 'ZS': {f:'&#127487;&#127462;',c:'South Africa'},
-      '3D2': {f:'&#127467;&#127471;',c:'Fiji'}, '4X': {f:'&#127470;&#127473;',c:'Israel'},
-      '4Z': {f:'&#127470;&#127473;',c:'Israel'}, '5B': {f:'&#127464;&#127486;',c:'Cyprus'},
-      '9A': {f:'&#127469;&#127479;',c:'Croatia'}, '9H': {f:'&#127474;&#127481;',c:'Malta'},
-      '9K': {f:'&#127472;&#127484;',c:'Kuwait'}, '9M': {f:'&#127474;&#127486;',c:'Malaysia'},
-      '9V': {f:'&#127480;&#127468;',c:'Singapore'}, '9Y': {f:'&#127481;&#127481;',c:'Trinidad'}
+      'A': {cc:'af',c:'Afghanistan'}, 'AP': {cc:'pk',c:'Pakistan'},
+      'BV': {cc:'tw',c:'Taiwan'}, 'BY': {cc:'cn',c:'China'},
+      'CE': {cc:'cl',c:'Chile'}, 'CM': {cc:'cu',c:'Cuba'}, 'CO': {cc:'cu',c:'Cuba'},
+      'CT': {cc:'pt',c:'Portugal'}, 'CU': {cc:'pt',c:'Portugal'},
+      'CX': {cc:'uy',c:'Uruguay'},
+      'DA': {cc:'de',c:'Germany'}, 'DB': {cc:'de',c:'Germany'}, 
+      'DC': {cc:'de',c:'Germany'}, 'DD': {cc:'de',c:'Germany'},
+      'DF': {cc:'de',c:'Germany'}, 'DG': {cc:'de',c:'Germany'},
+      'DH': {cc:'de',c:'Germany'}, 'DJ': {cc:'de',c:'Germany'},
+      'DK': {cc:'de',c:'Germany'}, 'DL': {cc:'de',c:'Germany'},
+      'DM': {cc:'de',c:'Germany'}, 'DO': {cc:'de',c:'Germany'},
+      'DP': {cc:'de',c:'Germany'}, 'DQ': {cc:'de',c:'Germany'},
+      'DR': {cc:'de',c:'Germany'},
+      'E5': {cc:'ck',c:'Cook Is.'}, 'E7': {cc:'ba',c:'Bosnia'},
+      'EA': {cc:'es',c:'Spain'}, 'EB': {cc:'es',c:'Spain'},
+      'EC': {cc:'es',c:'Spain'}, 'ED': {cc:'es',c:'Spain'},
+      'EI': {cc:'ie',c:'Ireland'}, 'EJ': {cc:'ie',c:'Ireland'},
+      'EK': {cc:'am',c:'Armenia'}, 'ER': {cc:'md',c:'Moldova'},
+      'ES': {cc:'ee',c:'Estonia'}, 'EU': {cc:'by',c:'Belarus'},
+      'EW': {cc:'by',c:'Belarus'},
+      'F': {cc:'fr',c:'France'},
+      'G': {cc:'gb',c:'England'}, 'GB': {cc:'gb',c:'UK'},
+      'GD': {cc:'im',c:'Isle of Man'}, 'GI': {cc:'gb',c:'N. Ireland'},
+      'GJ': {cc:'je',c:'Jersey'}, 'GM': {cc:'gb',c:'Scotland'},
+      'GU': {cc:'gg',c:'Guernsey'}, 'GW': {cc:'gb',c:'Wales'},
+      'HA': {cc:'hu',c:'Hungary'}, 'HB': {cc:'ch',c:'Switzerland'},
+      'HB0': {cc:'li',c:'Liechtenstein'},
+      'HC': {cc:'ec',c:'Ecuador'}, 'HI': {cc:'do',c:'Dom. Rep.'},
+      'HK': {cc:'co',c:'Colombia'}, 'HL': {cc:'kr',c:'South Korea'},
+      'HP': {cc:'pa',c:'Panama'}, 'HR': {cc:'hn',c:'Honduras'},
+      'HS': {cc:'th',c:'Thailand'}, 'HZ': {cc:'sa',c:'Saudi Arabia'},
+      'I': {cc:'it',c:'Italy'},
+      'JA': {cc:'jp',c:'Japan'}, 'JE': {cc:'jp',c:'Japan'},
+      'JF': {cc:'jp',c:'Japan'}, 'JG': {cc:'jp',c:'Japan'},
+      'JH': {cc:'jp',c:'Japan'}, 'JI': {cc:'jp',c:'Japan'},
+      'JJ': {cc:'jp',c:'Japan'}, 'JK': {cc:'jp',c:'Japan'},
+      'JL': {cc:'jp',c:'Japan'}, 'JM': {cc:'jp',c:'Japan'},
+      'JN': {cc:'jp',c:'Japan'}, 'JO': {cc:'jp',c:'Japan'},
+      'JP': {cc:'jp',c:'Japan'}, 'JQ': {cc:'jp',c:'Japan'},
+      'JR': {cc:'jp',c:'Japan'}, 'JS': {cc:'jp',c:'Japan'},
+      'JT': {cc:'mn',c:'Mongolia'}, 'JY': {cc:'jo',c:'Jordan'},
+      'K': {cc:'us',c:'USA'}, 'KA': {cc:'us',c:'USA'},
+      'KB': {cc:'us',c:'USA'}, 'KC': {cc:'us',c:'USA'},
+      'KD': {cc:'us',c:'USA'}, 'KE': {cc:'us',c:'USA'},
+      'KF': {cc:'us',c:'USA'}, 'KG': {cc:'us',c:'USA'},
+      'KH6': {cc:'us',c:'Hawaii'}, 'KI': {cc:'us',c:'USA'},
+      'KJ': {cc:'us',c:'USA'}, 'KK': {cc:'us',c:'USA'},
+      'KL7': {cc:'us',c:'Alaska'}, 'KM': {cc:'us',c:'USA'},
+      'KN': {cc:'us',c:'USA'}, 'KO': {cc:'us',c:'USA'},
+      'KP': {cc:'pr',c:'Puerto Rico'}, 'KQ': {cc:'us',c:'USA'},
+      'KR': {cc:'us',c:'USA'}, 'KS': {cc:'us',c:'USA'},
+      'KT': {cc:'us',c:'USA'}, 'KU': {cc:'us',c:'USA'},
+      'KV': {cc:'us',c:'USA'}, 'KW': {cc:'us',c:'USA'},
+      'KX': {cc:'us',c:'USA'}, 'KY': {cc:'us',c:'USA'},
+      'KZ': {cc:'us',c:'USA'},
+      'LA': {cc:'no',c:'Norway'}, 'LB': {cc:'no',c:'Norway'},
+      'LU': {cc:'ar',c:'Argentina'}, 'LW': {cc:'ar',c:'Argentina'},
+      'LX': {cc:'lu',c:'Luxembourg'}, 'LY': {cc:'lt',c:'Lithuania'},
+      'LZ': {cc:'bg',c:'Bulgaria'},
+      'N': {cc:'us',c:'USA'}, 'NH': {cc:'us',c:'Hawaii'},
+      'NL7': {cc:'us',c:'Alaska'}, 'NP': {cc:'pr',c:'Puerto Rico'},
+      'OA': {cc:'pe',c:'Peru'}, 'OE': {cc:'at',c:'Austria'},
+      'OF': {cc:'fi',c:'Finland'}, 'OG': {cc:'fi',c:'Finland'},
+      'OH': {cc:'fi',c:'Finland'}, 'OI': {cc:'fi',c:'Finland'},
+      'OK': {cc:'cz',c:'Czechia'}, 'OL': {cc:'cz',c:'Czechia'},
+      'OM': {cc:'sk',c:'Slovakia'}, 'ON': {cc:'be',c:'Belgium'},
+      'OO': {cc:'be',c:'Belgium'}, 'OP': {cc:'be',c:'Belgium'},
+      'OQ': {cc:'be',c:'Belgium'}, 'OR': {cc:'be',c:'Belgium'},
+      'OS': {cc:'be',c:'Belgium'}, 'OT': {cc:'be',c:'Belgium'},
+      'OZ': {cc:'dk',c:'Denmark'},
+      'P4': {cc:'aw',c:'Aruba'}, 'PA': {cc:'nl',c:'Netherlands'},
+      'PB': {cc:'nl',c:'Netherlands'}, 'PC': {cc:'nl',c:'Netherlands'},
+      'PD': {cc:'nl',c:'Netherlands'}, 'PE': {cc:'nl',c:'Netherlands'},
+      'PF': {cc:'nl',c:'Netherlands'}, 'PG': {cc:'nl',c:'Netherlands'},
+      'PH': {cc:'nl',c:'Netherlands'}, 'PI': {cc:'nl',c:'Netherlands'},
+      'PJ': {cc:'nl',c:'Neth. Antilles'}, 
+      'PP': {cc:'br',c:'Brazil'}, 'PQ': {cc:'br',c:'Brazil'},
+      'PR': {cc:'br',c:'Brazil'}, 'PS': {cc:'br',c:'Brazil'},
+      'PT': {cc:'br',c:'Brazil'}, 'PU': {cc:'br',c:'Brazil'},
+      'PV': {cc:'br',c:'Brazil'}, 'PW': {cc:'br',c:'Brazil'},
+      'PX': {cc:'br',c:'Brazil'}, 'PY': {cc:'br',c:'Brazil'},
+      'R': {cc:'ru',c:'Russia'}, 'RA': {cc:'ru',c:'Russia'},
+      'RK': {cc:'ru',c:'Russia'}, 'RN': {cc:'ru',c:'Russia'},
+      'RU': {cc:'ru',c:'Russia'}, 'RV': {cc:'ru',c:'Russia'},
+      'RW': {cc:'ru',c:'Russia'}, 'RX': {cc:'ru',c:'Russia'},
+      'RZ': {cc:'ru',c:'Russia'},
+      'S5': {cc:'si',c:'Slovenia'}, 'SA': {cc:'se',c:'Sweden'},
+      'SB': {cc:'se',c:'Sweden'}, 'SC': {cc:'se',c:'Sweden'},
+      'SD': {cc:'se',c:'Sweden'}, 'SE': {cc:'se',c:'Sweden'},
+      'SF': {cc:'se',c:'Sweden'}, 'SG': {cc:'se',c:'Sweden'},
+      'SH': {cc:'se',c:'Sweden'}, 'SI': {cc:'se',c:'Sweden'},
+      'SJ': {cc:'se',c:'Sweden'}, 'SK': {cc:'se',c:'Sweden'},
+      'SL': {cc:'se',c:'Sweden'}, 'SM': {cc:'se',c:'Sweden'},
+      'SN': {cc:'pl',c:'Poland'}, 'SO': {cc:'pl',c:'Poland'},
+      'SP': {cc:'pl',c:'Poland'}, 'SQ': {cc:'pl',c:'Poland'},
+      'SR': {cc:'pl',c:'Poland'}, 'SU': {cc:'eg',c:'Egypt'},
+      'SV': {cc:'gr',c:'Greece'}, 'SW': {cc:'gr',c:'Greece'},
+      'SX': {cc:'gr',c:'Greece'}, 'SY': {cc:'gr',c:'Greece'},
+      'SZ': {cc:'gr',c:'Greece'},
+      'T7': {cc:'sm',c:'San Marino'}, 'TA': {cc:'tr',c:'Turkey'},
+      'TC': {cc:'tr',c:'Turkey'}, 'TF': {cc:'is',c:'Iceland'},
+      'TG': {cc:'gt',c:'Guatemala'}, 'TI': {cc:'cr',c:'Costa Rica'},
+      'TK': {cc:'fr',c:'Corsica'},
+      'UA': {cc:'ru',c:'Russia'}, 'UB': {cc:'ru',c:'Russia'},
+      'UK': {cc:'uz',c:'Uzbekistan'}, 'UN': {cc:'kz',c:'Kazakhstan'},
+      'UR': {cc:'ua',c:'Ukraine'}, 'US': {cc:'ua',c:'Ukraine'},
+      'UT': {cc:'ua',c:'Ukraine'}, 'UU': {cc:'ua',c:'Ukraine'},
+      'UV': {cc:'ua',c:'Ukraine'}, 'UW': {cc:'ua',c:'Ukraine'},
+      'UX': {cc:'ua',c:'Ukraine'}, 'UY': {cc:'ua',c:'Ukraine'},
+      'UZ': {cc:'ua',c:'Ukraine'},
+      'V3': {cc:'bz',c:'Belize'}, 'V31': {cc:'bz',c:'Belize'}, 'V5': {cc:'na',c:'Namibia'},
+      'VA': {cc:'ca',c:'Canada'}, 'VE': {cc:'ca',c:'Canada'},
+      'VK': {cc:'au',c:'Australia'}, 'VP': {cc:'gb',c:'UK Territories'},
+      'VR': {cc:'hk',c:'Hong Kong'}, 'VU': {cc:'in',c:'India'},
+      'W': {cc:'us',c:'USA'}, 'WA': {cc:'us',c:'USA'},
+      'WB': {cc:'us',c:'USA'}, 'WC': {cc:'us',c:'USA'},
+      'WD': {cc:'us',c:'USA'}, 'WE': {cc:'us',c:'USA'},
+      'WF': {cc:'us',c:'USA'}, 'WG': {cc:'us',c:'USA'},
+      'WH6': {cc:'us',c:'Hawaii'}, 'WI': {cc:'us',c:'USA'},
+      'WJ': {cc:'us',c:'USA'}, 'WK': {cc:'us',c:'USA'},
+      'WL7': {cc:'us',c:'Alaska'}, 'WM': {cc:'us',c:'USA'},
+      'WN': {cc:'us',c:'USA'}, 'WO': {cc:'us',c:'USA'},
+      'WP': {cc:'pr',c:'Puerto Rico'}, 'WQ': {cc:'us',c:'USA'},
+      'WR': {cc:'us',c:'USA'}, 'WS': {cc:'us',c:'USA'},
+      'WT': {cc:'us',c:'USA'}, 'WU': {cc:'us',c:'USA'},
+      'WV': {cc:'us',c:'USA'}, 'WW': {cc:'us',c:'USA'},
+      'WX': {cc:'us',c:'USA'}, 'WY': {cc:'us',c:'USA'},
+      'WZ': {cc:'us',c:'USA'},
+      'XE': {cc:'mx',c:'Mexico'}, 'XF': {cc:'mx',c:'Mexico'},
+      'YB': {cc:'id',c:'Indonesia'}, 'YC': {cc:'id',c:'Indonesia'},
+      'YL': {cc:'lv',c:'Latvia'}, 'YO': {cc:'ro',c:'Romania'},
+      'YP': {cc:'ro',c:'Romania'}, 'YQ': {cc:'ro',c:'Romania'},
+      'YR': {cc:'ro',c:'Romania'}, 'YS': {cc:'sv',c:'El Salvador'},
+      'YT': {cc:'rs',c:'Serbia'}, 'YU': {cc:'rs',c:'Serbia'},
+      'YV': {cc:'ve',c:'Venezuela'},
+      'Z3': {cc:'mk',c:'N. Macedonia'}, 'ZA': {cc:'al',c:'Albania'},
+      'ZL': {cc:'nz',c:'New Zealand'}, 'ZP': {cc:'py',c:'Paraguay'},
+      'ZR': {cc:'za',c:'South Africa'}, 'ZS': {cc:'za',c:'South Africa'},
+      '3D2': {cc:'fj',c:'Fiji'}, '4X': {cc:'il',c:'Israel'},
+      '4Z': {cc:'il',c:'Israel'}, '5B': {cc:'cy',c:'Cyprus'},
+      '9A': {cc:'hr',c:'Croatia'}, '9H': {cc:'mt',c:'Malta'},
+      '9K': {cc:'kw',c:'Kuwait'}, '9M': {cc:'my',c:'Malaysia'},
+      '9V': {cc:'sg',c:'Singapore'}, '9Y': {cc:'tt',c:'Trinidad'}
     };
     
     function getCountryInfo(call) {
-      if (!call) return { flag: '', country: '' };
+      if (!call) return { cc: '', c: '' };
       call = call.toUpperCase();
-      // Try longest prefix first
+      // Try longest prefix first (4, 3, 2, 1 chars)
       for (let len = 4; len >= 1; len--) {
         const prefix = call.substring(0, len);
         if (PREFIXES[prefix]) return PREFIXES[prefix];
       }
-      // Fallback: try first char
-      const first = call.charAt(0);
-      if (PREFIXES[first]) return PREFIXES[first];
-      return { f: '&#127760;', c: 'Unknown' };
+      return { cc: '', c: 'Unknown' };
+    }
+    
+    function getFlagImg(cc) {
+      if (!cc) return '';
+      return '<img src="https://flagcdn.com/16x12/' + cc + '.png" width="16" height="12" alt="" style="vertical-align: middle; margin-right: 4px;">';
     }
     
     let qsoData = [];
@@ -599,7 +601,7 @@
         
         marker.bindPopup(
           '<strong style="color:' + color + '">' + qso.call + '</strong><br>' +
-          info.c + '<br>' +
+          getFlagImg(info.cc) + info.c + '<br>' +
           qso.grid + ' &bull; ' + qso.band + ' ' + qso.mode + '<br>' +
           qso.date + ' ' + qso.time + ' UTC'
         );
@@ -635,7 +637,7 @@
           '<td>' + qso.date + '</td>' +
           '<td>' + qso.time + '</td>' +
           '<td class="call">' + qso.call + '</td>' +
-          '<td><span class="flag">' + info.f + '</span>' + info.c + '</td>' +
+          '<td>' + getFlagImg(info.cc) + info.c + '</td>' +
           '<td>' + qso.grid + '</td>' +
           '<td class="band-' + qso.band + '">' + qso.band + '</td>' +
           '<td>' + qso.mode + '</td>' +
@@ -655,7 +657,7 @@
         container.innerHTML = '<div class="empty-state">' +
           '<h3>No Propagation Data Available</h3>' +
           '<p>Propagation data requires parsing your WSJT-X ALL.TXT file. ' +
-          'Edit the PowerShell script and set <code>True = False</code> to enable this feature.</p>' +
+          'Edit the PowerShell script and set <code>False = False</code> to enable this feature.</p>' +
           '</div>';
         return;
       }
@@ -783,7 +785,7 @@
         const snrClass = snrNum >= 0 ? 'good' : (snrNum >= -10 ? 'ok' : 'weak');
         
         return '<div class="spot">' +
-          '<div><span class="call">' + call + '</span><br><span class="country"><span class="flag">' + info.f + '</span>' + info.c + '</span></div>' +
+          '<div><span class="call">' + call + '</span><br><span class="country">' + getFlagImg(info.cc) + info.c + '</span></div>' +
           '<div class="info">' + s.frequency + ' MHz<br>' + s.mode + '</div>' +
           '<div class="snr ' + snrClass + '">' + s.snr + ' dB</div>' +
           '<div class="info">' + s.time + 'z</div>' +

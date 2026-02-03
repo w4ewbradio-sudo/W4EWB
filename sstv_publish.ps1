@@ -292,7 +292,7 @@ $head = @"
         <a href="https://www.qrz.com/db/W4EWB" target="_blank" rel="noopener">QRZ Profile</a> &#8226;
         <a href="../ft8/">FT8 Dashboard</a>
       </p>
-      <a href="latest.jpg" class="latest-link">📡 View Latest RX</a>
+      <a href="latest.jpg" class="latest-link">&#128225; View Latest RX</a>
     </header>
     
     <nav class="month-nav">
