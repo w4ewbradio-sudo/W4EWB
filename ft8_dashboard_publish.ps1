@@ -108,7 +108,7 @@ function Parse-AdifLog {
 
 # ---- Parse ALL.TXT for decode statistics ----
 function Parse-AllTxt {
-  param([string]$FilePath, [int]$MaxLines = 10000)
+  param([string]$FilePath, [int]$MaxLines = 25000)
   
   if (-not (Test-Path $FilePath)) { return @() }
   
@@ -142,8 +142,8 @@ function Parse-AllTxt {
       }
       
       $grid = ""
-      if ($message -match "\b([A-R]{2}\d{2}[a-x]{0,2})\b") {
-        $grid = $matches[1]
+      if ($message -match "(?i)\b([A-R]{2}\d{2}[A-X]{0,2})\b") {
+        $grid = $matches[1].ToUpper()
       }
       
       $call = ""
@@ -239,9 +239,10 @@ if ($SkipAllTxt) {
   Write-Host "Looking for ALL.TXT at $allTxtFile"
   if (Test-Path $allTxtFile) {
     $fileSize = (Get-Item $allTxtFile).Length / 1MB
-    Write-Host "Found ALL.TXT ($([math]::Round($fileSize, 1)) MB) - parsing last 10000 lines..."
-    $decodes = Parse-AllTxt -FilePath $allTxtFile -MaxLines 10000
-    Write-Host "Parsed $($decodes.Count) decodes"
+    Write-Host "Found ALL.TXT ($([math]::Round($fileSize, 1)) MB) - parsing last 25000 lines..."
+    $decodes = Parse-AllTxt -FilePath $allTxtFile -MaxLines 25000
+    $gridsFound = ($decodes | Where-Object { $_.grid }).Count
+    Write-Host "Parsed $($decodes.Count) decodes ($gridsFound with grids)"
   } else {
     Write-Host "ALL.TXT not found - propagation data will be empty"
   }
@@ -249,7 +250,7 @@ if ($SkipAllTxt) {
 
 # Aggregate decode stats
 $now = Get-Date
-$weekAgo = $now.AddDays(-7)
+$monthAgo = $now.AddDays(-30)
 
 $bandStats = @{}
 $recentDecodes = @()
@@ -258,7 +259,7 @@ foreach ($decode in $decodes) {
   if ($decode.timestamp) {
     try {
       $ts = [datetime]::Parse($decode.timestamp)
-      if ($ts -gt $weekAgo) {
+      if ($ts -gt $monthAgo) {
         $hourKey = $ts.ToString("yyyy-MM-dd HH")
         $band = $decode.band
         
@@ -318,6 +319,7 @@ try {
 }
 
 Write-Host "Processed $($decodes.Count) decodes, kept $($recentDecodes.Count) with grid info"
+Write-Host "Band stats collected for: $($bandStats.Keys -join ', ')"
 
 # ---- My grid coordinates ----
 $myCoords = Convert-GridToLatLon -Grid $MyGrid
@@ -582,7 +584,7 @@ $html = @"
     
     <!-- Propagation Panel -->
     <div id="prop-panel" class="panel">
-      <h3 style="margin-bottom: 16px;">Band Activity Heatmap (Last 7 Days)</h3>
+      <h3 style="margin-bottom: 16px;">Band Activity Heatmap (Last 30 Days)</h3>
       <div id="prop-heatmap"></div>
     </div>
     
