@@ -1,349 +1,9 @@
-# =========================
-# FT8 Dashboard Auto-Publish (WSJT-X -> GitHub Pages)
-# Repo:   C:\w4ewb\W4EWB
-# Source: WSJT-X log files (wsjtx_log.adi, ALL.TXT)
-# Output: repo\ft8\index.html + data files
-# =========================
-
-# ---- SETTINGS (edit these) ----
-$RepoRoot      = "C:\w4ewb\W4EWB"
-$WsjtxDir      = "$env:LOCALAPPDATA\WSJT-X"    # Standard WSJT-X location
-$MyCallsign    = "W4EWB"
-$MyGrid        = "EM78"                         # Your 4 or 6 char grid
-$SkipAllTxt    = $true                          # Set to $false to parse ALL.TXT (slow!)
-
-# Check if WSJT-X directory exists, try alternate locations
-if (-not (Test-Path $WsjtxDir)) {
-  # Try other common locations
-  $altPaths = @(
-    "C:\Users\$env:USERNAME\AppData\Local\WSJT-X",
-    "C:\WSJT-X",
-    "$env:USERPROFILE\WSJT-X"
-  )
-  foreach ($alt in $altPaths) {
-    if (Test-Path $alt) {
-      $WsjtxDir = $alt
-      Write-Host "Found WSJT-X data at: $WsjtxDir"
-      break
-    }
-  }
-}
-
-Write-Host "Using WSJT-X directory: $WsjtxDir"
-
-$Ft8Dir        = Join-Path $RepoRoot "ft8"
-$DataDir       = Join-Path $Ft8Dir "data"
-$IndexFile     = Join-Path $Ft8Dir "index.html"
-$QsoDataFile   = Join-Path $DataDir "qsos.json"
-$DecodeDataFile= Join-Path $DataDir "decodes.json"
-
-# ---- sanity ----
-foreach ($p in @($Ft8Dir, $DataDir)) {
-  if (-not (Test-Path $p)) { New-Item -ItemType Directory -Force -Path $p | Out-Null }
-}
-
-# ---- Grid square to Lat/Lon conversion ----
-function Convert-GridToLatLon {
-  param([string]$Grid)
-  
-  if ($Grid.Length -lt 4) { return $null }
-  
-  $Grid = $Grid.ToUpper()
-  
-  $lon = ([int][char]$Grid[0] - [int][char]'A') * 20 - 180
-  $lat = ([int][char]$Grid[1] - [int][char]'A') * 10 - 90
-  
-  $lon += ([int][char]$Grid[2] - [int][char]'0') * 2
-  $lat += ([int][char]$Grid[3] - [int][char]'0') * 1
-  
-  if ($Grid.Length -ge 6) {
-    $lon += ([int][char]$Grid[4] - [int][char]'A') * (2.0/24) + (1.0/24)
-    $lat += ([int][char]$Grid[5] - [int][char]'A') * (1.0/24) + (0.5/24)
-  } else {
-    $lon += 1
-    $lat += 0.5
-  }
-  
-  return @{ lat = $lat; lon = $lon }
-}
-
-# ---- Parse ADIF log file ----
-function Parse-AdifLog {
-  param([string]$FilePath)
-  
-  if (-not (Test-Path $FilePath)) { return @() }
-  
-  $content = Get-Content $FilePath -Raw
-  
-  # Skip header (everything before <eoh>)
-  $headerEnd = $content.IndexOf("<eoh>")
-  if ($headerEnd -gt 0) {
-    $content = $content.Substring($headerEnd + 5)
-  }
-  
-  $qsos = @()
-  
-  # Split into records by <eor>
-  $records = $content -split "<eor>" | Where-Object { $_.Trim() }
-  
-  foreach ($record in $records) {
-    $qso = @{}
-    
-    # Extract fields with regex: <FIELD:length>value
-    $matches = [regex]::Matches($record, "<(\w+):(\d+)(?::\w+)?>([^<]*)")
-    
-    foreach ($match in $matches) {
-      $fieldName = $match.Groups[1].Value.ToUpper()
-      $fieldLen = [int]$match.Groups[2].Value
-      $fieldValue = $match.Groups[3].Value.Substring(0, [Math]::Min($fieldLen, $match.Groups[3].Value.Length))
-      $qso[$fieldName] = $fieldValue.Trim()
-    }
-    
-    if ($qso.ContainsKey("CALL")) {
-      $qsos += $qso
-    }
-  }
-  
-  return $qsos
-}
-
-# ---- Parse ALL.TXT for decode statistics ----
-function Parse-AllTxt {
-  param([string]$FilePath, [int]$MaxLines = 50000)
-  
-  if (-not (Test-Path $FilePath)) { return @() }
-  
-  # Read last N lines for performance
-  $lines = Get-Content $FilePath -Tail $MaxLines -ErrorAction SilentlyContinue
-  
-  $decodes = @()
-  
-  foreach ($line in $lines) {
-    # Format: 231215_234500    14.074 Rx FT8    -10  0.2 1523 CQ DX K1ABC FN42
-    if ($line -match "^(\d{6})_(\d{6})\s+(\d+\.\d+)\s+Rx\s+(\w+)\s+(-?\d+)\s+[\d.]+\s+\d+\s+(.*)$") {
-      $dateStr = $matches[1]
-      $timeStr = $matches[2]
-      $freq = [double]$matches[3]
-      $mode = $matches[4]
-      $snr = [int]$matches[5]
-      $message = $matches[6]
-      
-      # Determine band from frequency
-      $band = switch -Regex ($freq.ToString()) {
-        "^1\."    { "160m" }
-        "^3\."    { "80m" }
-        "^5\."    { "60m" }
-        "^7\."    { "40m" }
-        "^10\."   { "30m" }
-        "^14\."   { "20m" }
-        "^18\."   { "17m" }
-        "^21\."   { "15m" }
-        "^24\."   { "12m" }
-        "^28\."   { "10m" }
-        "^50\."   { "6m" }
-        "^144\."  { "2m" }
-        default   { "other" }
-      }
-      
-      # Extract grid from message if present
-      $grid = ""
-      if ($message -match "\b([A-R]{2}\d{2}[a-x]{0,2})\b") {
-        $grid = $matches[1]
-      }
-      
-      # Extract callsign (rough parse)
-      $call = ""
-      $parts = $message -split "\s+"
-      foreach ($part in $parts) {
-        if ($part -match "^[A-Z0-9]{1,3}[0-9][A-Z0-9]{0,3}[A-Z]$") {
-          $call = $part
-          break
-        }
-      }
-      
-      # Parse date
-      try {
-        $year = "20" + $dateStr.Substring(0,2)
-        $month = $dateStr.Substring(2,2)
-        $day = $dateStr.Substring(4,2)
-        $hour = $timeStr.Substring(0,2)
-        $minute = $timeStr.Substring(2,2)
-        $timestamp = "$year-$month-$day $hour`:$minute"
-      } catch {
-        $timestamp = ""
-      }
-      
-      $decodes += @{
-        timestamp = $timestamp
-        band = $band
-        mode = $mode
-        snr = $snr
-        call = $call
-        grid = $grid
-        message = $message
-      }
-    }
-  }
-  
-  return $decodes
-}
-
-# ---- Process QSO log ----
-Write-Host "Processing WSJT-X logs..."
-
-$adifFile = Join-Path $WsjtxDir "wsjtx_log.adi"
-$allTxtFile = Join-Path $WsjtxDir "ALL.TXT"
-
-$qsos = Parse-AdifLog -FilePath $adifFile
-Write-Host "Found $($qsos.Count) QSOs in log"
-
-# Build QSO data with coordinates
-$qsoData = @()
-foreach ($qso in $qsos) {
-  $grid = if ($qso.ContainsKey("GRIDSQUARE")) { $qso["GRIDSQUARE"] } else { "" }
-  $coords = Convert-GridToLatLon -Grid $grid
-  
-  $band = if ($qso.ContainsKey("BAND")) { $qso["BAND"] } else { "" }
-  $mode = if ($qso.ContainsKey("MODE")) { $qso["MODE"] } else { "FT8" }
-  $date = if ($qso.ContainsKey("QSO_DATE")) { $qso["QSO_DATE"] } else { "" }
-  $time = if ($qso.ContainsKey("TIME_ON")) { $qso["TIME_ON"] } else { "" }
-  $rstSent = if ($qso.ContainsKey("RST_SENT")) { $qso["RST_SENT"] } else { "" }
-  $rstRcvd = if ($qso.ContainsKey("RST_RCVD")) { $qso["RST_RCVD"] } else { "" }
-  
-  # Format date nicely
-  $dateFormatted = ""
-  if ($date.Length -eq 8) {
-    $dateFormatted = "$($date.Substring(0,4))-$($date.Substring(4,2))-$($date.Substring(6,2))"
-  }
-  
-  $timeFormatted = ""
-  if ($time.Length -ge 4) {
-    $timeFormatted = "$($time.Substring(0,2)):$($time.Substring(2,2))"
-  }
-  
-  $qsoData += @{
-    call = $qso["CALL"]
-    grid = $grid
-    band = $band
-    mode = $mode
-    date = $dateFormatted
-    time = $timeFormatted
-    rstSent = $rstSent
-    rstRcvd = $rstRcvd
-    lat = if ($coords) { $coords.lat } else { $null }
-    lon = if ($coords) { $coords.lon } else { $null }
-  }
-}
-
-# Save QSO data as JSON
-$qsoData | ConvertTo-Json -Depth 5 | Set-Content -Encoding UTF8 $QsoDataFile
-
-# ---- Process ALL.TXT for propagation data ----
-$decodes = @()
-
-if ($SkipAllTxt) {
-  Write-Host "Skipping ALL.TXT parsing (set SkipAllTxt = `$false to enable)"
-} else {
-  Write-Host "Looking for ALL.TXT at $allTxtFile"
-  if (Test-Path $allTxtFile) {
-    $fileSize = (Get-Item $allTxtFile).Length / 1MB
-    Write-Host "Found ALL.TXT ($([math]::Round($fileSize, 1)) MB) - parsing last 10000 lines..."
-    $decodes = Parse-AllTxt -FilePath $allTxtFile -MaxLines 10000
-    Write-Host "Parsed $($decodes.Count) decodes"
-  } else {
-    Write-Host "ALL.TXT not found - propagation data will be empty (this is OK)"
-  }
-}
-
-# Aggregate decode stats by band and hour (last 7 days)
-$now = Get-Date
-$weekAgo = $now.AddDays(-7)
-
-$bandStats = @{}
-$recentDecodes = @()
-
-foreach ($decode in $decodes) {
-  if ($decode.timestamp) {
-    try {
-      $ts = [datetime]::Parse($decode.timestamp)
-      if ($ts -gt $weekAgo) {
-        $hourKey = $ts.ToString("yyyy-MM-dd HH")
-        $band = $decode.band
-        
-        if (-not $bandStats.ContainsKey($band)) {
-          $bandStats[$band] = @{}
-        }
-        if (-not $bandStats[$band].ContainsKey($hourKey)) {
-          $bandStats[$band][$hourKey] = @{ count = 0; snrSum = 0 }
-        }
-        $bandStats[$band][$hourKey].count++
-        $bandStats[$band][$hourKey].snrSum += $decode.snr
-        
-        # Keep last 1000 decodes with grids for map
-        if ($decode.grid -and $recentDecodes.Count -lt 1000) {
-          $coords = Convert-GridToLatLon -Grid $decode.grid
-          if ($coords) {
-            $recentDecodes += @{
-              call = $decode.call
-              grid = $decode.grid
-              band = $decode.band
-              snr = $decode.snr
-              timestamp = $decode.timestamp
-              lat = $coords.lat
-              lon = $coords.lon
-            }
-          }
-        }
-      }
-    } catch { }
-  }
-}
-
-# Convert band stats to array format for JSON
-$propData = @{
-  generated = $now.ToString("yyyy-MM-dd HH:mm:ss")
-  bands = @{}
-}
-
-foreach ($band in $bandStats.Keys) {
-  $propData.bands[$band] = @()
-  foreach ($hour in ($bandStats[$band].Keys | Sort-Object)) {
-    $stats = $bandStats[$band][$hour]
-    $avgSnr = if ($stats.count -gt 0) { [math]::Round($stats.snrSum / $stats.count, 1) } else { 0 }
-    $propData.bands[$band] += @{
-      hour = $hour
-      count = $stats.count
-      avgSnr = $avgSnr
-    }
-  }
-}
-
-$propData["recentDecodes"] = $recentDecodes
-
-try {
-  $propData | ConvertTo-Json -Depth 10 | Set-Content -Encoding UTF8 $DecodeDataFile
-  Write-Host "Saved propagation data to $DecodeDataFile"
-} catch {
-  Write-Host "Warning: Could not save decodes.json - $_"
-}
-
-Write-Host "Processed $($decodes.Count) decodes, kept $($recentDecodes.Count) with grid info"
-
-# ---- My grid coordinates ----
-$myCoords = Convert-GridToLatLon -Grid $MyGrid
-$MyLat = if ($myCoords) { $myCoords.lat } else { 38.25 }
-$MyLon = if ($myCoords) { $myCoords.lon } else { -85.75 }
-
-Write-Host "My coordinates: $MyLat, $MyLon"
-
-# ---- Generate Dashboard HTML ----
-$html = @"
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>$MyCallsign FT8 Dashboard</title>
+  <title>W4EWB FT8 Dashboard</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
@@ -645,10 +305,10 @@ $html = @"
   <div class="container">
     <header>
       <div class="title-section">
-        <h1><span class="call">$MyCallsign</span> FT8 Dashboard</h1>
+        <h1><span class="call">W4EWB</span> FT8 Dashboard</h1>
         <p class="subtitle">
-          Digital modes activity from my Yaesu FT-710 in Louisville, KY ($MyGrid)<br>
-          <a href="https://www.qrz.com/db/$MyCallsign" target="_blank">QRZ Profile</a> &bull;
+          Digital modes activity from my Yaesu FT-710 in Louisville, KY (EM78)<br>
+          <a href="https://www.qrz.com/db/W4EWB" target="_blank">QRZ Profile</a> &bull;
           <a href="../sstv/rx/">SSTV Gallery</a>
         </p>
       </div>
@@ -719,11 +379,11 @@ $html = @"
       </p>
       <div class="psk-section">
         <div class="psk-card">
-          <h3>📡 Where I'm Being Heard <span class="count" id="tx-count"></span></h3>
+          <h3>ðŸ“¡ Where I'm Being Heard <span class="count" id="tx-count"></span></h3>
           <div id="tx-spots" class="spot-list loading">Loading TX spots...</div>
         </div>
         <div class="psk-card">
-          <h3>📻 What I'm Hearing <span class="count" id="rx-count"></span></h3>
+          <h3>ðŸ“» What I'm Hearing <span class="count" id="rx-count"></span></h3>
           <div id="rx-spots" class="spot-list loading">Loading RX spots...</div>
         </div>
       </div>
@@ -752,8 +412,8 @@ $html = @"
     </div>
     
     <footer>
-      73 de $MyCallsign &bull;
-      <a href="https://www.qrz.com/db/$MyCallsign">QRZ</a> &bull;
+      73 de W4EWB &bull;
+      <a href="https://www.qrz.com/db/W4EWB">QRZ</a> &bull;
       <a href="../sstv/rx/">SSTV Gallery</a> &bull;
       Dashboard auto-generated from WSJT-X logs
     </footer>
@@ -761,10 +421,10 @@ $html = @"
   
   <script>
     // Configuration
-    const MY_CALL = '$MyCallsign';
-    const MY_GRID = '$MyGrid';
-    const MY_LAT = $MyLat;
-    const MY_LON = $MyLon;
+    const MY_CALL = 'W4EWB';
+    const MY_GRID = 'EM78';
+    const MY_LAT = 38.5;
+    const MY_LON = -85;
     
     // Band colors
     const BAND_COLORS = {
@@ -889,7 +549,7 @@ $html = @"
         
         marker.bindPopup(
           '<strong class="band-' + qso.band + '">' + qso.call + '</strong><br>' +
-          qso.grid + ' • ' + qso.band + ' ' + qso.mode + '<br>' +
+          qso.grid + ' â€¢ ' + qso.band + ' ' + qso.mode + '<br>' +
           qso.date + ' ' + qso.time + ' UTC'
         );
         
@@ -919,7 +579,7 @@ $html = @"
         });
         
         marker.bindPopup(
-          dec.call + '<br>' + dec.grid + ' • ' + dec.band + '<br>' +
+          dec.call + '<br>' + dec.grid + ' â€¢ ' + dec.band + '<br>' +
           'SNR: ' + dec.snr + ' dB'
         );
         
@@ -1103,31 +763,3 @@ $html = @"
   </script>
 </body>
 </html>
-"@
-
-$html | Set-Content -Encoding UTF8 $IndexFile
-
-Write-Host "Dashboard generated at $IndexFile"
-
-# Verify the file was created
-if (Test-Path $IndexFile) {
-  Write-Host "SUCCESS: index.html created successfully!"
-} else {
-  Write-Host "ERROR: index.html was NOT created!"
-}
-
-# ---- git commit + push ----
-Set-Location $RepoRoot
-git add . | Out-Null
-
-$diff = git status --porcelain
-if (-not $diff) {
-  Write-Host "No changes to publish."
-  exit 0
-}
-
-$ts = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
-git commit -m "FT8 Dashboard update $ts" | Out-Null
-git push | Out-Null
-
-Write-Host "FT8 Dashboard published successfully!"
