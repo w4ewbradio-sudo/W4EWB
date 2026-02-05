@@ -2866,5 +2866,29 @@
         "rstRcvd":  "-02",
         "mode":  "FT8",
         "lat":  42.5
+    },
+    {
+        "grid":  "",
+        "rstSent":  "-05",
+        "call":  "HI8RMQ",
+        "lon":  null,
+        "band":  "20m",
+        "time":  "00:53",
+        "date":  "2026-02-05",
+        "rstRcvd":  "-06",
+        "mode":  "FT8",
+        "lat":  null
+    },
+    {
+        "grid":  "",
+        "rstSent":  "-15",
+        "call":  "AH6HY",
+        "lon":  null,
+        "band":  "20m",
+        "time":  "02:51",
+        "date":  "2026-02-05",
+        "rstRcvd":  "-10",
+        "mode":  "FT8",
+        "lat":  null
     }
 ]
