@@ -267,10 +267,10 @@ foreach ($decode in $decodes) {
           $bandStats[$band] = @{}
         }
         if (-not $bandStats[$band].ContainsKey($hourKey)) {
-          $bandStats[$band][$hourKey] = @{ count = 0; snrSum = 0 }
+          $bandStats[$band][$hourKey] = @{ n = 0; snrSum = 0 }
         }
-        $bandStats[$band][$hourKey].count++
-        $bandStats[$band][$hourKey].snrSum += $decode.snr
+        $bandStats[$band][$hourKey]["n"]++
+        $bandStats[$band][$hourKey]["snrSum"] += $decode.snr
         
         if ($decode.grid -and $recentDecodes.Count -lt 1000) {
           $coords = Convert-GridToLatLon -Grid $decode.grid
@@ -300,10 +300,10 @@ foreach ($band in $bandStats.Keys) {
   $propData.bands[$band] = @()
   foreach ($hour in ($bandStats[$band].Keys | Sort-Object)) {
     $stats = $bandStats[$band][$hour]
-    $avgSnr = if ($stats.count -gt 0) { [math]::Round($stats.snrSum / $stats.count, 1) } else { 0 }
+    $avgSnr = if ($stats["n"] -gt 0) { [math]::Round($stats["snrSum"] / $stats["n"], 1) } else { 0 }
     $propData.bands[$band] += @{
       hour = $hour
-      count = $stats.count
+      count = $stats["n"]
       avgSnr = $avgSnr
     }
   }
@@ -1058,9 +1058,9 @@ $html = @"
       document.getElementById('rx-spots').innerHTML = 'Loading...';
       
       const txUrl = 'https://pskreporter.info/cgi-bin/pskquery5.pl?' +
-        'encap=0&callback=processTx&statistics=0&noactive=1&nolocator=0&senderCallsign=' + MY_CALL;
+        'encap=0&callback=processTx&statistics=0&noactive=1&nolocator=0&ageMax=86400&senderCallsign=' + MY_CALL;
       const rxUrl = 'https://pskreporter.info/cgi-bin/pskquery5.pl?' +
-        'encap=0&callback=processRx&statistics=0&noactive=1&nolocator=0&receiverCallsign=' + MY_CALL;
+        'encap=0&callback=processRx&statistics=0&noactive=1&nolocator=0&ageMax=86400&receiverCallsign=' + MY_CALL;
       
       loadJsonp(txUrl, 'processTx');
       loadJsonp(rxUrl, 'processRx');
