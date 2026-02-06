@@ -726,9 +726,9 @@
       document.getElementById('rx-spots').innerHTML = 'Loading...';
       
       const txUrl = 'https://pskreporter.info/cgi-bin/pskquery5.pl?' +
-        'encap=0&callback=processTx&statistics=0&noactive=1&nolocator=0&senderCallsign=' + MY_CALL;
+        'encap=0&callback=processTx&statistics=0&noactive=1&nolocator=0&ageMax=86400&senderCallsign=' + MY_CALL;
       const rxUrl = 'https://pskreporter.info/cgi-bin/pskquery5.pl?' +
-        'encap=0&callback=processRx&statistics=0&noactive=1&nolocator=0&receiverCallsign=' + MY_CALL;
+        'encap=0&callback=processRx&statistics=0&noactive=1&nolocator=0&ageMax=86400&receiverCallsign=' + MY_CALL;
       
       loadJsonp(txUrl, 'processTx');
       loadJsonp(rxUrl, 'processRx');
