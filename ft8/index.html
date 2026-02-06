@@ -206,7 +206,7 @@
         </div>
         <div class="stat-box">
           <div class="value" id="total-dxcc">--</div>
-          <div class="label">DXCC</div>
+          <div class="label">Countries</div>
         </div>
       </div>
     </header>
@@ -327,7 +327,13 @@
     
     // Callsign prefix to country code mapping (ISO 3166-1 alpha-2)
     const PREFIXES = {
-      'A': {cc:'af',c:'Afghanistan'}, 'AP': {cc:'pk',c:'Pakistan'},
+      'AA': {cc:'us',c:'USA'}, 'AB': {cc:'us',c:'USA'},
+      'AC': {cc:'us',c:'USA'}, 'AD': {cc:'us',c:'USA'},
+      'AE': {cc:'us',c:'USA'}, 'AF': {cc:'us',c:'USA'},
+      'AG': {cc:'us',c:'USA'}, 'AH': {cc:'us',c:'USA'},
+      'AI': {cc:'us',c:'USA'}, 'AJ': {cc:'us',c:'USA'},
+      'AK': {cc:'us',c:'USA'}, 'AL': {cc:'us',c:'Alaska'},
+      'AP': {cc:'pk',c:'Pakistan'},
       'BV': {cc:'tw',c:'Taiwan'}, 'BY': {cc:'cn',c:'China'},
       'CE': {cc:'cl',c:'Chile'}, 'CM': {cc:'cu',c:'Cuba'}, 'CO': {cc:'cu',c:'Cuba'},
       'CT': {cc:'pt',c:'Portugal'}, 'CU': {cc:'pt',c:'Portugal'},
@@ -630,6 +636,12 @@
     function updateQsoTable(days = 'all') {
       const filtered = filterByTime(qsoData, days);
       const tbody = document.getElementById('qso-tbody');
+      
+      filtered.sort((a, b) => {
+        const dateA = (a.date || '') + (a.time || '');
+        const dateB = (b.date || '') + (b.time || '');
+        return dateB.localeCompare(dateA);
+      });
       
       tbody.innerHTML = filtered.slice(0, 500).map(qso => {
         const info = getCountryInfo(qso.call);
