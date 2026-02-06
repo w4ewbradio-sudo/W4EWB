@@ -255,6 +255,24 @@ $monthAgo = $now.AddDays(-30)
 $bandStats = @{}
 $recentDecodes = @()
 
+# DEBUG: Show sample decode data
+if ($decodes.Count -gt 0) {
+  $sample = $decodes[0]
+  Write-Host "DEBUG: First decode keys: $($sample.Keys -join ', ')"
+  Write-Host "DEBUG: First decode timestamp: '$($sample.timestamp)'"
+  Write-Host "DEBUG: First decode band: '$($sample.band)' snr: '$($sample.snr)' grid: '$($sample.grid)'"
+  $withTs = ($decodes | Where-Object { $_.timestamp }).Count
+  Write-Host "DEBUG: Decodes with non-empty timestamp: $withTs"
+  Write-Host "DEBUG: Month-ago cutoff: $monthAgo"
+  # Try parsing the first timestamp
+  try {
+    $testTs = [datetime]::ParseExact($sample.timestamp, "yyyy-MM-dd HH:mm", $null)
+    Write-Host "DEBUG: First timestamp parsed OK: $testTs (within 30 days: $($testTs -gt $monthAgo))"
+  } catch {
+    Write-Host "DEBUG: First timestamp FAILED to parse: $_"
+  }
+}
+
 foreach ($decode in $decodes) {
   if ($decode.timestamp) {
     try {
