@@ -258,7 +258,7 @@ $recentDecodes = @()
 foreach ($decode in $decodes) {
   if ($decode.timestamp) {
     try {
-      $ts = [datetime]::Parse($decode.timestamp)
+      $ts = [datetime]::ParseExact($decode.timestamp, "yyyy-MM-dd HH:mm", $null)
       if ($ts -gt $monthAgo) {
         $hourKey = $ts.ToString("yyyy-MM-dd HH")
         $band = $decode.band
@@ -269,8 +269,9 @@ foreach ($decode in $decodes) {
         if (-not $bandStats[$band].ContainsKey($hourKey)) {
           $bandStats[$band][$hourKey] = @{ n = 0; snrSum = 0 }
         }
-        $bandStats[$band][$hourKey]["n"]++
-        $bandStats[$band][$hourKey]["snrSum"] += $decode.snr
+        $entry = $bandStats[$band][$hourKey]
+        $entry["n"] = $entry["n"] + 1
+        $entry["snrSum"] = $entry["snrSum"] + $decode.snr
         
         if ($decode.grid -and $recentDecodes.Count -lt 1000) {
           $coords = Convert-GridToLatLon -Grid $decode.grid
@@ -287,7 +288,13 @@ foreach ($decode in $decodes) {
           }
         }
       }
-    } catch { }
+    } catch {
+      if (-not $script:aggregateErrorShown) {
+        Write-Host "WARNING: Aggregation error on first failing decode: $_"
+        Write-Host "  Decode timestamp: '$($decode.timestamp)' band: '$($decode.band)' snr: '$($decode.snr)'"
+        $script:aggregateErrorShown = $true
+      }
+    }
   }
 }
 
