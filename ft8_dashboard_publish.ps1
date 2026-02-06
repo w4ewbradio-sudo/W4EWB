@@ -239,8 +239,8 @@ if ($SkipAllTxt) {
   Write-Host "Looking for ALL.TXT at $allTxtFile"
   if (Test-Path $allTxtFile) {
     $fileSize = (Get-Item $allTxtFile).Length / 1MB
-    Write-Host "Found ALL.TXT ($([math]::Round($fileSize, 1)) MB) - parsing last 25000 lines..."
-    $decodes = Parse-AllTxt -FilePath $allTxtFile -MaxLines 25000
+    Write-Host "Found ALL.TXT ($([math]::Round($fileSize, 1)) MB) - parsing last 100000 lines..."
+    $decodes = Parse-AllTxt -FilePath $allTxtFile -MaxLines 100000
     $gridsFound = ($decodes | Where-Object { $_.grid }).Count
     Write-Host "Parsed $($decodes.Count) decodes ($gridsFound with grids)"
   } else {
@@ -250,7 +250,7 @@ if ($SkipAllTxt) {
 
 # Aggregate decode stats
 $now = Get-Date
-$monthAgo = $now.AddDays(-30)
+$cutoffDate = $now.AddDays(-365)
 
 $bandStats = @{}
 $recentDecodes = @()
@@ -263,11 +263,11 @@ if ($decodes.Count -gt 0) {
   Write-Host "DEBUG: First decode band: '$($sample.band)' snr: '$($sample.snr)' grid: '$($sample.grid)'"
   $withTs = ($decodes | Where-Object { $_.timestamp }).Count
   Write-Host "DEBUG: Decodes with non-empty timestamp: $withTs"
-  Write-Host "DEBUG: Month-ago cutoff: $monthAgo"
+  Write-Host "DEBUG: Cutoff date: $cutoffDate"
   # Try parsing the first timestamp
   try {
     $testTs = [datetime]::ParseExact($sample.timestamp, "yyyy-MM-dd HH:mm", $null)
-    Write-Host "DEBUG: First timestamp parsed OK: $testTs (within 30 days: $($testTs -gt $monthAgo))"
+    Write-Host "DEBUG: First timestamp parsed OK: $testTs (within range: $($testTs -gt $cutoffDate))"
   } catch {
     Write-Host "DEBUG: First timestamp FAILED to parse: $_"
   }
@@ -277,7 +277,7 @@ foreach ($decode in $decodes) {
   if ($decode.timestamp) {
     try {
       $ts = [datetime]::ParseExact($decode.timestamp, "yyyy-MM-dd HH:mm", $null)
-      if ($ts -gt $monthAgo) {
+      if ($ts -gt $cutoffDate) {
         $hourKey = $ts.ToString("yyyy-MM-dd HH")
         $band = $decode.band
         
@@ -609,7 +609,7 @@ $html = @"
     
     <!-- Propagation Panel -->
     <div id="prop-panel" class="panel">
-      <h3 style="margin-bottom: 16px;">Band Activity Heatmap (Last 30 Days)</h3>
+      <h3 style="margin-bottom: 16px;">Band Activity Heatmap (Last 12 Months)</h3>
       <div id="prop-heatmap"></div>
     </div>
     
