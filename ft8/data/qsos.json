@@ -2902,5 +2902,41 @@
         "rstRcvd":  "-11",
         "mode":  "FT8",
         "lat":  41.5
+    },
+    {
+        "grid":  "EM60",
+        "rstSent":  "-09",
+        "call":  "N5BO",
+        "lon":  -87,
+        "band":  "40m",
+        "time":  "02:01",
+        "date":  "2026-02-08",
+        "rstRcvd":  "-07",
+        "mode":  "FT8",
+        "lat":  30.5
+    },
+    {
+        "grid":  "EM12",
+        "rstSent":  "-05",
+        "call":  "K5JCJ",
+        "lon":  -97,
+        "band":  "40m",
+        "time":  "02:11",
+        "date":  "2026-02-08",
+        "rstRcvd":  "+02",
+        "mode":  "FT8",
+        "lat":  32.5
+    },
+    {
+        "grid":  "FN24",
+        "rstSent":  "-20",
+        "call":  "KD2QQF",
+        "lon":  -75,
+        "band":  "40m",
+        "time":  "02:16",
+        "date":  "2026-02-08",
+        "rstRcvd":  "-17",
+        "mode":  "FT8",
+        "lat":  44.5
     }
 ]
