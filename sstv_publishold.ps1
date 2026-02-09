@@ -8,7 +8,7 @@
 # ---- SETTINGS (edit if needed) ----
 $RepoRoot   = "C:\w4ewb\W4EWB"
 $MmsstvDir  = "C:\Ham\MMSSTV\History"     # MMSTV BMP history folder
-$MaxImages  = 10000                        # rolling gallery size (effectively unlimited)
+$MaxImages  = 200                         # rolling gallery size
 $ThumbSize  = 360                         # square thumbs
 
 $RxDir      = Join-Path $RepoRoot "sstv\rx"
@@ -310,7 +310,7 @@ $navClose = @"
     </nav>
     
     <div class="stats">
-      Showing <span id="visible-count">50</span> of <span id="total-count">$($items.Count)</span> images
+      Showing <span id="visible-count">$($items.Count)</span> of <span>$($items.Count)</span> images
     </div>
     
     <div class="grid" id="gallery">
@@ -342,11 +342,6 @@ $foot = @"
       </div>
     </div>
     
-    <div id="load-more-container" style="text-align: center; padding: 30px 20px; display: none;">
-      <button id="load-more-btn" style="background: var(--accent); color: #000; border: none; padding: 12px 32px; border-radius: 6px; cursor: pointer; font-size: 1rem; font-weight: 500;">Load More Images</button>
-      <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: 8px;">Or just keep scrolling</p>
-    </div>
-    
     <footer class="footer">
       73 de W4EWB &bull; 
       <a href="https://www.qrz.com/db/W4EWB">QRZ</a> &#8226;
@@ -357,96 +352,29 @@ $foot = @"
   
   <script>
     (function() {
-      const BATCH_SIZE = 50;
       const buttons = document.querySelectorAll('.month-btn');
-      const allCards = Array.from(document.querySelectorAll('.card'));
+      const cards = document.querySelectorAll('.card');
       const countEl = document.getElementById('visible-count');
-      const totalEl = document.getElementById('total-count');
       const noResults = document.getElementById('no-results');
-      const loadMoreBtn = document.getElementById('load-more-btn');
-      const loadMoreContainer = document.getElementById('load-more-container');
       
-      let currentFilter = 'all';
-      let loadedCount = 0;
-      
-      // Get cards matching current filter
-      function getFilteredCards() {
-        if (currentFilter === 'all') return allCards;
-        return allCards.filter(c => c.getAttribute('data-month') === currentFilter);
-      }
-      
-      // Hide all cards initially
-      function hideAllCards() {
-        allCards.forEach(card => {
-          card.classList.add('hidden');
-          card.style.display = 'none';
-        });
-      }
-      
-      // Show next batch of cards
-      function showNextBatch() {
-        const filtered = getFilteredCards();
-        const end = Math.min(loadedCount + BATCH_SIZE, filtered.length);
-        
-        for (let i = loadedCount; i < end; i++) {
-          filtered[i].classList.remove('hidden');
-          filtered[i].style.display = '';
-        }
-        
-        loadedCount = end;
-        countEl.textContent = loadedCount;
-        
-        // Show/hide load more button
-        if (loadedCount >= filtered.length) {
-          loadMoreContainer.style.display = 'none';
-        } else {
-          loadMoreContainer.style.display = 'block';
-        }
-        
-        noResults.style.display = loadedCount === 0 ? 'block' : 'none';
-      }
-      
-      // Filter by month
       function filterByMonth(month) {
-        currentFilter = month;
-        loadedCount = 0;
-        
-        // Hide all cards first
-        hideAllCards();
-        
-        // Update total count for this filter
-        const filtered = getFilteredCards();
-        totalEl.textContent = filtered.length;
-        
-        // Show first batch
-        showNextBatch();
+        let visible = 0;
+        cards.forEach(card => {
+          const cardMonth = card.getAttribute('data-month');
+          const show = (month === 'all' || cardMonth === month);
+          card.classList.toggle('hidden', !show);
+          if (show) visible++;
+        });
+        countEl.textContent = visible;
+        noResults.style.display = visible === 0 ? 'block' : 'none';
       }
       
-      // Initialize
-      hideAllCards();
-      totalEl.textContent = allCards.length;
-      showNextBatch();
-      
-      // Month button clicks
       buttons.forEach(btn => {
         btn.addEventListener('click', function() {
           buttons.forEach(b => b.classList.remove('active'));
           this.classList.add('active');
           filterByMonth(this.getAttribute('data-month'));
         });
-      });
-      
-      // Load more button click
-      loadMoreBtn.addEventListener('click', showNextBatch);
-      
-      // Infinite scroll - load more when near bottom
-      window.addEventListener('scroll', function() {
-        if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) {
-          const filtered = getFilteredCards();
-          if (loadedCount < filtered.length) {
-            showNextBatch();
-          }
-        }
       });
     })();
   </script>
