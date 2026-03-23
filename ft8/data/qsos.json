@@ -1,12 +1,26 @@
-﻿{
-    "grid":  "EM10",
-    "rstSent":  "-01",
-    "call":  "W5XO",
-    "lon":  -97,
-    "band":  "20m",
-    "time":  "17:56",
-    "date":  "2026-03-22",
-    "rstRcvd":  "+07",
-    "mode":  "FT8",
-    "lat":  30.5
-}
+﻿[
+    {
+        "grid":  "EM10",
+        "rstSent":  "-01",
+        "call":  "W5XO",
+        "lon":  -97,
+        "band":  "20m",
+        "time":  "17:56",
+        "date":  "2026-03-22",
+        "rstRcvd":  "+07",
+        "mode":  "FT8",
+        "lat":  30.5
+    },
+    {
+        "grid":  "FL01",
+        "rstSent":  "-14",
+        "call":  "CO6XE",
+        "lon":  -79,
+        "band":  "20m",
+        "time":  "12:17",
+        "date":  "2026-03-23",
+        "rstRcvd":  "-11",
+        "mode":  "FT8",
+        "lat":  21.5
+    }
+]
