@@ -1,0 +1,2063 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Biometric Analysis HUD v2</title>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core@3.20.0/dist/tf-core.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter@3.20.0/dist/tf-converter.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl@3.20.0/dist/tf-backend-webgl.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection@0.0.3/dist/face-landmarks-detection.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
+
+*{margin:0;padding:0;box-sizing:border-box}
+
+:root{
+  --cyan:#00e5ff;--cyan-dim:#00839280;--cyan-glow:#00e5ff60;
+  --yellow:#ffd600;--red:#ff1744;--green:#00e676;--orange:#ff9100;
+  --purple:#d500f9;--pink:#ff4081;
+  --bg-dark:#0a0e14;--bg-panel:#0d1520e8;--bg-module:#0a111ade;
+  --border:#00e5ff30;--text-dim:#4a7080;--text-mid:#6aa0b0;--text-bright:#b0dce8;
+}
+
+body{background:var(--bg-dark);color:var(--text-bright);font-family:'Share Tech Mono',monospace;overflow-x:hidden;min-height:100vh}
+
+.hud-container{display:grid;grid-template-columns:380px 1fr 380px;gap:0;min-height:100vh;max-width:1440px;margin:0 auto;padding:8px}
+.left-panel,.right-panel{display:flex;flex-direction:column;gap:2px;overflow-y:auto;max-height:100vh}
+.center-panel{display:flex;flex-direction:column;align-items:center;padding:8px;gap:8px}
+
+.video-container{position:relative;width:100%;max-width:560px;aspect-ratio:4/3;border:1px solid var(--border);overflow:hidden;background:#000}
+.video-container video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+.video-container canvas{position:absolute;top:0;left:0;width:100%;height:100%;transform:scaleX(-1)}
+.video-overlay{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;border:1px solid var(--cyan-dim);box-shadow:inset 0 0 60px rgba(0,229,255,0.03)}
+.video-overlay::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--cyan);opacity:0.4;animation:scanline 4s linear infinite}
+@keyframes scanline{0%{top:0;opacity:.4}50%{opacity:.1}100%{top:100%;opacity:.4}}
+
+.module{background:var(--bg-module);border:1px solid var(--border);border-left:2px solid var(--cyan-dim);padding:7px 10px;position:relative}
+.module-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;padding-bottom:3px;border-bottom:1px solid var(--border)}
+.module-title{font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700;color:var(--cyan);letter-spacing:2px;display:flex;align-items:center;gap:5px}
+.module-title::before{content:'◆';font-size:7px;color:var(--cyan);animation:pulse-dot 2s ease-in-out infinite}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.3}}
+.module-id{font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--text-dim);letter-spacing:1px}
+
+.data-row{display:flex;justify-content:space-between;align-items:center;padding:2px 0;font-size:11px;min-height:20px}
+.data-label{color:var(--text-dim);font-size:10px;text-transform:uppercase;letter-spacing:1px;white-space:nowrap}
+.data-value{color:var(--text-bright);font-size:11px;font-weight:bold;text-align:right}
+.data-value.highlight{color:var(--cyan)}.data-value.warn{color:var(--yellow)}.data-value.alert{color:var(--red)}
+.data-value.good{color:var(--green)}.data-value.orange{color:var(--orange)}.data-value.purple{color:var(--purple)}.data-value.pink{color:var(--pink)}
+
+.bar-container{display:flex;align-items:center;gap:5px;flex:1;margin-left:8px}
+.bar-track{flex:1;height:4px;background:#0a1520;border:1px solid var(--border);position:relative;max-width:120px}
+.bar-fill{height:100%;background:var(--cyan);transition:width .3s ease;box-shadow:0 0 6px var(--cyan-glow)}
+.bar-fill.warn{background:var(--yellow);box-shadow:0 0 6px #ffd60040}
+.bar-fill.alert{background:var(--red);box-shadow:0 0 6px #ff174440}
+.bar-fill.good{background:var(--green);box-shadow:0 0 6px #00e67640}
+.bar-fill.purple{background:var(--purple);box-shadow:0 0 6px #d500f940}
+.bar-fill.pink{background:var(--pink);box-shadow:0 0 6px #ff408140}
+.bar-fill.orange{background:var(--orange);box-shadow:0 0 6px #ff910040}
+
+.waveform-container{width:100%;height:55px;margin:4px 0;background:#060c14;border:1px solid var(--border);position:relative;overflow:hidden}
+.waveform-container canvas{width:100%;height:100%}
+
+.status-bar{width:100%;max-width:560px;display:flex;justify-content:space-between;font-size:9px;color:var(--text-dim);padding:3px 8px;border:1px solid var(--border);background:var(--bg-module)}
+.status-indicator{display:flex;align-items:center;gap:4px}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse-dot 1.5s ease-in-out infinite}
+.status-dot.inactive{background:var(--red)}.status-dot.processing{background:var(--yellow)}
+
+.system-log{width:100%;max-width:560px;background:var(--bg-module);border:1px solid var(--border);padding:4px 8px;font-size:9px;color:var(--text-dim);max-height:70px;overflow-y:auto;line-height:1.5}
+.log-entry{padding:1px 0}.log-entry .timestamp{color:var(--cyan-dim)}
+.log-entry .msg-info{color:var(--text-mid)}.log-entry .msg-warn{color:var(--yellow)}
+.log-entry .msg-error{color:var(--red)}.log-entry .msg-success{color:var(--green)}
+
+.corner-mark{position:absolute;width:7px;height:7px;border-color:var(--cyan);border-style:solid;opacity:.5}
+.corner-mark.tl{top:-1px;left:-1px;border-width:1px 0 0 1px}.corner-mark.tr{top:-1px;right:-1px;border-width:1px 1px 0 0}
+.corner-mark.bl{bottom:-1px;left:-1px;border-width:0 0 1px 1px}.corner-mark.br{bottom:-1px;right:-1px;border-width:0 1px 1px 0}
+
+/* Emotion bars */
+.emotion-row{display:flex;align-items:center;gap:4px;padding:1px 0;font-size:10px}
+.emotion-label{color:var(--text-dim);width:55px;text-transform:uppercase;letter-spacing:.5px;font-size:9px}
+.emotion-track{flex:1;height:5px;background:#0a1520;border:1px solid var(--border)}
+.emotion-fill{height:100%;transition:width .4s ease}
+.emotion-pct{width:32px;text-align:right;font-size:10px;font-weight:bold}
+
+/* Mini sparkline canvas */
+.sparkline-container{width:100%;height:30px;margin:3px 0;background:#060c14;border:1px solid var(--border);overflow:hidden}
+.sparkline-container canvas{width:100%;height:100%}
+
+/* Skin color swatch */
+.color-swatch{width:24px;height:12px;border:1px solid var(--border);display:inline-block;vertical-align:middle}
+
+@media(max-width:1100px){.hud-container{grid-template-columns:1fr;max-width:500px}.center-panel{order:-1}.left-panel,.right-panel{max-height:none}}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:var(--bg-dark)}::-webkit-scrollbar-thumb{background:var(--cyan-dim)}
+
+#init-overlay{position:fixed;inset:0;background:var(--bg-dark);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1000;transition:opacity .8s ease}
+#init-overlay.hidden{opacity:0;pointer-events:none}
+.init-title{font-family:'Orbitron',sans-serif;font-size:22px;color:var(--cyan);letter-spacing:8px;margin-bottom:25px}
+.init-progress{width:300px;height:2px;background:#0a1520;border:1px solid var(--border);margin-bottom:14px}
+.init-progress-fill{height:100%;background:var(--cyan);width:0%;transition:width .3s ease;box-shadow:0 0 10px var(--cyan-glow)}
+/* Settings Panel */
+.settings-overlay{position:fixed;inset:0;background:rgba(10,14,20,0.92);z-index:500;display:none;overflow-y:auto;padding:30px}
+.settings-overlay.visible{display:flex;justify-content:center;align-items:flex-start}
+.settings-panel{background:var(--bg-module);border:1px solid var(--cyan);max-width:700px;width:100%;padding:20px 24px;position:relative}
+.settings-panel h2{font-family:'Orbitron',sans-serif;font-size:14px;color:var(--cyan);letter-spacing:3px;margin-bottom:16px}
+.settings-panel h3{font-family:'Orbitron',sans-serif;font-size:11px;color:var(--cyan);letter-spacing:2px;margin:16px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--border)}
+.settings-close{position:absolute;top:12px;right:16px;background:none;border:1px solid var(--border);color:var(--cyan);font-family:'Share Tech Mono',monospace;font-size:12px;padding:4px 10px;cursor:pointer}
+.settings-close:hover{background:var(--cyan);color:var(--bg-dark)}
+
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;gap:12px}
+.setting-label{color:var(--text-mid);font-size:11px;flex:1}
+.setting-control{display:flex;align-items:center;gap:8px}
+.setting-control input[type=range]{width:120px;accent-color:var(--cyan);height:4px}
+.setting-control .val{color:var(--cyan);font-size:11px;min-width:36px;text-align:right}
+.setting-control select{background:var(--bg-dark);color:var(--text-bright);border:1px solid var(--border);font-family:'Share Tech Mono',monospace;font-size:10px;padding:3px 6px}
+
+.btn{background:none;border:1px solid var(--border);color:var(--text-bright);font-family:'Share Tech Mono',monospace;font-size:11px;padding:6px 14px;cursor:pointer;letter-spacing:1px;transition:all .2s}
+.btn:hover{border-color:var(--cyan);color:var(--cyan)}
+.btn.primary{border-color:var(--cyan);color:var(--cyan)}
+.btn.primary:hover{background:var(--cyan);color:var(--bg-dark)}
+.btn.danger{border-color:var(--red);color:var(--red)}
+.btn.danger:hover{background:var(--red);color:var(--bg-dark)}
+.btn.recording{border-color:var(--red);color:var(--red);animation:pulse-dot 1s ease-in-out infinite}
+.btn-group{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+
+/* Calibration Wizard */
+.calib-overlay{position:fixed;inset:0;background:rgba(10,14,20,0.95);z-index:600;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.calib-overlay.visible{display:flex}
+.calib-title{font-family:'Orbitron',sans-serif;font-size:16px;color:var(--cyan);letter-spacing:4px;margin-bottom:10px}
+.calib-instruction{font-size:14px;color:var(--text-bright);margin-bottom:20px;max-width:500px;line-height:1.6}
+.calib-progress{width:400px;height:4px;background:#0a1520;border:1px solid var(--border);margin:16px 0}
+.calib-progress-fill{height:100%;background:var(--cyan);transition:width .3s;box-shadow:0 0 8px var(--cyan-glow)}
+.calib-face-icon{font-size:48px;margin:10px 0}
+.calib-countdown{font-family:'Orbitron',sans-serif;font-size:36px;color:var(--yellow);margin:10px 0}
+.calib-status{font-size:11px;color:var(--text-dim);letter-spacing:1px;margin-top:8px}
+
+/* Toolbar buttons in status bar */
+.toolbar-btn{background:none;border:1px solid var(--border);color:var(--text-dim);font-family:'Share Tech Mono',monospace;font-size:9px;padding:2px 8px;cursor:pointer;letter-spacing:1px}
+.toolbar-btn:hover{border-color:var(--cyan);color:var(--cyan)}
+.toolbar-btn.active{border-color:var(--red);color:var(--red)}
+</style>
+</head>
+<body>
+
+<div id="init-overlay">
+  <div class="init-title">BIOMETRIC HUD v2</div>
+  <div class="init-progress"><div class="init-progress-fill" id="init-progress-fill"></div></div>
+  <div id="init-status">INITIALIZING SYSTEMS...</div>
+</div>
+
+<!-- SETTINGS PANEL -->
+<div class="settings-overlay" id="settings-overlay">
+<div class="settings-panel">
+  <button class="settings-close" onclick="toggleSettings()">✕ CLOSE</button>
+  <h2>◆ HUD SETTINGS</h2>
+
+  <h3>ENVIRONMENT PRESET</h3>
+  <div class="setting-row">
+    <span class="setting-label">Lighting Condition</span>
+    <div class="setting-control"><select id="set-lighting" onchange="applyPreset()">
+      <option value="auto">AUTO DETECT</option><option value="bright">BRIGHT / RING LIGHT</option>
+      <option value="natural">NATURAL WINDOW</option><option value="dim">DIM / MONITOR GLOW</option>
+      <option value="mixed">MIXED / UNEVEN</option>
+    </select></div>
+  </div>
+  <div class="setting-row">
+    <span class="setting-label">Distance to Camera</span>
+    <div class="setting-control"><select id="set-distance" onchange="applyPreset()">
+      <option value="auto">AUTO DETECT</option><option value="close">1-2 FT (CLOSE)</option>
+      <option value="medium">2-3 FT (ARM'S LENGTH)</option><option value="far">3-5 FT (DESK DEPTH)</option>
+    </select></div>
+  </div>
+
+  <h3>SENSITIVITY CONTROLS</h3>
+  <div class="setting-row">
+    <span class="setting-label">Emotion Sensitivity</span>
+    <div class="setting-control"><input type="range" min="20" max="200" value="100" id="set-emo-sens" oninput="updateSettingVal(this)"><span class="val" id="set-emo-sens-val">100%</span></div>
+  </div>
+  <div class="setting-row">
+    <span class="setting-label">Blink Detection Sens.</span>
+    <div class="setting-control"><input type="range" min="50" max="200" value="100" id="set-blink-sens" oninput="updateSettingVal(this)"><span class="val" id="set-blink-sens-val">100%</span></div>
+  </div>
+  <div class="setting-row">
+    <span class="setting-label">Neutral Threshold</span>
+    <div class="setting-control"><input type="range" min="5" max="40" value="20" id="set-neutral-thresh" oninput="updateSettingVal(this)"><span class="val" id="set-neutral-thresh-val">20</span></div>
+  </div>
+  <div class="setting-row">
+    <span class="setting-label">Smoothing (Emotions)</span>
+    <div class="setting-control"><input type="range" min="2" max="25" value="8" id="set-emo-smooth" oninput="updateSettingVal(this)"><span class="val" id="set-emo-smooth-val">8</span></div>
+  </div>
+  <div class="setting-row">
+    <span class="setting-label">Smoothing (rPPG)</span>
+    <div class="setting-control"><input type="range" min="3" max="20" value="10" id="set-rppg-smooth" oninput="updateSettingVal(this)"><span class="val" id="set-rppg-smooth-val">10</span></div>
+  </div>
+
+  <h3>CALIBRATION</h3>
+  <p style="font-size:10px;color:var(--text-dim);margin-bottom:10px">Guided calibration captures your personal facial baselines for more accurate readings across all modules.</p>
+  <div class="btn-group">
+    <button class="btn primary" onclick="startCalibration()">▶ START CALIBRATION</button>
+    <button class="btn" onclick="resetCalibration()">↺ RESET TO DEFAULTS</button>
+  </div>
+  <div class="setting-row" id="calib-status-row" style="display:none">
+    <span class="setting-label">Calibration Status</span>
+    <span class="data-value good" id="calib-status-text">CALIBRATED</span>
+  </div>
+
+  <h3>DATA RECORDING</h3>
+  <div class="btn-group">
+    <button class="btn" id="btn-record" onclick="toggleRecording()">⏺ START RECORDING</button>
+    <button class="btn" onclick="exportData('json')">⬇ EXPORT JSON</button>
+    <button class="btn" onclick="exportData('csv')">⬇ EXPORT CSV</button>
+    <button class="btn" onclick="document.getElementById('import-file').click()">⬆ IMPORT DATA</button>
+    <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+  </div>
+  <div class="setting-row">
+    <span class="setting-label">Recording Status</span>
+    <span class="data-value" id="recording-status">NOT RECORDING</span>
+  </div>
+  <div class="setting-row">
+    <span class="setting-label">Recorded Frames</span>
+    <span class="data-value" id="recorded-frames">0</span>
+  </div>
+
+  <h3>DISPLAY</h3>
+  <div class="setting-row">
+    <span class="setting-label">Show Landmark Mesh</span>
+    <div class="setting-control"><select id="set-show-mesh"><option value="on">ON</option><option value="off">OFF</option></select></div>
+  </div>
+  <div class="setting-row">
+    <span class="setting-label">Show Bounding Box</span>
+    <div class="setting-control"><select id="set-show-bbox"><option value="on">ON</option><option value="off">OFF</option></select></div>
+  </div>
+</div>
+</div>
+
+<!-- CALIBRATION WIZARD -->
+<div class="calib-overlay" id="calib-overlay">
+  <div class="calib-title">CALIBRATION WIZARD</div>
+  <div class="calib-face-icon" id="calib-icon">😐</div>
+  <div class="calib-instruction" id="calib-instruction">Preparing calibration...</div>
+  <div class="calib-countdown" id="calib-countdown"></div>
+  <div class="calib-progress"><div class="calib-progress-fill" id="calib-progress-fill" style="width:0%"></div></div>
+  <div class="calib-status" id="calib-step-status">STEP 0 / 6</div>
+  <div style="margin-top:16px"><button class="btn danger" onclick="cancelCalibration()">✕ CANCEL</button></div>
+</div>
+
+<div class="hud-container" id="hud-container" style="opacity:0">
+
+<!-- ============ LEFT PANEL ============ -->
+<div class="left-panel">
+
+  <!-- MOD 01: SUBJECT LOCK -->
+  <div class="module">
+    <div class="corner-mark tl"></div><div class="corner-mark tr"></div><div class="corner-mark bl"></div><div class="corner-mark br"></div>
+    <div class="module-header"><span class="module-title">SUBJECT LOCK</span><span class="module-id">MOD 01</span></div>
+    <div class="data-row"><span class="data-label">Face Status</span><span class="data-value alert" id="face-status">NOT DETECTED</span></div>
+    <div class="data-row"><span class="data-label">Faces in Frame</span><span class="data-value" id="face-count">0</span></div>
+    <div class="data-row"><span class="data-label">Bounding Box</span><span class="data-value" id="face-bbox">—</span></div>
+    <div class="data-row"><span class="data-label">Face Area %</span><div class="bar-container"><div class="bar-track"><div class="bar-fill" id="face-area-bar" style="width:0%"></div></div><span class="data-value" id="face-area">0%</span></div></div>
+    <div class="data-row"><span class="data-label">Confidence</span><div class="bar-container"><div class="bar-track"><div class="bar-fill good" id="confidence-bar" style="width:0%"></div></div><span class="data-value good" id="confidence">—</span></div></div>
+    <div class="data-row"><span class="data-label">Detector</span><span class="data-value highlight" id="detector-mode">TFJS FACEMESH</span></div>
+    <div class="data-row"><span class="data-label">Total Frames</span><span class="data-value" id="total-frames">0</span></div>
+  </div>
+
+  <!-- MOD 02: rPPG CARDIOVASCULAR -->
+  <div class="module">
+    <div class="corner-mark tl"></div><div class="corner-mark tr"></div><div class="corner-mark bl"></div><div class="corner-mark br"></div>
+    <div class="module-header"><span class="module-title">rPPG — CARDIOVASCULAR</span><span class="module-id">MOD 02</span></div>
+    <div class="data-row"><span class="data-label">Heart Rate</span><span class="data-value highlight" id="heart-rate" style="font-size:14px">— BPM</span></div>
+    <div class="data-row"><span class="data-label">HRV RMSSD</span><span class="data-value" id="hrv">— ms</span></div>
+    <div class="data-row"><span class="data-label">Signal Quality</span><div class="bar-container"><div class="bar-track"><div class="bar-fill warn" id="signal-bar" style="width:0%"></div></div><span class="data-value warn" id="signal-quality">0%</span></div></div>
+    <div class="data-row"><span class="data-label">Samples</span><span class="data-value" id="rppg-samples">0 / 300</span></div>
+    <div class="data-row"><span class="data-label">RGB Channels</span><span class="data-value" id="rgb-channels">—</span></div>
+    <div class="data-row"><span class="data-label">Forehead ROI</span><span class="data-value" id="forehead-region">—</span></div>
+    <div class="waveform-container"><canvas id="waveform-canvas"></canvas></div>
+  </div>
+
+  <!-- MOD 03: HEAD POSE -->
+  <div class="module">
+    <div class="corner-mark tl"></div><div class="corner-mark tr"></div><div class="corner-mark bl"></div><div class="corner-mark br"></div>
+    <div class="module-header"><span class="module-title">HEAD POSE</span><span class="module-id">MOD 03</span></div>
+    <div class="data-row"><span class="data-label">Yaw (L/R)</span><div class="bar-container"><div class="bar-track"><div class="bar-fill" id="yaw-bar" style="width:50%"></div></div><span class="data-value" id="yaw-val">0°</span></div></div>
+    <div class="data-row"><span class="data-label">Pitch (U/D)</span><div class="bar-container"><div class="bar-track"><div class="bar-fill" id="pitch-bar" style="width:50%"></div></div><span class="data-value" id="pitch-val">0°</span></div></div>
+    <div class="data-row"><span class="data-label">Roll</span><div class="bar-container"><div class="bar-track"><div class="bar-fill" id="roll-bar" style="width:50%"></div></div><span class="data-value" id="roll-val">0°</span></div></div>
+    <div class="data-row"><span class="data-label">Face Center</span><span class="data-value" id="face-cxy">—</span></div>
+    <div class="data-row"><span class="data-label">Motion / Frame</span><div class="bar-container"><div class="bar-track"><div class="bar-fill" id="motion-bar" style="width:0%"></div></div><span class="data-value" id="motion-val">0</span></div></div>
+    <div class="data-row"><span class="data-label">Posture</span><span class="data-value good" id="posture">—</span></div>
+    <div class="data-row"><span class="data-label">Gaze Direction</span><span class="data-value highlight" id="gaze-dir">—</span></div>
+  </div>
+
+  <!-- MOD 08: EMOTION RECOGNITION (NEW) -->
+  <div class="module">
+    <div class="corner-mark tl"></div><div class="corner-mark tr"></div><div class="corner-mark bl"></div><div class="corner-mark br"></div>
+    <div class="module-header"><span class="module-title">EMOTION RECOGNITION</span><span class="module-id">MOD 08</span></div>
+    <div class="data-row"><span class="data-label">Dominant</span><span class="data-value highlight" id="emotion-dominant" style="font-size:13px">—</span></div>
+    <div class="data-row"><span class="data-label">Valence</span><div class="bar-container"><div class="bar-track"><div class="bar-fill good" id="valence-bar" style="width:50%"></div></div><span class="data-value" id="valence-val">0</span></div></div>
+    <div class="data-row"><span class="data-label">Arousal</span><div class="bar-container"><div class="bar-track"><div class="bar-fill orange" id="arousal-bar" style="width:50%"></div></div><span class="data-value" id="arousal-val">0</span></div></div>
+    <div id="emotion-bars">
+      <div class="emotion-row"><span class="emotion-label">Happy</span><div class="emotion-track"><div class="emotion-fill" id="emo-happy" style="width:0%;background:#00e676"></div></div><span class="emotion-pct" id="emo-happy-pct">0%</span></div>
+      <div class="emotion-row"><span class="emotion-label">Sad</span><div class="emotion-track"><div class="emotion-fill" id="emo-sad" style="width:0%;background:#448aff"></div></div><span class="emotion-pct" id="emo-sad-pct">0%</span></div>
+      <div class="emotion-row"><span class="emotion-label">Angry</span><div class="emotion-track"><div class="emotion-fill" id="emo-angry" style="width:0%;background:#ff1744"></div></div><span class="emotion-pct" id="emo-angry-pct">0%</span></div>
+      <div class="emotion-row"><span class="emotion-label">Surprise</span><div class="emotion-track"><div class="emotion-fill" id="emo-surprise" style="width:0%;background:#ffd600"></div></div><span class="emotion-pct" id="emo-surprise-pct">0%</span></div>
+      <div class="emotion-row"><span class="emotion-label">Fear</span><div class="emotion-track"><div class="emotion-fill" id="emo-fear" style="width:0%;background:#d500f9"></div></div><span class="emotion-pct" id="emo-fear-pct">0%</span></div>
+      <div class="emotion-row"><span class="emotion-label">Disgust</span><div class="emotion-track"><div class="emotion-fill" id="emo-disgust" style="width:0%;background:#ff9100"></div></div><span class="emotion-pct" id="emo-disgust-pct">0%</span></div>
+      <div class="emotion-row"><span class="emotion-label">Neutral</span><div class="emotion-track"><div class="emotion-fill" id="emo-neutral" style="width:0%;background:#607d8b"></div></div><span class="emotion-pct" id="emo-neutral-pct">0%</span></div>
+    </div>
+    <div class="sparkline-container"><canvas id="emotion-sparkline"></canvas></div>
+  </div>
+
+  <!-- MOD 09: DEMOGRAPHICS (NEW) -->
+  <div class="module">
+    <div class="corner-mark tl"></div><div class="corner-mark tr"></div><div class="corner-mark bl"></div><div class="corner-mark br"></div>
+    <div class="module-header"><span class="module-title">DEMOGRAPHICS EST.</span><span class="module-id">MOD 09</span></div>
+    <div class="data-row"><span class="data-label">Est. Age</span><span class="data-value highlight" id="est-age" style="font-size:13px">—</span></div>
+    <div class="data-row"><span class="data-label">Age Range</span><span class="data-value" id="age-range">—</span></div>
+    <div class="data-row"><span class="data-label">Age Confidence</span><div class="bar-container"><div class="bar-track"><div class="bar-fill" id="age-conf-bar" style="width:0%"></div></div><span class="data-value" id="age-conf">—</span></div></div>
+    <div class="data-row"><span class="data-label">Gender Est.</span><span class="data-value purple" id="gender-est">—</span></div>
+    <div class="data-row"><span class="data-label">Masc / Fem</span><div class="bar-container"><div class="bar-track"><div class="bar-fill purple" id="gender-bar" style="width:50%"></div></div><span class="data-value" id="gender-ratio">—</span></div></div>
+    <div class="data-row"><span class="data-label">Skin Tone</span><span class="data-value" id="skin-tone">—</span> <span class="color-swatch" id="skin-swatch"></span></div>
+    <div class="data-row"><span class="data-label">Dist. to Camera</span><span class="data-value" id="dist-camera">—</span></div>
+  </div>
+</div>
+
+<!-- ============ CENTER PANEL ============ -->
+<div class="center-panel">
+  <div class="status-bar">
+    <div class="status-indicator"><div class="status-dot" id="cam-dot"></div><span id="cam-status">CAMERA</span></div>
+    <div class="status-indicator"><div class="status-dot processing" id="model-dot"></div><span id="model-status">MODEL LOADING</span></div>
+    <div class="status-indicator"><span id="fps-display">0 FPS</span></div>
+    <div class="status-indicator"><span id="res-display">—</span></div>
+    <div class="status-indicator" style="gap:4px">
+      <button class="toolbar-btn" id="tb-record" onclick="toggleRecording()" title="Record data">⏺ REC</button>
+      <button class="toolbar-btn" onclick="startCalibration()" title="Calibrate">⚙ CAL</button>
+      <button class="toolbar-btn" onclick="toggleSettings()" title="Settings">☰ SET</button>
+    </div>
+  </div>
+  <div class="video-container" id="video-container">
+    <video id="webcam" autoplay playsinline muted></video>
+    <canvas id="overlay-canvas"></canvas>
+    <div class="video-overlay"></div>
+  </div>
+  <div class="system-log" id="system-log"></div>
+</div>
+
+<!-- ============ RIGHT PANEL ============ -->
+<div class="right-panel">
+
+  <!-- MOD 04: FACIAL LANDMARKS -->
+  <div class="module">
+    <div class="corner-mark tl"></div><div class="corner-mark tr"></div><div class="corner-mark bl"></div><div class="corner-mark br"></div>
+    <div class="module-header"><span class="module-title">FACIAL LANDMARKS</span><span class="module-id">MOD 04</span></div>
+    <div class="data-row"><span class="data-label">Landmark Pts</span><span class="data-value" id="landmark-count">0</span></div>
+    <div class="data-row"><span class="data-label">Left Eye</span><div class="bar-container"><div class="bar-track"><div class="bar-fill good" id="leye-bar" style="width:0%"></div></div><span class="data-value" id="leye-val">—</span></div></div>
+    <div class="data-row"><span class="data-label">Right Eye</span><div class="bar-container"><div class="bar-track"><div class="bar-fill good" id="reye-bar" style="width:0%"></div></div><span class="data-value" id="reye-val">—</span></div></div>
+    <div class="data-row"><span class="data-label">Eye Distance</span><div class="bar-container"><div class="bar-track"><div class="bar-fill" id="eyedist-bar" style="width:0%"></div></div><span class="data-value" id="eye-distance">—</span></div></div>
+    <div class="data-row"><span class="data-label">Face Symmetry</span><div class="bar-container"><div class="bar-track"><div class="bar-fill good" id="symmetry-bar" style="width:0%"></div></div><span class="data-value" id="face-symmetry">—</span></div></div>
+    <div class="data-row"><span class="data-label">Nose-Mouth</span><span class="data-value" id="nose-mouth-dist">—</span></div>
+  </div>
+
+  <!-- MOD 05: ATTENTION & BLINKS -->
+  <div class="module">
+    <div class="corner-mark tl"></div><div class="corner-mark tr"></div><div class="corner-mark bl"></div><div class="corner-mark br"></div>
+    <div class="module-header"><span class="module-title">ATTENTION & BLINKS</span><span class="module-id">MOD 05</span></div>
+    <div class="data-row"><span class="data-label">Blink Rate</span><span class="data-value" id="blink-rate">— /min</span></div>
+    <div class="data-row"><span class="data-label">Last Blink</span><span class="data-value" id="last-blink">—</span></div>
+    <div class="data-row"><span class="data-label">EAR</span><div class="bar-container"><div class="bar-track"><div class="bar-fill" id="ear-bar" style="width:0%"></div></div><span class="data-value" id="ear-val">—</span></div></div>
+    <div class="data-row"><span class="data-label">Attention</span><div class="bar-container"><div class="bar-track"><div class="bar-fill good" id="attention-bar" style="width:0%"></div></div><span class="data-value good" id="attention-score">—</span></div></div>
+    <div class="data-row"><span class="data-label">Engagement</span><span class="data-value" id="engagement">—</span></div>
+    <div class="data-row"><span class="data-label">Drowsiness</span><span class="data-value good" id="drowsiness">—</span></div>
+    <div class="data-row"><span class="data-label">Total Blinks</span><span class="data-value" id="total-blinks">0</span></div>
+  </div>
+
+  <!-- MOD 06: EXPRESSIONS -->
+  <div class="module">
+    <div class="corner-mark tl"></div><div class="corner-mark tr"></div><div class="corner-mark bl"></div><div class="corner-mark br"></div>
+    <div class="module-header"><span class="module-title">EXPRESSION ANALYSIS</span><span class="module-id">MOD 06</span></div>
+    <div class="data-row"><span class="data-label">Mouth Open</span><div class="bar-container"><div class="bar-track"><div class="bar-fill" id="mouth-open-bar" style="width:0%"></div></div><span class="data-value" id="mouth-open-val">0%</span></div></div>
+    <div class="data-row"><span class="data-label">Brow Raise</span><div class="bar-container"><div class="bar-track"><div class="bar-fill" id="brow-bar" style="width:0%"></div></div><span class="data-value" id="brow-val">0%</span></div></div>
+    <div class="data-row"><span class="data-label">Smile Index</span><div class="bar-container"><div class="bar-track"><div class="bar-fill good" id="smile-bar" style="width:0%"></div></div><span class="data-value" id="smile-val">0%</span></div></div>
+    <div class="data-row"><span class="data-label">Squint</span><div class="bar-container"><div class="bar-track"><div class="bar-fill" id="squint-bar" style="width:0%"></div></div><span class="data-value" id="squint-val">0%</span></div></div>
+    <div class="data-row"><span class="data-label">Dominant</span><span class="data-value highlight" id="expression-state">—</span></div>
+  </div>
+
+  <!-- MOD 10: RESPIRATION (NEW) -->
+  <div class="module">
+    <div class="corner-mark tl"></div><div class="corner-mark tr"></div><div class="corner-mark bl"></div><div class="corner-mark br"></div>
+    <div class="module-header"><span class="module-title">RESPIRATION MONITOR</span><span class="module-id">MOD 10</span></div>
+    <div class="data-row"><span class="data-label">Resp Rate</span><span class="data-value highlight" id="resp-rate" style="font-size:13px">— BrPM</span></div>
+    <div class="data-row"><span class="data-label">Breath Depth</span><div class="bar-container"><div class="bar-track"><div class="bar-fill" id="breath-depth-bar" style="width:0%"></div></div><span class="data-value" id="breath-depth">—</span></div></div>
+    <div class="data-row"><span class="data-label">Phase</span><span class="data-value" id="resp-phase">—</span></div>
+    <div class="data-row"><span class="data-label">Regularity</span><div class="bar-container"><div class="bar-track"><div class="bar-fill good" id="resp-reg-bar" style="width:0%"></div></div><span class="data-value" id="resp-regularity">—</span></div></div>
+    <div class="data-row"><span class="data-label">Signal Src</span><span class="data-value" id="resp-source">LANDMARK+rPPG</span></div>
+    <div class="waveform-container"><canvas id="resp-canvas"></canvas></div>
+  </div>
+
+  <!-- MOD 11: STRESS & WELLNESS (NEW) -->
+  <div class="module">
+    <div class="corner-mark tl"></div><div class="corner-mark tr"></div><div class="corner-mark bl"></div><div class="corner-mark br"></div>
+    <div class="module-header"><span class="module-title">STRESS & WELLNESS</span><span class="module-id">MOD 11</span></div>
+    <div class="data-row"><span class="data-label">Stress Index</span><div class="bar-container"><div class="bar-track"><div class="bar-fill warn" id="stress-bar" style="width:0%"></div></div><span class="data-value warn" id="stress-val">—</span></div></div>
+    <div class="data-row"><span class="data-label">Cognitive Load</span><div class="bar-container"><div class="bar-track"><div class="bar-fill orange" id="cogload-bar" style="width:0%"></div></div><span class="data-value" id="cogload-val">—</span></div></div>
+    <div class="data-row"><span class="data-label">Fatigue Index</span><div class="bar-container"><div class="bar-track"><div class="bar-fill" id="fatigue-bar" style="width:0%"></div></div><span class="data-value" id="fatigue-val">—</span></div></div>
+    <div class="data-row"><span class="data-label">Wellness</span><div class="bar-container"><div class="bar-track"><div class="bar-fill good" id="wellness-bar" style="width:0%"></div></div><span class="data-value good" id="wellness-val">—</span></div></div>
+    <div class="data-row"><span class="data-label">BP Estimate</span><span class="data-value" id="bp-est">—</span></div>
+    <div class="data-row"><span class="data-label">SpO2 Est.</span><div class="bar-container"><div class="bar-track"><div class="bar-fill good" id="spo2-bar" style="width:0%"></div></div><span class="data-value good" id="spo2-val">—</span></div></div>
+  </div>
+
+  <!-- MOD 12: SKIN & COMPLEXION (NEW) -->
+  <div class="module">
+    <div class="corner-mark tl"></div><div class="corner-mark tr"></div><div class="corner-mark bl"></div><div class="corner-mark br"></div>
+    <div class="module-header"><span class="module-title">SKIN & COMPLEXION</span><span class="module-id">MOD 12</span></div>
+    <div class="data-row"><span class="data-label">Luminance</span><div class="bar-container"><div class="bar-track"><div class="bar-fill" id="skin-lum-bar" style="width:0%"></div></div><span class="data-value" id="skin-lum">—</span></div></div>
+    <div class="data-row"><span class="data-label">Skin Hue</span><span class="data-value" id="skin-hue">—</span></div>
+    <div class="data-row"><span class="data-label">Redness</span><div class="bar-container"><div class="bar-track"><div class="bar-fill alert" id="redness-bar" style="width:0%"></div></div><span class="data-value" id="redness-val">—</span></div></div>
+    <div class="data-row"><span class="data-label">Uniformity</span><div class="bar-container"><div class="bar-track"><div class="bar-fill good" id="uniformity-bar" style="width:0%"></div></div><span class="data-value" id="uniformity-val">—</span></div></div>
+    <div class="data-row"><span class="data-label">Color Temp</span><span class="data-value" id="color-temp">—</span></div>
+    <div class="data-row"><span class="data-label">Cheek Sample</span><span class="color-swatch" id="cheek-swatch"></span> <span class="data-value" id="cheek-rgb">—</span></div>
+  </div>
+
+  <!-- MOD 07: SESSION -->
+  <div class="module">
+    <div class="corner-mark tl"></div><div class="corner-mark tr"></div><div class="corner-mark bl"></div><div class="corner-mark br"></div>
+    <div class="module-header"><span class="module-title">SESSION DATA</span><span class="module-id">MOD 07</span></div>
+    <div class="data-row"><span class="data-label">Uptime</span><span class="data-value" id="uptime">00:00:00</span></div>
+    <div class="data-row"><span class="data-label">Avg HR</span><span class="data-value" id="avg-hr">— BPM</span></div>
+    <div class="data-row"><span class="data-label">HR Min/Max</span><span class="data-value" id="hr-range">— / —</span></div>
+    <div class="data-row"><span class="data-label">Face Visible</span><div class="bar-container"><div class="bar-track"><div class="bar-fill good" id="visible-bar" style="width:0%"></div></div><span class="data-value" id="face-visible-pct">0%</span></div></div>
+    <div class="data-row"><span class="data-label">Avg Attention</span><span class="data-value" id="avg-attention">—</span></div>
+    <div class="data-row"><span class="data-label">Avg Emotion</span><span class="data-value" id="avg-emotion">—</span></div>
+  </div>
+</div>
+
+</div>
+
+<script>
+// ============================================================
+// BIOMETRIC HUD v2 — FULL ENGINE WITH 12 MODULES
+// ============================================================
+const $ = id => document.getElementById(id);
+
+const state = {
+  frameCount: 0, fpsFrames: [], faceDetected: false, startTime: Date.now(),
+  lastFaceCenter: null, motionHistory: [], prevLandmarks: null,
+  // rPPG
+  rppgBuffer: [], rppgMaxSamples: 300, heartRateHistory: [], hrvHistory: [],
+  currentHR: 0, signalQuality: 0,
+  // Blinks
+  blinkTimestamps: [], totalBlinks: 0, lastBlinkTime: 0, eyeClosedFrames: 0,
+  earThreshold: 0.21, wasEyeClosed: false,
+  // Attention
+  attentionScore: 100, attentionHistory: [],
+  // Session
+  faceVisibleFrames: 0, hrMin: Infinity, hrMax: 0, hrSum: 0, hrCount: 0,
+  // Emotions (NEW)
+  emotions: { happy:0, sad:0, angry:0, surprise:0, fear:0, disgust:0, neutral:80 },
+  emotionHistory: [], // sparkline data
+  emotionSmooth: { happy:0, sad:0, angry:0, surprise:0, fear:0, disgust:0, neutral:80 },
+  // Demographics (NEW)
+  ageEstimates: [], genderScores: [],
+  // Respiration (NEW)
+  respBuffer: [], respMaxSamples: 300, respRateHistory: [],
+  // Skin (NEW)
+  skinSamples: [],
+  // Stress (NEW)
+  stressHistory: [],
+};
+
+function log(msg, type='info') {
+  const el = $('system-log');
+  const ts = new Date().toLocaleTimeString('en-US',{hour12:false});
+  const d = document.createElement('div');
+  d.className='log-entry';
+  d.innerHTML=`<span class="timestamp">[${ts}]</span> <span class="msg-${type}">${msg}</span>`;
+  el.appendChild(d); el.scrollTop=el.scrollHeight;
+  if(el.children.length>50) el.removeChild(el.firstChild);
+}
+
+let model=null;
+const video=$('webcam'), overlayCanvas=$('overlay-canvas'), overlayCtx=overlayCanvas.getContext('2d');
+const waveCanvas=$('waveform-canvas'), waveCtx=waveCanvas.getContext('2d');
+const respCanvasEl=$('resp-canvas');
+let respCtx;
+const emoSparkEl=$('emotion-sparkline');
+let emoSparkCtx;
+
+async function init(){
+  const pFill=$('init-progress-fill'), pStat=$('init-status');
+  pStat.textContent='REQUESTING CAMERA ACCESS...'; pFill.style.width='10%';
+
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({video:{width:{ideal:640},height:{ideal:480},facingMode:'user'},audio:false});
+    video.srcObject=stream; await video.play();
+    overlayCanvas.width=video.videoWidth; overlayCanvas.height=video.videoHeight;
+    $('res-display').textContent=video.videoWidth+'×'+video.videoHeight;
+    $('cam-dot').className='status-dot'; $('cam-status').textContent='CAMERA LIVE';
+    log('Camera: '+video.videoWidth+'×'+video.videoHeight,'success');
+  }catch(e){
+    log('Camera denied: '+e.message,'error');
+    $('cam-dot').className='status-dot inactive'; $('cam-status').textContent='NO CAMERA';
+    pStat.textContent='NO CAMERA — DEMO MODE'; pFill.style.width='100%';
+    setTimeout(()=>{ $('init-overlay').classList.add('hidden'); $('hud-container').style.opacity='1'; initCanvases(); runDemoMode(); },1200);
+    return;
+  }
+
+  pStat.textContent='LOADING TENSORFLOW.JS...'; pFill.style.width='30%';
+  await tf.setBackend('webgl'); await tf.ready();
+  log('TF backend: '+tf.getBackend(),'success');
+
+  pStat.textContent='LOADING FACEMESH...'; pFill.style.width='55%';
+  try{
+    model=await faceLandmarksDetection.load(
+      faceLandmarksDetection.SupportedPackages.mediapipeFacemesh,
+      { maxFaces: 1, shouldLoadIrisModel: true }
+    );
+    log('FaceMesh loaded (468 landmarks + iris)','success');
+  }catch(e){
+    log('Iris model failed ('+e.message+'), trying without iris...','warn');
+    try{
+      model=await faceLandmarksDetection.load(
+        faceLandmarksDetection.SupportedPackages.mediapipeFacemesh,
+        { maxFaces: 1, shouldLoadIrisModel: false }
+      );
+      log('FaceMesh loaded (468 landmarks)','success');
+    }catch(e2){ log('Model failed: '+e2.message,'error'); $('model-dot').className='status-dot inactive'; }
+  }
+  if(model){ $('model-dot').className='status-dot'; $('model-status').textContent='MODEL READY'; }
+
+  pStat.textContent='CALIBRATING...'; pFill.style.width='85%';
+  initCanvases();
+  pFill.style.width='100%'; pStat.textContent='ALL SYSTEMS NOMINAL';
+  log('HUD v2 initialized — 12 modules online','success');
+  loadSavedCalibration();
+  setTimeout(()=>{ $('init-overlay').classList.add('hidden'); $('hud-container').style.opacity='1'; requestAnimationFrame(loop); },700);
+}
+
+function initCanvases(){
+  const wr=waveCanvas.parentElement.getBoundingClientRect();
+  waveCanvas.width=wr.width; waveCanvas.height=wr.height;
+  const rr=respCanvasEl.parentElement.getBoundingClientRect();
+  respCanvasEl.width=rr.width; respCanvasEl.height=rr.height;
+  respCtx=respCanvasEl.getContext('2d');
+  const er=emoSparkEl.parentElement.getBoundingClientRect();
+  emoSparkEl.width=er.width; emoSparkEl.height=er.height;
+  emoSparkCtx=emoSparkEl.getContext('2d');
+}
+
+// ============ MAIN LOOP ============
+async function loop(){
+  const now=performance.now();
+  state.frameCount++;
+  state.fpsFrames.push(now);
+  state.fpsFrames=state.fpsFrames.filter(t=>now-t<1000);
+  $('fps-display').textContent=state.fpsFrames.length+' FPS';
+  $('total-frames').textContent=state.frameCount;
+
+  const elapsed=Math.floor((Date.now()-state.startTime)/1000);
+  $('uptime').textContent=String(Math.floor(elapsed/3600)).padStart(2,'0')+':'+String(Math.floor((elapsed%3600)/60)).padStart(2,'0')+':'+String(elapsed%60).padStart(2,'0');
+
+  if(model&&video.readyState>=2){
+    try{
+      const p=await model.estimateFaces({input:video, returnTensors:false, flipHorizontal:false, predictIrises:false});
+      processFrame(p,now);
+    }catch(e){ /* silently continue */ }
+  }
+  // Calibration capture
+  if(calibState.active) captureCalibSample();
+  // Data recording (every 3rd frame to reduce size)
+  if(recordingState.active && state.frameCount%3===0) recordFrame();
+  requestAnimationFrame(loop);
+}
+
+// ============ PROCESS FRAME ============
+function processFrame(predictions,now){
+  overlayCtx.clearRect(0,0,overlayCanvas.width,overlayCanvas.height);
+  if(predictions.length>0){
+    const face=predictions[0], mesh=face.scaledMesh;
+    if(!state.faceDetected) log('Face locked','success');
+    state.faceDetected=true; state.faceVisibleFrames++;
+
+    // Run occlusion detection first — determines how other modules weight regions
+    detectOcclusions(mesh);
+
+    updateSubjectLock(face,mesh);
+    if($('set-show-mesh').value!=='off') drawLandmarks(mesh);
+    updateRPPG_POS(mesh,now); // POS algorithm with multi-ROI
+    updateHeadPose(mesh,now);
+    updateLandmarkData(mesh);
+    updateAttentionBlinks(mesh,now);
+    updateExpressions(mesh);
+    updateEmotions(mesh,now);
+    updateDemographics(mesh,now);
+    updateRespiration(mesh,now);
+    updateSkinAnalysis(mesh);
+    updateStressWellness(now);
+
+    state.prevLandmarks=mesh.map(p=>[...p]);
+  } else {
+    if(state.faceDetected) log('Face lost','warn');
+    state.faceDetected=false;
+    $('face-status').textContent='NOT DETECTED'; $('face-status').className='data-value alert';
+    $('face-count').textContent='0';
+    state.attentionScore=Math.max(0,state.attentionScore-0.5);
+    updateAttentionDisplay();
+  }
+  updateSession();
+  drawWaveform();
+  drawRespWaveform();
+  drawEmotionSparkline();
+}
+
+// ============ OCCLUSION DETECTION ============
+function detectOcclusions(mesh){
+  if(!state.occlusion) state.occlusion={beard:false,glasses:false,beardConf:0,glassesConf:0,
+    lowerFaceReliable:true,upperFaceReliable:true,beardHistory:[],glassesHistory:[]};
+
+  const occ=state.occlusion;
+
+  // --- BEARD DETECTION ---
+  // Compare skin color in forehead (always exposed) vs chin/jaw area
+  // If chin area has very different texture/color or darker than expected, likely beard
+  try{
+    const fhPt=mesh[151]; // center forehead
+    const chinPt=mesh[152]; // chin
+    const jawL=mesh[172], jawR=mesh[397]; // jaw sides
+
+    if(fhPt&&chinPt){
+      const tc=document.createElement('canvas'),ctx=tc.getContext('2d'),s=24;
+      tc.width=s; tc.height=s;
+
+      // Sample forehead
+      ctx.drawImage(video,fhPt[0]-s/2,fhPt[1]-s/2,s,s,0,0,s,s);
+      let fhData=ctx.getImageData(0,0,s,s).data;
+      let fhR=0,fhG=0,fhB=0,fhLums=[],px=0;
+      for(let i=0;i<fhData.length;i+=4){fhR+=fhData[i];fhG+=fhData[i+1];fhB+=fhData[i+2];
+        fhLums.push(0.299*fhData[i]+0.587*fhData[i+1]+0.114*fhData[i+2]);px++}
+      fhR/=px;fhG/=px;fhB/=px;
+      const fhLumMean=fhLums.reduce((a,b)=>a+b,0)/fhLums.length;
+      const fhLumVar=Math.sqrt(fhLums.reduce((a,v)=>a+(v-fhLumMean)**2,0)/fhLums.length);
+
+      // Sample chin
+      ctx.drawImage(video,chinPt[0]-s/2,chinPt[1]-s/2,s,s,0,0,s,s);
+      let chData=ctx.getImageData(0,0,s,s).data;
+      let chR=0,chG=0,chB=0,chLums=[];px=0;
+      for(let i=0;i<chData.length;i+=4){chR+=chData[i];chG+=chData[i+1];chB+=chData[i+2];
+        chLums.push(0.299*chData[i]+0.587*chData[i+1]+0.114*chData[i+2]);px++}
+      chR/=px;chG/=px;chB/=px;
+      const chLumMean=chLums.reduce((a,b)=>a+b,0)/chLums.length;
+      const chLumVar=Math.sqrt(chLums.reduce((a,v)=>a+(v-chLumMean)**2,0)/chLums.length);
+
+      // Beard indicators:
+      // 1. Chin is significantly darker than forehead (hair absorbs light)
+      const lumRatio=chLumMean/(fhLumMean||1);
+      const darkerChin=lumRatio<0.75?1:lumRatio<0.85?0.5:0;
+
+      // 2. Chin has higher texture variance (hair = more texture)
+      const varRatio=chLumVar/(fhLumVar||1);
+      const rougherChin=varRatio>1.5?1:varRatio>1.2?0.5:0;
+
+      // 3. Color difference between forehead and chin (skin vs hair color)
+      const colorDiff=Math.sqrt((fhR-chR)**2+(fhG-chG)**2+(fhB-chB)**2);
+      const colorDiffNorm=colorDiff/255;
+      const differentColor=colorDiffNorm>0.15?1:colorDiffNorm>0.08?0.5:0;
+
+      // 4. Chin is less red relative to green (skin is redder than hair)
+      const fhRedness=(fhR-fhG)/(fhR||1);
+      const chRedness=(chR-chG)/(chR||1);
+      const lessRed=fhRedness-chRedness>0.05?1:fhRedness-chRedness>0.02?0.5:0;
+
+      // Combine signals
+      let beardScore=(darkerChin*0.3+rougherChin*0.25+differentColor*0.25+lessRed*0.2)*100;
+      occ.beardHistory.push(beardScore);
+      if(occ.beardHistory.length>60)occ.beardHistory.shift();
+
+      // Use median of history for stability
+      const sorted=[...occ.beardHistory].sort((a,b)=>a-b);
+      occ.beardConf=sorted[Math.floor(sorted.length*0.5)];
+      occ.beard=occ.beardConf>35;
+    }
+  }catch(e){}
+
+  // --- GLASSES DETECTION ---
+  // Check for high-contrast edges across the nose bridge between eyes
+  try{
+    const bridgePt=mesh[6]; // nose bridge between eyes
+    if(bridgePt){
+      const tc=document.createElement('canvas'),ctx=tc.getContext('2d'),s=20;
+      tc.width=s;tc.height=s;
+      ctx.drawImage(video,bridgePt[0]-s/2,bridgePt[1]-s/2,s,s,0,0,s,s);
+      const d=ctx.getImageData(0,0,s,s).data;
+      // Check for strong horizontal edges (glasses frame)
+      let edgeSum=0,px=0;
+      for(let y=1;y<s-1;y++){
+        for(let x=0;x<s;x++){
+          const i=(y*s+x)*4;
+          const above=((y-1)*s+x)*4;
+          const below=((y+1)*s+x)*4;
+          const lum=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
+          const lumA=0.299*d[above]+0.587*d[above+1]+0.114*d[above+2];
+          const lumB=0.299*d[below]+0.587*d[below+1]+0.114*d[below+2];
+          edgeSum+=Math.abs(lum-lumA)+Math.abs(lum-lumB);px++;
+        }
+      }
+      const avgEdge=edgeSum/px;
+      let glassesScore=Math.min(Math.max((avgEdge-15)*3,0),100);
+      occ.glassesHistory.push(glassesScore);
+      if(occ.glassesHistory.length>60)occ.glassesHistory.shift();
+      const gSorted=[...occ.glassesHistory].sort((a,b)=>a-b);
+      occ.glassesConf=gSorted[Math.floor(gSorted.length*0.5)];
+      occ.glasses=occ.glassesConf>40;
+    }
+  }catch(e){}
+
+  // Set region reliability flags
+  occ.lowerFaceReliable=!occ.beard;
+  occ.upperFaceReliable=!occ.glasses;
+
+  // Update subject lock display with occlusion info
+  const occTags=[];
+  if(occ.beard) occTags.push('BEARD');
+  if(occ.glasses) occTags.push('GLASSES');
+  $('detector-mode').textContent=occTags.length>0?'TFJS + '+occTags.join('+'):'TFJS FACEMESH';
+}
+
+// ============ MOD 01: SUBJECT LOCK ============
+function updateSubjectLock(face,mesh){
+  $('face-status').textContent='LOCKED'; $('face-status').className='data-value good';
+  $('face-count').textContent='1';
+  const bb=face.boundingBox;
+  const x=Math.round(bb.topLeft[0]),y=Math.round(bb.topLeft[1]);
+  const w=Math.round(bb.bottomRight[0]-bb.topLeft[0]),h=Math.round(bb.bottomRight[1]-bb.topLeft[1]);
+  $('face-bbox').textContent=`${x},${y} ${w}×${h}`;
+  const area=(w*h)/(overlayCanvas.width*overlayCanvas.height)*100;
+  $('face-area').textContent=area.toFixed(1)+'%'; $('face-area-bar').style.width=Math.min(area*2,100)+'%';
+  const conf=face.faceInViewConfidence||0.95;
+  $('confidence').textContent=(conf*100).toFixed(0)+'%'; $('confidence-bar').style.width=(conf*100)+'%';
+
+  overlayCtx.strokeStyle='#00e5ff80'; overlayCtx.lineWidth=1; overlayCtx.setLineDash([6,4]);
+  overlayCtx.strokeRect(bb.topLeft[0],bb.topLeft[1],w,h); overlayCtx.setLineDash([]);
+  const cl=12; overlayCtx.strokeStyle='#00e5ff'; overlayCtx.lineWidth=2;
+  [[x,y+cl,x,y,x+cl,y],[x+w-cl,y,x+w,y,x+w,y+cl],[x,y+h-cl,x,y+h,x+cl,y+h],[x+w-cl,y+h,x+w,y+h,x+w,y+h-cl]].forEach(c=>{
+    overlayCtx.beginPath(); overlayCtx.moveTo(c[0],c[1]); overlayCtx.lineTo(c[2],c[3]); overlayCtx.lineTo(c[4],c[5]); overlayCtx.stroke();
+  });
+}
+
+// ============ DRAW LANDMARKS ============
+function drawLandmarks(mesh){
+  const contours={
+    jaw:[10,338,297,332,284,251,389,356,454,323,361,288,397,365,379,378,400,377,152,148,176,149,150,136,172,58,132,93,234,127,162,21,54,103,67,109,10],
+    lEyeT:[466,388,387,386,385,384,398],lEyeB:[466,263,249,390,373,374,380,381,382,398],
+    rEyeT:[246,161,160,159,158,157,173],rEyeB:[246,33,7,163,144,145,153,154,155,173],
+    nose:[168,6,197,195,5],noseB:[48,115,220,45,4,275,440,344,278],
+    oLips:[61,146,91,181,84,17,314,405,321,375,291,409,270,269,267,0,37,39,40,185,61],
+    iLips:[78,191,80,81,82,13,312,311,310,415,308,324,318,402,317,14,87,178,88,95,78],
+    lBrow:[276,283,282,295,285],rBrow:[46,53,52,65,55]
+  };
+  for(const k in contours){
+    overlayCtx.strokeStyle=k.includes('Eye')?'#00e67640':k.includes('Lip')?'#ff174430':k.includes('nose')||k.includes('Nose')?'#ffd60030':k.includes('Brow')?'#ff910040':'#00e5ff20';
+    overlayCtx.lineWidth=1; overlayCtx.beginPath();
+    contours[k].forEach((idx,i)=>{const p=mesh[idx]; if(p){i===0?overlayCtx.moveTo(p[0],p[1]):overlayCtx.lineTo(p[0],p[1])}});
+    overlayCtx.stroke();
+  }
+  overlayCtx.fillStyle='#00e5ff';
+  [1,4,5,6,33,133,362,263,61,291,199,168].forEach(idx=>{if(mesh[idx]){overlayCtx.beginPath();overlayCtx.arc(mesh[idx][0],mesh[idx][1],2,0,Math.PI*2);overlayCtx.fill()}});
+}
+
+// ============ MOD 02: rPPG with POS Algorithm + Multi-ROI ============
+function sampleROI(cx,cy,sz){
+  try{
+    const tc=document.createElement('canvas'),ctx=tc.getContext('2d');
+    tc.width=sz;tc.height=sz;
+    ctx.drawImage(video,cx-sz/2,cy-sz/2,sz,sz,0,0,sz,sz);
+    const d=ctx.getImageData(0,0,sz,sz).data;
+    let r=0,g=0,b=0,px=0;
+    for(let i=0;i<d.length;i+=4){r+=d[i];g+=d[i+1];b+=d[i+2];px++}
+    return {r:r/px,g:g/px,b:b/px,valid:true};
+  }catch(e){return {r:0,g:0,b:0,valid:false}}
+}
+
+function updateRPPG_POS(mesh,now){
+  const occ=state.occlusion||{beard:false};
+  const foreheadPts=[10,67,109,108,69,104,68,71,21,151,338,297,299,337,284,251];
+  let fx=0,fy=0,fc=0;
+  foreheadPts.forEach(i=>{if(mesh[i]){fx+=mesh[i][0];fy+=mesh[i][1];fc++}});
+  if(!fc)return; fx/=fc; fy/=fc;
+
+  const sz=36, rois=[];
+  const fhS=sampleROI(fx,fy,sz);
+  if(fhS.valid) rois.push({...fhS,weight:0.5});
+  const lCk=mesh[205],rCk=mesh[425];
+  if(lCk){const s=sampleROI(lCk[0],lCk[1],sz);if(s.valid)rois.push({...s,weight:occ.beard?0.1:0.25})}
+  if(rCk){const s=sampleROI(rCk[0],rCk[1],sz);if(s.valid)rois.push({...s,weight:occ.beard?0.1:0.25})}
+
+  let tW=0,wR=0,wG=0,wB=0;
+  rois.forEach(r=>{wR+=r.r*r.weight;wG+=r.g*r.weight;wB+=r.b*r.weight;tW+=r.weight});
+  if(!tW)return;
+  const rA=wR/tW,gA=wG/tW,bA=wB/tW;
+  $('rgb-channels').textContent=`${rA.toFixed(0)}/${gA.toFixed(0)}/${bA.toFixed(0)}`;
+  $('forehead-region').textContent=`${rois.length} ROI ${occ.beard?'(FH-PRI)':'(FH+CK)'}`;
+
+  overlayCtx.lineWidth=1;overlayCtx.setLineDash([3,3]);
+  overlayCtx.strokeStyle='#ffd60050';overlayCtx.strokeRect(fx-sz/2,fy-sz/2,sz,sz);
+  if(!occ.beard){overlayCtx.strokeStyle='#00e67030';
+    if(lCk)overlayCtx.strokeRect(lCk[0]-sz/2,lCk[1]-sz/2,sz,sz);
+    if(rCk)overlayCtx.strokeRect(rCk[0]-sz/2,rCk[1]-sz/2,sz,sz);
+  }
+  overlayCtx.setLineDash([]);
+
+  state.rppgBuffer.push({time:now,r:rA,g:gA,b:bA});
+  if(state.rppgBuffer.length>state.rppgMaxSamples)state.rppgBuffer.shift();
+  $('rppg-samples').textContent=state.rppgBuffer.length+' / '+state.rppgMaxSamples;
+  if(state.rppgBuffer.length>=90) computeHR_POS(now);
+}
+
+function computeHR_POS(now){
+  const buf=state.rppgBuffer,N=buf.length;if(N<90)return;
+  const smW=Math.max(5,Math.min(20,settings.rppgSmoothing));
+  // POS: Plane Orthogonal to Skin
+  const winLen=Math.min(45,Math.floor(N/2));
+  const posSignal=new Array(N).fill(0);
+  for(let st=0;st<=N-winLen;st+=Math.floor(winLen/2)){
+    const seg=buf.slice(st,st+winLen),len=seg.length;
+    let mR=0,mG=0,mB=0;seg.forEach(s=>{mR+=s.r;mG+=s.g;mB+=s.b});mR/=len;mG/=len;mB/=len;
+    if(!mR||!mG||!mB)continue;
+    const Cn=seg.map(s=>({r:s.r/mR,g:s.g/mG,b:s.b/mB}));
+    const S1=Cn.map(c=>c.g-c.b),S2=Cn.map(c=>c.g+c.b-2*c.r);
+    const m1=S1.reduce((a,b)=>a+b,0)/len,m2=S2.reduce((a,b)=>a+b,0)/len;
+    const std1=Math.sqrt(S1.reduce((a,v)=>a+(v-m1)**2,0)/len)||.001;
+    const std2=Math.sqrt(S2.reduce((a,v)=>a+(v-m2)**2,0)/len)||.001;
+    const alpha=std1/std2;
+    for(let i=0;i<len;i++){const idx=st+i;if(idx<N)posSignal[idx]+=S1[i]+alpha*S2[i]}
+  }
+  // Detrend
+  const ws=20,det=[];
+  for(let i=0;i<N;i++){let s=Math.max(0,i-ws),e=Math.min(N,i+ws),sm=0;for(let j=s;j<e;j++)sm+=posSignal[j];det.push(posSignal[i]-sm/(e-s))}
+  state.posSignal=det;
+  // Peaks
+  const peaks=[];
+  for(let i=2;i<det.length-2;i++){if(det[i]>det[i-1]&&det[i]>det[i-2]&&det[i]>det[i+1]&&det[i]>det[i+2]&&det[i]>0)peaks.push(i)}
+  if(peaks.length>=3){
+    const iv=[];for(let i=1;i<peaks.length;i++){const dt=buf[peaks[i]].time-buf[peaks[i-1]].time;if(dt>300&&dt<2000)iv.push(dt)}
+    if(iv.length>=2){
+      const avg=iv.reduce((a,b)=>a+b,0)/iv.length;
+      let hr=Math.max(45,Math.min(180,60000/avg));
+      state.heartRateHistory.push(hr);if(state.heartRateHistory.length>smW)state.heartRateHistory.shift();
+      state.currentHR=Math.round(state.heartRateHistory.reduce((a,b)=>a+b,0)/state.heartRateHistory.length);
+      $('heart-rate').textContent=state.currentHR+' BPM';
+      if(iv.length>=3){let ss=0;for(let i=1;i<iv.length;i++)ss+=(iv[i]-iv[i-1])**2;
+        const rmssd=Math.sqrt(ss/(iv.length-1));state.hrvHistory.push(rmssd);if(state.hrvHistory.length>8)state.hrvHistory.shift();
+        $('hrv').textContent=Math.round(state.hrvHistory.reduce((a,b)=>a+b,0)/state.hrvHistory.length)+' ms';
+      }
+      const std=Math.sqrt(iv.map(x=>(x-avg)**2).reduce((a,b)=>a+b,0)/iv.length);
+      state.signalQuality=Math.max(0,Math.min(100,Math.round((1-std/avg*2)*100)));
+    }
+  }
+  const sq=state.signalQuality;$('signal-quality').textContent=sq+'%';$('signal-bar').style.width=sq+'%';
+  const sc=sq>60?'good':sq>30?'warn':'alert';$('signal-bar').className='bar-fill '+sc;$('signal-quality').className='data-value '+sc;
+  if(state.currentHR>0){state.hrSum+=state.currentHR;state.hrCount++;state.hrMin=Math.min(state.hrMin,state.currentHR);state.hrMax=Math.max(state.hrMax,state.currentHR)}
+}
+
+function drawWaveform(){
+  const w=waveCanvas.width,h=waveCanvas.height;
+  waveCtx.fillStyle='#060c14';waveCtx.fillRect(0,0,w,h);
+  waveCtx.strokeStyle='#00e5ff10';waveCtx.lineWidth=.5;
+  for(let y=0;y<h;y+=10){waveCtx.beginPath();waveCtx.moveTo(0,y);waveCtx.lineTo(w,y);waveCtx.stroke()}
+  for(let x=0;x<w;x+=20){waveCtx.beginPath();waveCtx.moveTo(x,0);waveCtx.lineTo(x,h);waveCtx.stroke()}
+  const det=state.posSignal||[];if(det.length<2)return;
+  const mx=Math.max(...det.map(Math.abs),.001);
+  waveCtx.beginPath();waveCtx.strokeStyle='#00e5ff';waveCtx.lineWidth=1.5;waveCtx.shadowColor='#00e5ff';waveCtx.shadowBlur=4;
+  det.forEach((v,i)=>{const x=(i/state.rppgMaxSamples)*w,y=h/2-(v/mx)*(h*.4);i===0?waveCtx.moveTo(x,y):waveCtx.lineTo(x,y)});
+  waveCtx.stroke();waveCtx.shadowBlur=0;
+}
+
+// ============ MOD 03: HEAD POSE ============
+function updateHeadPose(mesh,now){
+  const nt=mesh[4],ch=mesh[152],le=mesh[33],re=mesh[263],fh=mesh[10];
+  if(!nt||!ch||!le||!re||!fh)return;
+  const cx=(le[0]+re[0])/2,cy=(le[1]+re[1])/2;
+  const yaw=Math.round((nt[0]-cx)/((re[0]-le[0])||1)*-45);
+  const pitch=Math.round(((nt[1]-cy)/((ch[1]-fh[1])||1)-.35)*-80);
+  const roll=Math.round(Math.atan2(re[1]-le[1],re[0]-le[0])*180/Math.PI);
+
+  $('yaw-val').textContent=(yaw>0?'+':'')+yaw+'°'; $('pitch-val').textContent=(pitch>0?'+':'')+pitch+'°'; $('roll-val').textContent=(roll>0?'+':'')+roll+'°';
+  $('yaw-bar').style.width=Math.max(0,Math.min(100,50+yaw))+'%'; $('pitch-bar').style.width=Math.max(0,Math.min(100,50+pitch))+'%'; $('roll-bar').style.width=Math.max(0,Math.min(100,50+roll*2))+'%';
+  $('face-cxy').textContent=Math.round(cx)+', '+Math.round(cy);
+
+  if(state.prevLandmarks){
+    let mot=0;[1,4,33,263,61,291].forEach(idx=>{if(mesh[idx]&&state.prevLandmarks[idx]){const dx=mesh[idx][0]-state.prevLandmarks[idx][0],dy=mesh[idx][1]-state.prevLandmarks[idx][1];mot+=Math.sqrt(dx*dx+dy*dy)}});
+    mot/=6;state.motionHistory.push(mot);if(state.motionHistory.length>30)state.motionHistory.shift();
+    const am=state.motionHistory.reduce((a,b)=>a+b,0)/state.motionHistory.length;
+    $('motion-val').textContent=am.toFixed(1); $('motion-bar').style.width=Math.min(am*10,100)+'%';
+  }
+  const ht=Math.abs(roll);
+  $('posture').textContent=ht>15||pitch<-20?'POOR':ht>8||pitch<-10?'FAIR':'GOOD';
+  $('posture').className='data-value '+(ht>15||pitch<-20?'alert':ht>8||pitch<-10?'warn':'good');
+  $('gaze-dir').textContent=(Math.abs(yaw)<8?'CENTER':yaw<0?'LEFT':'RIGHT')+(Math.abs(pitch)<8?'':pitch>0?' UP':' DOWN')||'CENTER';
+  state.lastFaceCenter={x:cx,y:cy};
+}
+
+// ============ MOD 04: LANDMARKS ============
+function computeEAR(mesh,side){
+  let t,b,l,r;
+  if(side==='left'){t=mesh[386];b=mesh[374];l=mesh[362];r=mesh[263]}else{t=mesh[159];b=mesh[145];l=mesh[33];r=mesh[133]}
+  if(!t||!b||!l||!r)return .25;
+  return Math.sqrt((t[0]-b[0])**2+(t[1]-b[1])**2)/(Math.sqrt((l[0]-r[0])**2+(l[1]-r[1])**2)||1);
+}
+
+function updateLandmarkData(mesh){
+  $('landmark-count').textContent=mesh.length;
+  const le=computeEAR(mesh,'left'),re=computeEAR(mesh,'right');
+  $('leye-val').textContent=le.toFixed(3); $('leye-bar').style.width=Math.min(le*300,100)+'%';
+  $('reye-val').textContent=re.toFixed(3); $('reye-bar').style.width=Math.min(re*300,100)+'%';
+  const lc=mesh[33],rc=mesh[263];
+  if(lc&&rc){const ed=Math.sqrt((lc[0]-rc[0])**2+(lc[1]-rc[1])**2);$('eye-distance').textContent=Math.round(ed)+'px';$('eyedist-bar').style.width=Math.min(ed/2,100)+'%'}
+  if(mesh[4]&&mesh[13]){const d=Math.sqrt((mesh[4][0]-mesh[13][0])**2+(mesh[4][1]-mesh[13][1])**2);$('nose-mouth-dist').textContent=Math.round(d)+'px'}
+  const lCk=mesh[234],rCk=mesh[454],ns=mesh[4];
+  if(lCk&&rCk&&ns){const dL=Math.sqrt((lCk[0]-ns[0])**2+(lCk[1]-ns[1])**2),dR=Math.sqrt((rCk[0]-ns[0])**2+(rCk[1]-ns[1])**2);
+    const sym=Math.min(dL,dR)/Math.max(dL,dR)*100;$('face-symmetry').textContent=sym.toFixed(0)+'%';$('symmetry-bar').style.width=sym+'%'}
+}
+
+// ============ MOD 05: ATTENTION & BLINKS ============
+function updateAttentionBlinks(mesh,now){
+  const le=computeEAR(mesh,'left'),re=computeEAR(mesh,'right'),avg=(le+re)/2;
+  $('ear-val').textContent=avg.toFixed(3); $('ear-bar').style.width=Math.min(avg*300,100)+'%';
+
+  // === AUTO-CALIBRATING BLINK DETECTION ===
+  // Build EAR history for adaptive thresholding
+  if(!state.earHistory) state.earHistory=[];
+  state.earHistory.push(avg);
+  if(state.earHistory.length>300) state.earHistory.shift();
+
+  // After 30 frames, compute adaptive threshold
+  let blinkThreshold=state.earThreshold; // fallback 0.21
+  if(state.earHistory.length>=30){
+    const sorted=[...state.earHistory].sort((a,b)=>a-b);
+    const median=sorted[Math.floor(sorted.length*0.5)];
+    const p10=sorted[Math.floor(sorted.length*0.1)]; // 10th percentile (closed)
+    const p85=sorted[Math.floor(sorted.length*0.85)]; // 85th percentile (open)
+    // Threshold = midpoint between typical-open and typical-closed, biased toward open
+    blinkThreshold=p10 + (p85-p10)*0.45;
+    // Also track the open-eye baseline for display
+    state.earOpenBaseline=p85;
+  }
+
+  // Velocity-based blink detection: detect rapid EAR drops
+  const prevEar=state.earHistory.length>=2?state.earHistory[state.earHistory.length-2]:avg;
+  const earVelocity=prevEar-avg; // positive = closing
+
+  // Two-criteria blink: EITHER below adaptive threshold OR rapid velocity drop
+  const belowThreshold=avg<blinkThreshold;
+  const rapidDrop=earVelocity>0.02 && avg<(state.earOpenBaseline||0.28)*0.85;
+  const eyeClosing=belowThreshold||rapidDrop;
+
+  if(eyeClosing&&!state.wasEyeClosed){
+    state.eyeClosedFrames=1;
+    state.blinkStartEAR=prevEar; // remember the open EAR before blink
+  } else if(eyeClosing){
+    state.eyeClosedFrames++;
+  } else if(!eyeClosing&&state.wasEyeClosed){
+    // Eye just opened — was it a blink?
+    const duration=state.eyeClosedFrames;
+    const earDrop=(state.blinkStartEAR||0.3)-avg;
+    // Blink: 1-20 frames duration, with meaningful EAR drop
+    if(duration>=1 && duration<20){
+      state.totalBlinks++;
+      state.blinkTimestamps.push(now);
+      state.lastBlinkTime=now;
+      state.blinkTimestamps=state.blinkTimestamps.filter(t=>now-t<60000);
+    }
+    state.eyeClosedFrames=0;
+  }
+  state.wasEyeClosed=eyeClosing;
+
+  $('total-blinks').textContent=state.totalBlinks;
+  const rb=state.blinkTimestamps.filter(t=>now-t<60000);
+  const blinkRate=rb.length;
+  $('blink-rate').textContent=blinkRate+' /min';
+  if(state.lastBlinkTime>0){
+    const ago=(now-state.lastBlinkTime)/1000;
+    $('last-blink').textContent=ago<60?ago.toFixed(1)+'s ago':'>60s';
+  }
+
+  // === MULTI-SIGNAL ATTENTION MODEL ===
+  const gaze=$('gaze-dir').textContent;
+  const gazeCenter=gaze.includes('CENTER');
+  const motion=state.motionHistory.length>0?state.motionHistory.reduce((a,b)=>a+b,0)/state.motionHistory.length:0;
+
+  // Attention signals (each contributes independently)
+  // 1. Gaze on target (40% weight)
+  const gazeScore=gazeCenter?100:(gaze.includes('UP')||gaze.includes('DOWN')?40:60);
+
+  // 2. Blink regularity (20% weight) — normal is 12-20/min
+  let blinkScore;
+  if(blinkRate>=8 && blinkRate<=22) blinkScore=100; // normal range
+  else if(blinkRate<8) blinkScore=Math.max(30, 100-(8-blinkRate)*10); // too few (hyperfocus or disconnected)
+  else blinkScore=Math.max(20, 100-(blinkRate-22)*5); // too many (fatigue/stress)
+
+  // 3. Stillness (15% weight) — moderate motion is fine, excessive = distracted
+  const motionScore=motion<5?100:Math.max(0,100-motion*8);
+
+  // 4. Eye openness (15% weight) — closing eyes = inattentive
+  const openness=state.earOpenBaseline?Math.min(100,avg/(state.earOpenBaseline)*100):80;
+
+  // 5. Face presence (10% weight)
+  const presenceScore=state.faceDetected?100:0;
+
+  // Weighted combination
+  let att=gazeScore*0.35 + blinkScore*0.20 + motionScore*0.15 + openness*0.15 + presenceScore*0.15;
+  att=Math.max(0,Math.min(100,att));
+
+  // Smooth — don't make it too sticky
+  const prevAtt=state.attentionScore;
+  const attAlpha=Math.abs(att-prevAtt)>20?0.15:0.06; // faster response to big changes
+  state.attentionScore+=(att-state.attentionScore)*attAlpha;
+  state.attentionHistory.push(state.attentionScore);
+  if(state.attentionHistory.length>300)state.attentionHistory.shift();
+  updateAttentionDisplay();
+
+  // === DROWSINESS (calibrated to blink patterns) ===
+  const longClosed=eyeClosing&&state.eyeClosedFrames>25;
+  const veryHighBlinks=blinkRate>25;
+  const lowAttention=state.attentionScore<40;
+  const perclos=state.earHistory.length>60?
+    state.earHistory.slice(-60).filter(e=>e<blinkThreshold).length/60*100:0; // % time eyes closed
+
+  if(longClosed||perclos>30){
+    $('drowsiness').textContent='HIGH'; $('drowsiness').className='data-value alert';
+  } else if(veryHighBlinks||perclos>15||lowAttention){
+    $('drowsiness').textContent='MODERATE'; $('drowsiness').className='data-value warn';
+  } else {
+    $('drowsiness').textContent='LOW'; $('drowsiness').className='data-value good';
+  }
+
+  // === ENGAGEMENT ===
+  const engScore=state.attentionScore*0.5 + (gazeCenter?25:10) + (state.faceDetected?15:0) + (perclos<10?10:0);
+  $('engagement').textContent=engScore>70?'HIGH':engScore>40?'MODERATE':'LOW';
+  $('engagement').className='data-value '+(engScore>70?'good':engScore>40?'warn':'alert');
+}
+function updateAttentionDisplay(){
+  const a=state.attentionScore;$('attention-score').textContent=Math.round(a)+'%';$('attention-bar').style.width=a+'%';
+  const c=a>70?'good':a>40?'warn':'alert';$('attention-bar').className='bar-fill '+c;$('attention-score').className='data-value '+c;
+}
+
+// ============ MOD 06: EXPRESSIONS ============
+function updateExpressions(mesh){
+  const occ=state.occlusion||{beard:false,glasses:false};
+  // Lower-face AU confidence modifier: beard reduces mouth/lip reliability
+  const lowerConf=occ.beard?0.4:1.0; // 40% confidence on mouth AUs when bearded
+  const upperConf=occ.glasses?0.6:1.0; // 60% on eye AUs when glasses
+
+  const mT=mesh[13],mB=mesh[14],lL=mesh[61],rL=mesh[291];
+  // Lip corners for smile: 61 (left), 291 (right), relative to mouth center
+  const mCenterY=mT&&mB?(mT[1]+mB[1])/2:0;
+  let mouthOpen=0,smile=0;
+  if(mT&&mB&&lL&&rL){
+    const mH=Math.sqrt((mT[0]-mB[0])**2+(mT[1]-mB[1])**2);
+    const mW=Math.sqrt((lL[0]-rL[0])**2+(lL[1]-rL[1])**2);
+    // Mouth open: inner lip vertical gap vs mouth width
+    mouthOpen=Math.min(Math.max((mH/mW-0.08)*120, 0), 100);
+
+    // Smile: lip corner elevation relative to center of lips
+    // When smiling, corners rise above the center line of the mouth
+    const cornerAvgY=(lL[1]+rL[1])/2;
+    const cornerElevation=mCenterY-cornerAvgY; // positive = corners above center = smiling
+    // Also check mouth width expansion (smiling widens the mouth)
+    const noseTip=mesh[4], chin=mesh[152];
+    const faceH=noseTip&&chin?Math.abs(chin[1]-noseTip[1]):100;
+    const widthRatio=mW/faceH; // typically ~0.55-0.75, smiling pushes to 0.7+
+    
+    // Combine corner elevation with width ratio
+    const elevationScore=Math.max(0, cornerElevation/faceH*500); // normalized
+    const widthScore=Math.max(0, (widthRatio-0.58)*300);
+    smile=Math.min(Math.max(elevationScore*0.6 + widthScore*0.4, 0), 100);
+  }
+  $('mouth-open-val').textContent=Math.round(mouthOpen)+'%'; $('mouth-open-bar').style.width=mouthOpen+'%';
+  $('smile-val').textContent=Math.round(smile)+'%'; $('smile-bar').style.width=smile+'%';
+
+  // Brow raise: distance from brow landmarks to eye landmarks, normalized by face height
+  const fh=mesh[10],ch=mesh[152];
+  const faceH=fh&&ch?Math.abs(ch[1]-fh[1]):200;
+  // Use outer brow points vs eye top
+  const lBrowOuter=mesh[70],rBrowOuter=mesh[300]; // mid-brow points
+  const lEyeTop=mesh[159],rEyeTop=mesh[386];  // eye top
+  let browRaise=0;
+  if(lBrowOuter&&rBrowOuter&&lEyeTop&&rEyeTop){
+    const lGap=lEyeTop[1]-lBrowOuter[1]; // positive = brow above eye
+    const rGap=rEyeTop[1]-rBrowOuter[1];
+    const avgGap=(lGap+rGap)/2;
+    const normalizedGap=avgGap/faceH; // typically ~0.04-0.08
+    // Baseline ~0.05, raised brows push to 0.07+
+    browRaise=Math.min(Math.max((normalizedGap-0.045)*2000, 0), 100);
+  }
+  $('brow-val').textContent=Math.round(browRaise)+'%'; $('brow-bar').style.width=browRaise+'%';
+
+  // Squint: EAR relative to personal baseline (calibrate over first 60 frames)
+  const ear=(computeEAR(mesh,'left')+computeEAR(mesh,'right'))/2;
+  if(!state.earBaseline){
+    state.earCalibration=state.earCalibration||[];
+    state.earCalibration.push(ear);
+    if(state.earCalibration.length>=45){
+      // Use 75th percentile as baseline (open eyes)
+      const sorted=[...state.earCalibration].sort((a,b)=>b-a);
+      state.earBaseline=sorted[Math.floor(sorted.length*0.25)];
+    }
+  }
+  const baseline=state.earBaseline||0.28;
+  const squint=Math.min(Math.max((baseline-ear)/baseline*200, 0), 100);
+  $('squint-val').textContent=Math.round(squint)+'%'; $('squint-bar').style.width=squint+'%';
+
+  // Lip corner depression (frown): corners below center = frown
+  let frown=0;
+  if(lL&&rL&&mT&&mB){
+    const cornerAvgY=(lL[1]+rL[1])/2;
+    const depression=cornerAvgY-mCenterY; // positive = corners below center
+    frown=Math.min(Math.max(depression/faceH*500, 0), 100);
+  }
+
+  // Nose wrinkle (disgust proxy): compression of nose bridge area — AUTO-CALIBRATED
+  let noseWrinkle=0;
+  const nBridge1=mesh[6],nBridge2=mesh[197];
+  if(nBridge1&&nBridge2){
+    const bridgeDist=Math.abs(nBridge1[1]-nBridge2[1])/faceH;
+    // Calibrate baseline nose bridge distance
+    if(!state.noseBridgeCalibration) state.noseBridgeCalibration=[];
+    state.noseBridgeCalibration.push(bridgeDist);
+    if(state.noseBridgeCalibration.length>120) state.noseBridgeCalibration.shift();
+    // Baseline = 80th percentile (relaxed face)
+    if(state.noseBridgeCalibration.length>=20){
+      const sorted=[...state.noseBridgeCalibration].sort((a,b)=>b-a);
+      const baselineNose=sorted[Math.floor(sorted.length*0.2)];
+      // Wrinkle = how much current is LESS than baseline (compressed)
+      const compression=(baselineNose-bridgeDist)/baselineNose;
+      noseWrinkle=Math.min(Math.max(compression*400, 0), 100);
+    }
+  }
+
+  let expr='NEUTRAL';
+  if(mouthOpen>40)expr='TALKING';
+  else if(smile>25)expr='SMILING';
+  else if(browRaise>35&&mouthOpen>15)expr='SURPRISED';
+  else if(squint>35&&frown>10)expr='ANGRY';
+  else if(frown>20&&browRaise<15)expr='SAD';
+  else if(squint>30)expr='FOCUSED';
+  $('expression-state').textContent=expr;
+
+  state._au={mouthOpen:mouthOpen*lowerConf,smile:smile*lowerConf,browRaise:browRaise*upperConf,
+    squint:squint*upperConf,ear,frown:frown*lowerConf,noseWrinkle,
+    lowerConf,upperConf};
+}
+
+// ============ MOD 08: EMOTION RECOGNITION (TUNED) ============
+function updateEmotions(mesh,now){
+  const au=state._au||{mouthOpen:0,smile:0,browRaise:0,squint:0,ear:.25,frown:0,noseWrinkle:0};
+  const sym=parseFloat($('face-symmetry').textContent)||95;
+  const asymmetry=Math.max(0,100-sym);
+  const sens=settings.emoSensitivity/100; // sensitivity multiplier
+  const cal=state.calibration||null;
+
+  // Subtract personal neutral baselines if calibrated
+  const adjSmile=cal?Math.max(0,au.smile-cal.neutralSmile*0.8):au.smile;
+  const adjBrow=cal?Math.max(0,au.browRaise-cal.neutralBrow*0.7):au.browRaise;
+  const adjSquint=cal?Math.max(0,au.squint-cal.neutralSquint*0.6):au.squint;
+  const adjFrown=cal?Math.max(0,au.frown-cal.neutralFrown*0.7):au.frown;
+  const adjNoseWrinkle=cal?Math.max(0,au.noseWrinkle-cal.neutralNoseWrinkle*0.8):au.noseWrinkle;
+
+  // Scale by sensitivity
+  const s=adjSmile*sens, b=adjBrow*sens, sq=adjSquint*sens, f=adjFrown*sens, nw=adjNoseWrinkle*sens;
+
+  // Dynamic range: if calibrated, scale relative to calibrated expression peaks
+  const smileRange=cal&&cal.happySmile>0?(s/cal.happySmile*60):s*0.85;
+  const browRange=cal&&cal.surpriseBrow>0?(b/cal.surpriseBrow*60):b*0.5;
+  const squintRange=cal&&cal.angrySquint>0?(sq/cal.angrySquint*50):sq*0.4;
+  const frownRange=cal&&cal.sadFrown>0?(f/cal.sadFrown*60):f*0.5;
+
+  const baseline=state.earOpenBaseline||state.earBaseline||0.28;
+  const eyeWiden=Math.max(0,(au.ear-baseline)/baseline*80)*sens;
+
+  // Emotion scores
+  let happy=Math.min(100, smileRange + (s>8?sq*0.1:0));
+  let surprise=Math.min(100, browRange + au.mouthOpen*0.25*sens + eyeWiden*0.3);
+  let angry=Math.min(100, (sq>10&&f>3)?(squintRange+frownRange*0.6+Math.max(0,asymmetry-8)*0.2):(sq*0.08+f*0.08));
+  let sad=Math.min(100, frownRange*0.8 + (f>3?Math.max(0,(8-s)*0.15):0));
+  let fear=Math.min(100, browRange*0.4 + eyeWiden*0.5 + (au.mouthOpen>5&&au.mouthOpen<30?au.mouthOpen*0.2*sens:0));
+  if(au.mouthOpen>35) fear*=0.3;
+  let disgust=Math.min(100, nw>5 ? nw*0.6 + (nw>10?sq*0.1:0) : 0);
+
+  // Clamp
+  happy=Math.max(0,happy); surprise=Math.max(0,surprise); angry=Math.max(0,angry);
+  sad=Math.max(0,sad); fear=Math.max(0,fear); disgust=Math.max(0,disgust);
+
+  // Neutral: use configurable threshold
+  const neutralThresh=settings.neutralThreshold;
+  const emotionSum=happy+surprise+angry+sad+fear+disgust;
+  let neutral;
+  if(emotionSum<neutralThresh){
+    neutral=100-emotionSum*(100/(neutralThresh+1)); // smooth transition
+  } else {
+    neutral=Math.max(0, neutralThresh*2-emotionSum);
+  }
+
+  // Normalize
+  let total=happy+surprise+angry+sad+fear+disgust+neutral;
+  if(total>0){happy=happy/total*100;surprise=surprise/total*100;angry=angry/total*100;sad=sad/total*100;fear=fear/total*100;disgust=disgust/total*100;neutral=neutral/total*100}
+
+  // Adaptive smoothing from settings
+  const sm=state.emotionSmooth;
+  const baseAlpha=Math.max(0.03,Math.min(0.3, 1/(settings.emoSmoothing+1)));
+  for(const k of ['happy','sad','angry','surprise','fear','disgust','neutral']){
+    const target={happy,sad,angry,surprise,fear,disgust,neutral}[k];
+    const diff=Math.abs(target-sm[k]);
+    const alpha=diff>25?baseAlpha*3:diff>10?baseAlpha*1.8:baseAlpha;
+    sm[k]+=(target-sm[k])*alpha;
+  }
+
+  const emos={happy:sm.happy,sad:sm.sad,angry:sm.angry,surprise:sm.surprise,fear:sm.fear,disgust:sm.disgust,neutral:sm.neutral};
+  state.emotions=emos;
+
+  for(const k in emos){$('emo-'+k).style.width=emos[k]+'%';$('emo-'+k+'-pct').textContent=Math.round(emos[k])+'%'}
+
+  // Dominant (require threshold to override neutral)
+  let dom='NEUTRAL',domV=sm.neutral;
+  const minDom=cal?8:12; // lower threshold when calibrated
+  for(const k of ['happy','sad','angry','surprise','fear','disgust']){
+    if(sm[k]>domV&&sm[k]>minDom){domV=sm[k];dom=k.toUpperCase()}
+  }
+  $('emotion-dominant').textContent=dom;
+
+  const valence=((sm.happy*1.0+sm.surprise*0.2)-(sm.sad+sm.angry+sm.fear*0.8+sm.disgust))/100;
+  $('valence-val').textContent=valence.toFixed(2); $('valence-bar').style.width=Math.max(0,Math.min(100,50+valence*50))+'%';
+  const arousal=Math.min(1,(sm.surprise*1.2+sm.angry+sm.fear+sm.happy*0.4)/(100+emotionSum*0.5));
+  $('arousal-val').textContent=arousal.toFixed(2); $('arousal-bar').style.width=(arousal*100)+'%';
+
+  state.emotionHistory.push({t:now,happy:sm.happy,sad:sm.sad,angry:sm.angry,surprise:sm.surprise,neutral:sm.neutral});
+  if(state.emotionHistory.length>150) state.emotionHistory.shift();
+}
+
+function drawEmotionSparkline(){
+  if(!emoSparkCtx)return;
+  const w=emoSparkEl.width,h=emoSparkEl.height,hist=state.emotionHistory;
+  emoSparkCtx.fillStyle='#060c14';emoSparkCtx.fillRect(0,0,w,h);
+  if(hist.length<2)return;
+  const colors={happy:'#00e676',sad:'#448aff',angry:'#ff1744',surprise:'#ffd600',neutral:'#607d8b'};
+  for(const emo of ['neutral','sad','angry','surprise','happy']){
+    emoSparkCtx.beginPath();emoSparkCtx.strokeStyle=colors[emo];emoSparkCtx.lineWidth=1;
+    hist.forEach((d,i)=>{const x=(i/(hist.length-1))*w,y=h-(d[emo]/100)*h;i===0?emoSparkCtx.moveTo(x,y):emoSparkCtx.lineTo(x,y)});
+    emoSparkCtx.stroke();
+  }
+}
+
+// ============ MOD 09: DEMOGRAPHICS (TUNED) ============
+function updateDemographics(mesh,now){
+  const fh=mesh[10],ch=mesh[152],le=mesh[33],re=mesh[263],lCk=mesh[234],rCk=mesh[454],ns=mesh[4];
+  if(!fh||!ch||!le||!re||!ns)return;
+
+  const faceH=Math.sqrt((fh[0]-ch[0])**2+(fh[1]-ch[1])**2);
+  const faceW=Math.sqrt((lCk[0]-rCk[0])**2+(lCk[1]-rCk[1])**2);
+  const eyeDist=Math.sqrt((le[0]-re[0])**2+(le[1]-re[1])**2);
+
+  // --- AGE ESTIMATION (multi-feature) ---
+  // 1. Forehead-to-face ratio (forehead shrinks proportionally with age)
+  const eyeLineY=(le[1]+re[1])/2;
+  const foreheadH=eyeLineY-fh[1];
+  const lowerFaceH=ch[1]-eyeLineY;
+  const foreheadRatio=foreheadH/(faceH||1); // ~0.33-0.40
+
+  // 2. Nose length to face height (nose lengthens with age)
+  const noseBridge=mesh[6]; // between eyes on nose
+  const noseLen=ns&&noseBridge?Math.sqrt((ns[0]-noseBridge[0])**2+(ns[1]-noseBridge[1])**2):0;
+  const noseRatio=noseLen/(faceH||1); // ~0.15-0.22
+
+  // 3. Mouth-to-chin distance (relatively stable)
+  const mouthTop=mesh[13];
+  const mouthChinDist=mouthTop&&ch?Math.abs(ch[1]-mouthTop[1]):0;
+  const mouthChinRatio=mouthChinDist/(faceH||1); // ~0.15-0.22
+
+  // 4. Face width/height ratio (face elongates slightly with age)
+  const fwRatio=faceW/(faceH||1); // ~0.65-0.85
+
+  // 5. Eye-to-face width ratio (eyes appear smaller relative to face with age)
+  const eyeFaceRatio=eyeDist/(faceW||1);
+
+  // 6. Lower face proportion (jaw/chin area increases with age)
+  const lowerRatio=lowerFaceH/(faceH||1);
+
+  // 7. Skin texture proxy: luminance variance from forehead (wrinkles = more variance)
+  let skinVariance=0;
+  try{
+    const tc=document.createElement('canvas'),ctx=tc.getContext('2d'),sz=30;tc.width=sz;tc.height=sz;
+    const fhPt=mesh[151]; // center forehead
+    if(fhPt){
+      ctx.drawImage(video,fhPt[0]-sz/2,fhPt[1]-sz/2,sz,sz,0,0,sz,sz);
+      const d=ctx.getImageData(0,0,sz,sz).data;
+      let lums=[],sum=0;
+      for(let i=0;i<d.length;i+=4){const l=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];lums.push(l);sum+=l}
+      const mean=sum/lums.length;
+      skinVariance=Math.sqrt(lums.reduce((a,v)=>a+(v-mean)**2,0)/lums.length);
+    }
+  }catch(e){}
+
+  // Multi-feature age model (empirically tuned)
+  // Base age ~30, adjust based on features
+  let ageEst=30;
+  ageEst += (noseRatio-0.17)*200;       // longer nose = older (+/- 8yr)
+  ageEst += (lowerRatio-0.55)*80;       // more lower face = older (+/- 6yr)
+  ageEst += (foreheadRatio-0.36)*-60;   // less forehead = older
+  ageEst += (fwRatio-0.72)*40;          // wider = older
+  ageEst += (0.44-eyeFaceRatio)*80;     // smaller eye ratio = older
+  ageEst += (mouthChinRatio-0.18)*60;   // longer chin area = older
+  ageEst += Math.min(skinVariance*0.3, 15); // skin texture adds age
+
+  // Beard adjustment: beard occlusion means chin/jaw features are unreliable
+  // Don't penalize age for lower-face texture when bearded
+  const occ=state.occlusion||{beard:false,beardConf:0};
+  if(occ.beard){
+    // Reduce weight of lower-face features, increase upper-face weight
+    ageEst=30;
+    ageEst += (noseRatio-0.17)*250;       // nose is still visible above beard
+    ageEst += (foreheadRatio-0.36)*-80;   // forehead reliable
+    ageEst += (fwRatio-0.72)*50;          // face width reliable
+    ageEst += (0.44-eyeFaceRatio)*100;    // eye ratio reliable
+    ageEst += Math.min(skinVariance*0.4, 18); // forehead texture reliable
+  }
+
+  ageEst=Math.max(18,Math.min(75,ageEst));
+
+  state.ageEstimates.push(ageEst);if(state.ageEstimates.length>90)state.ageEstimates.shift();
+  const avgAge=Math.round(state.ageEstimates.reduce((a,b)=>a+b,0)/state.ageEstimates.length);
+  $('est-age').textContent=avgAge;
+  const confSamples=Math.min(state.ageEstimates.length,90);
+  // Confidence based on variance of estimates
+  const ageVar=state.ageEstimates.length>5?Math.sqrt(state.ageEstimates.reduce((a,v)=>a+(v-avgAge)**2,0)/state.ageEstimates.length):10;
+  const ageConf=Math.max(20,Math.min(85, 90-ageVar*3));
+  const ageRange=Math.max(3,Math.round(ageVar*1.5));
+  $('age-range').textContent=(avgAge-ageRange)+'–'+(avgAge+ageRange);
+  $('age-conf').textContent=Math.round(ageConf)+'%'; $('age-conf-bar').style.width=ageConf+'%';
+
+  // --- GENDER ESTIMATION (multi-feature) ---
+  // Masculine features: wider jaw relative to cheeks, thicker brow ridge, larger nose, squarer face
+  const jawL=mesh[172],jawR=mesh[397];
+  const jawWidth=jawL&&jawR?Math.sqrt((jawL[0]-jawR[0])**2+(jawL[1]-jawR[1])**2):faceW;
+  const jawToFaceRatio=jawWidth/(faceW||1); // higher = more masculine (~0.7-0.95)
+
+  // Brow ridge thickness (brow-to-eye distance)
+  const lBrow=mesh[65],lEye=mesh[159];
+  const browDist=lBrow&&lEye?Math.abs(lBrow[1]-lEye[1])/(faceH||1):0;
+
+  // Nose width
+  const noseL=mesh[48],noseR=mesh[278];
+  const noseWidth=noseL&&noseR?Math.sqrt((noseL[0]-noseR[0])**2+(noseL[1]-noseR[1])**2):0;
+  const noseWidthRatio=noseWidth/(faceW||1);
+
+  // Face shape squareness
+  const squareness=fwRatio; // squarer face = more masculine
+
+  let mascScore=50; // start neutral
+  mascScore += (jawToFaceRatio-0.82)*150;   // jaw prominence
+  mascScore += (browDist-0.045)*500;         // brow ridge
+  mascScore += (noseWidthRatio-0.22)*200;   // nose width
+  mascScore += (squareness-0.72)*100;        // face squareness
+  mascScore += (noseRatio-0.17)*150;         // nose length
+  mascScore=Math.max(10,Math.min(90,mascScore));
+
+  state.genderScores.push(mascScore);if(state.genderScores.length>90)state.genderScores.shift();
+  const avgGS=state.genderScores.reduce((a,b)=>a+b,0)/state.genderScores.length;
+  $('gender-est').textContent=avgGS>55?'MASCULINE':avgGS<45?'FEMININE':'ANDROGYNOUS';
+  $('gender-ratio').textContent=Math.round(avgGS)+'/'+Math.round(100-avgGS);
+  $('gender-bar').style.width=avgGS+'%';
+
+  // Skin tone from cheek
+  try{
+    const ck=mesh[205];
+    if(ck){
+      const tc=document.createElement('canvas'),ctx=tc.getContext('2d'),s=20;tc.width=s;tc.height=s;
+      ctx.drawImage(video,ck[0]-s/2,ck[1]-s/2,s,s,0,0,s,s);
+      const d=ctx.getImageData(0,0,s,s).data;
+      let r=0,g=0,b=0,px=0;for(let i=0;i<d.length;i+=4){r+=d[i];g+=d[i+1];b+=d[i+2];px++}
+      r=Math.round(r/px);g=Math.round(g/px);b=Math.round(b/px);
+      $('skin-swatch').style.background=`rgb(${r},${g},${b})`;
+      $('skin-tone').textContent=`R${r} G${g} B${b}`;
+    }
+  }catch(e){}
+
+  // Distance to camera
+  const focalPx=640; const avgEyeDistMM=63;
+  const distCM=Math.round((avgEyeDistMM*focalPx)/(eyeDist||1)/10);
+  $('dist-camera').textContent=distCM+' cm';
+}
+
+// ============ MOD 10: RESPIRATION (TUNED) ============
+function updateRespiration(mesh,now){
+  // Track chin AND nose tip Y — use their mean to reduce noise
+  // Also fuse rPPG amplitude modulation (breathing modulates blood flow signal)
+  const chin=mesh[152],nose=mesh[4];
+  if(!chin||!nose)return;
+
+  // Primary signal: facial landmark vertical motion
+  const signalY=(chin[1]*0.6+nose[1]*0.4); // weight chin more (closer to chest motion)
+
+  // Secondary signal: rPPG green channel amplitude envelope
+  let rppgEnvelope=0;
+  if(state.rppgBuffer.length>10){
+    const last10=state.rppgBuffer.slice(-10);
+    const gVals=last10.map(s=>s.g);
+    const gMean=gVals.reduce((a,b)=>a+b,0)/gVals.length;
+    rppgEnvelope=Math.sqrt(gVals.reduce((a,v)=>a+(v-gMean)**2,0)/gVals.length);
+  }
+
+  // Fuse: combine landmark Y with rPPG envelope
+  state.respBuffer.push({time:now,y:signalY,env:rppgEnvelope});
+  if(state.respBuffer.length>state.respMaxSamples)state.respBuffer.shift();
+
+  if(state.respBuffer.length<90)return; // need more data for resp rate
+
+  // Detrend with larger window for slower resp signal
+  const raw=state.respBuffer.map(s=>s.y),ws=50,det=[];
+  for(let i=0;i<raw.length;i++){let s=Math.max(0,i-ws),e=Math.min(raw.length,i+ws),sm=0;for(let j=s;j<e;j++)sm+=raw[j];det.push(raw[i]-sm/(e-s))}
+
+  // Low-pass: simple moving average over 5 samples to remove high-freq jitter
+  const smoothed=[];
+  for(let i=0;i<det.length;i++){
+    let s=Math.max(0,i-2),e=Math.min(det.length,i+3),sm=0;
+    for(let j=s;j<e;j++)sm+=det[j];
+    smoothed.push(sm/(e-s));
+  }
+
+  // Peak detection with minimum prominence
+  const stdDev=Math.sqrt(smoothed.reduce((a,v)=>a+v*v,0)/smoothed.length);
+  const minProm=stdDev*0.3; // adaptive threshold
+
+  const peaks=[];
+  for(let i=4;i<smoothed.length-4;i++){
+    if(smoothed[i]>smoothed[i-1]&&smoothed[i]>smoothed[i-2]&&
+       smoothed[i]>smoothed[i+1]&&smoothed[i]>smoothed[i+2]&&
+       smoothed[i]>minProm) peaks.push(i);
+  }
+
+  if(peaks.length>=2){
+    const iv=[];
+    for(let i=1;i<peaks.length;i++){
+      const dt=state.respBuffer[peaks[i]].time-state.respBuffer[peaks[i-1]].time;
+      if(dt>2000&&dt<12000)iv.push(dt); // 5-30 BrPM range
+    }
+    if(iv.length>=1){
+      const avgIv=iv.reduce((a,b)=>a+b,0)/iv.length;
+      let rr=60000/avgIv;
+      rr=Math.max(6,Math.min(28,rr));
+      state.respRateHistory.push(rr);if(state.respRateHistory.length>12)state.respRateHistory.shift();
+      const smoothRR=Math.round(state.respRateHistory.reduce((a,b)=>a+b,0)/state.respRateHistory.length);
+      $('resp-rate').textContent=smoothRR+' BrPM';
+
+      const amp=smoothed.length>0?Math.max(...smoothed.map(Math.abs)):0;
+      const maxAmp=Math.max(stdDev*3, 0.5);
+      const depth=Math.min(Math.round(amp/maxAmp*100),100);
+      $('breath-depth').textContent=depth+'%'; $('breath-depth-bar').style.width=depth+'%';
+
+      // Phase: use slope over last ~10 samples for stable direction
+      const windowEnd=smoothed.length-1;
+      const windowStart=Math.max(0,windowEnd-10);
+      let rising=0,falling=0;
+      for(let i=windowStart+1;i<=windowEnd;i++){
+        if(smoothed[i]>smoothed[i-1]) rising++;
+        else falling++;
+      }
+      const phase=rising>falling?'INHALE':'EXHALE';
+      // Only show phase if we have some resp rate confidence
+      if(state.respRateHistory.length>0){
+        $('resp-phase').textContent=phase;
+        $('resp-phase').className='data-value '+(phase==='INHALE'?'highlight':'orange');
+      }
+
+      if(iv.length>=2){
+        const ivStd=Math.sqrt(iv.map(x=>(x-avgIv)**2).reduce((a,b)=>a+b,0)/iv.length);
+        const reg=Math.max(0,Math.min(100,Math.round((1-ivStd/avgIv)*100)));
+        $('resp-regularity').textContent=reg+'%'; $('resp-reg-bar').style.width=reg+'%';
+      }
+    }
+  }
+}
+
+function drawRespWaveform(){
+  if(!respCtx)return;
+  const w=respCanvasEl.width,h=respCanvasEl.height;
+  respCtx.fillStyle='#060c14';respCtx.fillRect(0,0,w,h);
+  respCtx.strokeStyle='#00e5ff10';respCtx.lineWidth=.5;
+  for(let y=0;y<h;y+=8){respCtx.beginPath();respCtx.moveTo(0,y);respCtx.lineTo(w,y);respCtx.stroke()}
+
+  const buf=state.respBuffer;if(buf.length<2)return;
+  const raw=buf.map(s=>s.y),ws=50,det=[];
+  for(let i=0;i<raw.length;i++){let s=Math.max(0,i-ws),e=Math.min(raw.length,i+ws),sm=0;for(let j=s;j<e;j++)sm+=raw[j];det.push(raw[i]-sm/(e-s))}
+  // Smooth for display
+  const disp=[];
+  for(let i=0;i<det.length;i++){let s=Math.max(0,i-2),e=Math.min(det.length,i+3),sm=0;for(let j=s;j<e;j++)sm+=det[j];disp.push(sm/(e-s))}
+  const mx=Math.max(...disp.map(Math.abs),0.1);
+
+  respCtx.beginPath();respCtx.strokeStyle='#ff9100';respCtx.lineWidth=1.5;respCtx.shadowColor='#ff9100';respCtx.shadowBlur=3;
+  disp.forEach((v,i)=>{const x=(i/state.respMaxSamples)*w,y=h/2-(v/mx)*(h*.4);i===0?respCtx.moveTo(x,y):respCtx.lineTo(x,y)});
+  respCtx.stroke();respCtx.shadowBlur=0;
+}
+
+// ============ MOD 11: STRESS & WELLNESS (TUNED) ============
+function updateStressWellness(now){
+  const hrv=state.hrvHistory.length>0?state.hrvHistory.reduce((a,b)=>a+b,0)/state.hrvHistory.length:50;
+  const blinkRate=state.blinkTimestamps.filter(t=>now-t<60000).length;
+  const motion=state.motionHistory.length>0?state.motionHistory.reduce((a,b)=>a+b,0)/state.motionHistory.length:0;
+  const au=state._au||{squint:0,frown:0};
+  const att=state.attentionScore;
+
+  // --- STRESS INDEX ---
+  // Low HRV is the strongest stress indicator
+  // Normal resting HRV RMSSD: 20-100ms. Under stress: <20ms
+  const hrvStress=hrv>0?Math.max(0, (60-hrv)/60*50):25; // 0-50 contribution
+  // High blink rate (>20/min) suggests stress
+  const blinkStress=Math.max(0, (blinkRate-14)*2); // 0-20 contribution
+  // Facial tension (frown + squint)
+  const facialStress=(au.frown*0.15 + au.squint*0.1); // 0-25 contribution
+  // Motion restlessness
+  const motionStress=Math.min(motion*2, 15); // 0-15 contribution
+
+  let stress=Math.max(0,Math.min(100, hrvStress + blinkStress + facialStress + motionStress));
+  state.stressHistory.push(stress);if(state.stressHistory.length>180)state.stressHistory.shift();
+  const avgStress=Math.round(state.stressHistory.reduce((a,b)=>a+b,0)/state.stressHistory.length);
+  $('stress-val').textContent=avgStress+'%'; $('stress-bar').style.width=avgStress+'%';
+  const sc=avgStress>60?'alert':avgStress>35?'warn':'good';
+  $('stress-bar').className='bar-fill '+sc; $('stress-val').className='data-value '+sc;
+
+  // --- COGNITIVE LOAD ---
+  // Blink suppression (focused people blink less)
+  const blinkSuppression=Math.max(0, (15-blinkRate)*3); // less blinking = more load
+  // Gaze stability (looking at one point = processing)
+  const gazeStable=$('gaze-dir').textContent.includes('CENTER')?15:0;
+  // Squint (concentration)
+  const concentrationSquint=au.squint*0.3;
+
+  const cogLoad=Math.max(0,Math.min(100, blinkSuppression + gazeStable + concentrationSquint + motion*-3));
+  $('cogload-val').textContent=Math.round(cogLoad)+'%'; $('cogload-bar').style.width=cogLoad+'%';
+
+  // --- FATIGUE INDEX ---
+  const drowsyText=$('drowsiness').textContent;
+  const drowsyScore=drowsyText==='HIGH'?40:drowsyText==='MODERATE'?20:0;
+  const attFatigue=Math.max(0, (70-att)*0.4); // low attention = fatigued
+  const blinkFatigue=Math.max(0, (blinkRate-18)*1.5); // excessive blinking
+  let fatigue=Math.max(0,Math.min(100, drowsyScore + attFatigue + blinkFatigue));
+  $('fatigue-val').textContent=Math.round(fatigue)+'%'; $('fatigue-bar').style.width=fatigue+'%';
+  const fc=fatigue>50?'alert':fatigue>25?'warn':'good';
+  $('fatigue-bar').className='bar-fill '+fc; $('fatigue-val').className='data-value '+fc;
+
+  // --- WELLNESS (composite inverse) ---
+  const wellness=Math.max(0,Math.min(100, 100 - avgStress*0.35 - fatigue*0.35 - Math.max(0,30-att)*0.3));
+  $('wellness-val').textContent=Math.round(wellness)+'%'; $('wellness-bar').style.width=wellness+'%';
+  const wc=wellness>60?'good':wellness>35?'warn':'alert';
+  $('wellness-bar').className='bar-fill '+wc; $('wellness-val').className='data-value '+wc;
+
+  // --- BP ESTIMATE (HR + HRV based, anchored to population norms) ---
+  if(state.currentHR>0){
+    // Systolic: base 115, modulated by HR and HRV
+    const sys=Math.round(115 + (state.currentHR-70)*0.4 - (hrv-40)*0.1);
+    const dia=Math.round(75 + (state.currentHR-70)*0.2 - (hrv-40)*0.05);
+    $('bp-est').textContent=Math.max(90,Math.min(160,sys))+'/'+Math.max(55,Math.min(100,dia))+' mmHg';
+  }
+
+  // --- SpO2 (AC/DC ratio from rPPG) ---
+  if(state.rppgBuffer.length>60){
+    const recent=state.rppgBuffer.slice(-60);
+    // AC component: variation (std dev) of each channel
+    const rVals=recent.map(s=>s.r), gVals=recent.map(s=>s.g);
+    const rMean=rVals.reduce((a,b)=>a+b,0)/rVals.length;
+    const gMean=gVals.reduce((a,b)=>a+b,0)/gVals.length;
+    const rAC=Math.sqrt(rVals.reduce((a,v)=>a+(v-rMean)**2,0)/rVals.length);
+    const gAC=Math.sqrt(gVals.reduce((a,v)=>a+(v-gMean)**2,0)/gVals.length);
+    // Ratio of ratios: (AC_red/DC_red) / (AC_green/DC_green)
+    const rRatio=(rAC/(rMean||1))/(gAC/(gMean||1)||1);
+    // SpO2 ≈ 110 - 25 * ratio (empirical approximation)
+    let spo2=Math.round(Math.max(88,Math.min(100, 110-25*rRatio)));
+    $('spo2-val').textContent=spo2+'%'; $('spo2-bar').style.width=spo2+'%';
+    const spc=spo2>=95?'good':spo2>=90?'warn':'alert';
+    $('spo2-bar').className='bar-fill '+spc; $('spo2-val').className='data-value '+spc;
+  }
+}
+
+// ============ MOD 12: SKIN ANALYSIS (TUNED) ============
+function updateSkinAnalysis(mesh){
+  const regions=[mesh[205],mesh[425],mesh[151]]; // right cheek, left cheek, forehead
+  let rT=0,gT=0,bT=0,count=0;
+  const samples=[];
+
+  try{
+    for(const pt of regions){
+      if(!pt)continue;
+      const tc=document.createElement('canvas'),ctx=tc.getContext('2d'),s=20;tc.width=s;tc.height=s;
+      ctx.drawImage(video,pt[0]-s/2,pt[1]-s/2,s,s,0,0,s,s);
+      const d=ctx.getImageData(0,0,s,s).data;
+      let r=0,g=0,b=0,px=0;
+      for(let i=0;i<d.length;i+=4){r+=d[i];g+=d[i+1];b+=d[i+2];px++}
+      r/=px;g/=px;b/=px;
+      samples.push({r,g,b});rT+=r;gT+=g;bT+=b;count++;
+    }
+  }catch(e){return}
+
+  if(count===0)return;
+  const rA=rT/count,gA=gT/count,bA=bT/count;
+
+  // Luminance (perceptual)
+  const lum=(0.299*rA+0.587*gA+0.114*bA)/255*100;
+  $('skin-lum').textContent=Math.round(lum)+'%'; $('skin-lum-bar').style.width=lum+'%';
+
+  // Hue (proper HSL conversion)
+  const rN=rA/255,gN=gA/255,bN=bA/255;
+  const cMax=Math.max(rN,gN,bN),cMin=Math.min(rN,gN,bN),delta=cMax-cMin;
+  let hue=0;
+  if(delta>0.001){
+    if(cMax===rN)hue=60*(((gN-bN)/delta)%6);
+    else if(cMax===gN)hue=60*((bN-rN)/delta+2);
+    else hue=60*((rN-gN)/delta+4);
+    if(hue<0)hue+=360;
+  }
+  $('skin-hue').textContent=Math.round(hue)+'°';
+
+  // Redness: how much R exceeds the average of G and B, relative to overall brightness
+  const gbAvg=(gA+bA)/2;
+  const redness=Math.max(0,Math.min(100, (rA-gbAvg)/(rA||1)*300));
+  $('redness-val').textContent=Math.round(redness)+'%'; $('redness-bar').style.width=redness+'%';
+
+  // Uniformity: coefficient of variation across sample regions
+  if(samples.length>=2){
+    let totalDiff=0;
+    for(let i=0;i<samples.length;i++){
+      for(let j=i+1;j<samples.length;j++){
+        totalDiff+=Math.abs(samples[i].r-samples[j].r)+Math.abs(samples[i].g-samples[j].g)+Math.abs(samples[i].b-samples[j].b);
+      }
+    }
+    const pairs=samples.length*(samples.length-1)/2;
+    totalDiff/=pairs;
+    const uniformity=Math.max(0,Math.min(100, 100-totalDiff*0.8));
+    $('uniformity-val').textContent=Math.round(uniformity)+'%'; $('uniformity-bar').style.width=uniformity+'%';
+  }
+
+  // Color temperature: correlated color temp from R/B ratio
+  const rbRatio=rA/(bA||1);
+  // Warm light (incandescent ~2700K): R>>B, rbRatio ~2.0+
+  // Cool light (daylight ~6500K): R≈B, rbRatio ~1.0-1.3
+  const temp=Math.round(Math.max(2500,Math.min(8000, 8000 - rbRatio*2500)));
+  $('color-temp').textContent=temp+'K';
+
+  $('cheek-swatch').style.background=`rgb(${Math.round(rA)},${Math.round(gA)},${Math.round(bA)})`;
+  $('cheek-rgb').textContent=`${Math.round(rA)}/${Math.round(gA)}/${Math.round(bA)}`;
+}
+
+// ============ MOD 07: SESSION ============
+function updateSession(){
+  if(state.hrCount>0){$('avg-hr').textContent=Math.round(state.hrSum/state.hrCount)+' BPM';$('hr-range').textContent=state.hrMin+' / '+state.hrMax}
+  const vp=state.frameCount>0?Math.round(state.faceVisibleFrames/state.frameCount*100):0;
+  $('face-visible-pct').textContent=vp+'%'; $('visible-bar').style.width=vp+'%';
+  if(state.attentionHistory.length>0)$('avg-attention').textContent=Math.round(state.attentionHistory.reduce((a,b)=>a+b,0)/state.attentionHistory.length)+'%';
+  // Average dominant emotion
+  if(state.emotionHistory.length>10){
+    const last=state.emotionHistory.slice(-30);
+    const avgE={happy:0,sad:0,angry:0,surprise:0,neutral:0};
+    last.forEach(d=>{for(const k in avgE)avgE[k]+=d[k]});
+    let dom='NEUTRAL',domV=0;for(const k in avgE){if(avgE[k]>domV){domV=avgE[k];dom=k.toUpperCase()}}
+    $('avg-emotion').textContent=dom;
+  }
+}
+
+// ============ DEMO MODE ============
+function runDemoMode(){
+  log('Demo mode — simulated biometrics','warn');
+  function tick(){
+    state.frameCount++;const now=performance.now();
+    state.fpsFrames.push(now);state.fpsFrames=state.fpsFrames.filter(t=>now-t<1000);
+    $('fps-display').textContent=state.fpsFrames.length+' FPS';$('total-frames').textContent=state.frameCount;
+    const el=Math.floor((Date.now()-state.startTime)/1000);
+    $('uptime').textContent=String(Math.floor(el/3600)).padStart(2,'0')+':'+String(Math.floor((el%3600)/60)).padStart(2,'0')+':'+String(el%60).padStart(2,'0');
+    const t=now/1000;
+
+    // MOD 01
+    $('face-status').textContent='LOCKED (DEMO)';$('face-status').className='data-value warn';
+    $('face-count').textContent='1';$('face-bbox').textContent='180,60 280×320';
+    $('face-area').textContent='29%';$('face-area-bar').style.width='58%';
+    $('confidence').textContent='94%';$('confidence-bar').style.width='94%';
+
+    // MOD 02
+    const hr=68+Math.sin(t*.1)*5+(Math.random()-.5)*3;state.currentHR=Math.round(hr);
+    $('heart-rate').textContent=state.currentHR+' BPM';
+    $('hrv').textContent=Math.round(42+Math.sin(t*.05)*15)+' ms';
+    $('signal-quality').textContent='65%';$('signal-bar').style.width='65%';$('signal-bar').className='bar-fill good';
+    $('rgb-channels').textContent=Math.round(145+Math.sin(t)*3)+'/'+Math.round(112+Math.sin(t*1.2)*2)+'/'+Math.round(98+Math.sin(t*.8)*2);
+    $('forehead-region').textContent='310,85 40×40';$('rppg-samples').textContent='300/300';
+    state.rppgBuffer.push({time:now,g:128+Math.sin(t*6)*3+Math.sin(t*1.1)*8+(Math.random()-.5)*2,r:145+Math.sin(t*.8)*3,b:98+Math.sin(t*.6)*2});
+    if(state.rppgBuffer.length>300)state.rppgBuffer.shift();drawWaveform();
+
+    // MOD 03
+    $('yaw-val').textContent=Math.round(Math.sin(t*.3)*8)+'°';$('pitch-val').textContent=Math.round(Math.sin(t*.2)*5)+'°';$('roll-val').textContent=Math.round(Math.sin(t*.15)*3)+'°';
+    $('yaw-bar').style.width=(50+Math.sin(t*.3)*15)+'%';$('pitch-bar').style.width=(50+Math.sin(t*.2)*10)+'%';$('roll-bar').style.width=(50+Math.sin(t*.15)*8)+'%';
+    $('face-cxy').textContent=Math.round(320+Math.sin(t*.3)*20)+', '+Math.round(240+Math.sin(t*.2)*15);
+    $('motion-val').textContent=(1.2+Math.random()*.8).toFixed(1);$('motion-bar').style.width=(15+Math.random()*10)+'%';
+    $('posture').textContent='GOOD';$('posture').className='data-value good';$('gaze-dir').textContent='CENTER';
+
+    // MOD 04
+    $('landmark-count').textContent='468';
+    $('leye-val').textContent=(.27+Math.sin(t*.5)*.03).toFixed(3);$('leye-bar').style.width='75%';
+    $('reye-val').textContent=(.26+Math.sin(t*.5)*.03).toFixed(3);$('reye-bar').style.width='73%';
+    $('eye-distance').textContent='118px';$('eyedist-bar').style.width='59%';
+    $('nose-mouth-dist').textContent='73px';$('face-symmetry').textContent='94%';$('symmetry-bar').style.width='94%';
+
+    // MOD 05
+    $('blink-rate').textContent=Math.round(14+Math.sin(t*.1)*3)+' /min';
+    $('last-blink').textContent=(1.2+Math.random()*3).toFixed(1)+'s ago';
+    $('ear-val').textContent=(.27+Math.sin(t*.5)*.02).toFixed(3);$('ear-bar').style.width='72%';
+    $('attention-score').textContent=Math.round(85+Math.sin(t*.08)*10)+'%';$('attention-bar').style.width=(85+Math.sin(t*.08)*10)+'%';
+    $('engagement').textContent='HIGH';$('engagement').className='data-value good';
+    $('drowsiness').textContent='LOW';$('drowsiness').className='data-value good';
+    $('total-blinks').textContent=Math.floor(t/4);
+
+    // MOD 06
+    $('mouth-open-val').textContent=Math.round(5+Math.max(0,Math.sin(t*2)*15))+'%';$('mouth-open-bar').style.width=(5+Math.max(0,Math.sin(t*2)*15))+'%';
+    $('brow-val').textContent=Math.round(10+Math.max(0,Math.sin(t*.4)*20))+'%';$('brow-bar').style.width=(10+Math.max(0,Math.sin(t*.4)*20))+'%';
+    $('smile-val').textContent=Math.round(20+Math.sin(t*.3)*15)+'%';$('smile-bar').style.width=(20+Math.sin(t*.3)*15)+'%';
+    $('squint-val').textContent=Math.round(8+Math.random()*5)+'%';$('squint-bar').style.width=(8+Math.random()*5)+'%';
+    $('expression-state').textContent='NEUTRAL';
+
+    // MOD 08: Emotions demo
+    const dHappy=35+Math.sin(t*.15)*20,dNeutral=40-Math.sin(t*.15)*15,dSad=5+Math.sin(t*.08)*5,dAngry=3+Math.random()*2,dSurp=8+Math.sin(t*.3)*8,dFear=2+Math.random(),dDisg=2+Math.random();
+    $('emo-happy').style.width=dHappy+'%';$('emo-happy-pct').textContent=Math.round(dHappy)+'%';
+    $('emo-neutral').style.width=dNeutral+'%';$('emo-neutral-pct').textContent=Math.round(dNeutral)+'%';
+    $('emo-sad').style.width=dSad+'%';$('emo-sad-pct').textContent=Math.round(dSad)+'%';
+    $('emo-angry').style.width=dAngry+'%';$('emo-angry-pct').textContent=Math.round(dAngry)+'%';
+    $('emo-surprise').style.width=dSurp+'%';$('emo-surprise-pct').textContent=Math.round(dSurp)+'%';
+    $('emo-fear').style.width=dFear+'%';$('emo-fear-pct').textContent=Math.round(dFear)+'%';
+    $('emo-disgust').style.width=dDisg+'%';$('emo-disgust-pct').textContent=Math.round(dDisg)+'%';
+    $('emotion-dominant').textContent=dHappy>dNeutral?'HAPPY':'NEUTRAL';
+    $('valence-val').textContent=(.3+Math.sin(t*.1)*.2).toFixed(2);$('valence-bar').style.width=(65+Math.sin(t*.1)*10)+'%';
+    $('arousal-val').textContent=(.35+Math.sin(t*.15)*.15).toFixed(2);$('arousal-bar').style.width=(35+Math.sin(t*.15)*15)+'%';
+    state.emotionHistory.push({t:now,happy:dHappy,sad:dSad,angry:dAngry,surprise:dSurp,neutral:dNeutral});
+    if(state.emotionHistory.length>150)state.emotionHistory.shift();
+    drawEmotionSparkline();
+
+    // MOD 09: Demographics demo
+    $('est-age').textContent='34';$('age-range').textContent='30–38';$('age-conf').textContent='82%';$('age-conf-bar').style.width='82%';
+    $('gender-est').textContent='MASCULINE';$('gender-ratio').textContent='62/38';$('gender-bar').style.width='62%';
+    $('skin-tone').textContent='R185 G148 B128';$('skin-swatch').style.background='rgb(185,148,128)';
+    $('dist-camera').textContent='58 cm';
+
+    // MOD 10: Respiration demo
+    state.respBuffer.push({time:now,y:240+Math.sin(t*.4)*3+Math.sin(t*.8)*1+(Math.random()-.5)*.5});
+    if(state.respBuffer.length>300)state.respBuffer.shift();
+    $('resp-rate').textContent=Math.round(15+Math.sin(t*.05)*2)+' BrPM';
+    $('breath-depth').textContent=Math.round(55+Math.sin(t*.4)*15)+'%';$('breath-depth-bar').style.width=(55+Math.sin(t*.4)*15)+'%';
+    $('resp-phase').textContent=Math.sin(t*.4)>0?'EXHALE':'INHALE';$('resp-phase').className='data-value '+(Math.sin(t*.4)>0?'orange':'highlight');
+    $('resp-regularity').textContent='78%';$('resp-reg-bar').style.width='78%';
+    drawRespWaveform();
+
+    // MOD 11: Stress demo
+    const dStress=28+Math.sin(t*.07)*12;
+    $('stress-val').textContent=Math.round(dStress)+'%';$('stress-bar').style.width=dStress+'%';$('stress-bar').className='bar-fill good';$('stress-val').className='data-value good';
+    $('cogload-val').textContent=Math.round(42+Math.sin(t*.1)*10)+'%';$('cogload-bar').style.width=(42+Math.sin(t*.1)*10)+'%';
+    $('fatigue-val').textContent='18%';$('fatigue-bar').style.width='18%';$('fatigue-bar').className='bar-fill good';$('fatigue-val').className='data-value good';
+    $('wellness-val').textContent='76%';$('wellness-bar').style.width='76%';
+    $('bp-est').textContent='118/76 mmHg';
+    $('spo2-val').textContent='97%';$('spo2-bar').style.width='97%';
+
+    // MOD 12: Skin demo
+    $('skin-lum').textContent='62%';$('skin-lum-bar').style.width='62%';
+    $('skin-hue').textContent='22°';
+    $('redness-val').textContent='24%';$('redness-bar').style.width='24%';
+    $('uniformity-val').textContent='87%';$('uniformity-bar').style.width='87%';
+    $('color-temp').textContent='4200K';
+    $('cheek-swatch').style.background='rgb(185,148,128)';$('cheek-rgb').textContent='185/148/128';
+
+    // MOD 07: Session
+    state.hrSum+=state.currentHR;state.hrCount++;
+    state.hrMin=Math.min(state.hrMin===Infinity?hr:state.hrMin,hr);state.hrMax=Math.max(state.hrMax,hr);
+    $('avg-hr').textContent=Math.round(state.hrSum/state.hrCount)+' BPM';
+    $('hr-range').textContent=Math.round(state.hrMin)+' / '+Math.round(state.hrMax);
+    $('face-visible-pct').textContent='98%';$('visible-bar').style.width='98%';
+    $('avg-attention').textContent='84%';$('avg-emotion').textContent='HAPPY';
+
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+// ============ SETTINGS SYSTEM ============
+const settings = {
+  emoSensitivity: 100,
+  blinkSensitivity: 100,
+  neutralThreshold: 20,
+  emoSmoothing: 8,
+  rppgSmoothing: 10,
+  lighting: 'auto',
+  distance: 'auto',
+  showMesh: true,
+  showBbox: true
+};
+
+function toggleSettings(){
+  const o=$('settings-overlay');
+  o.classList.toggle('visible');
+}
+
+function updateSettingVal(el){
+  const valEl=$( el.id+'-val');
+  if(valEl) valEl.textContent=el.id.includes('thresh')||el.id.includes('smooth')?el.value:el.value+'%';
+  // Apply live
+  settings.emoSensitivity=parseInt($('set-emo-sens').value);
+  settings.blinkSensitivity=parseInt($('set-blink-sens').value);
+  settings.neutralThreshold=parseInt($('set-neutral-thresh').value);
+  settings.emoSmoothing=parseInt($('set-emo-smooth').value);
+  settings.rppgSmoothing=parseInt($('set-rppg-smooth').value);
+}
+
+function applyPreset(){
+  settings.lighting=$('set-lighting').value;
+  settings.distance=$('set-distance').value;
+  log('Preset: '+settings.lighting+' / '+settings.distance,'info');
+}
+
+// ============ CALIBRATION WIZARD ============
+const calibSteps = [
+  { icon:'😐', label:'NEUTRAL FACE', desc:'Look at the camera with a relaxed, neutral expression. Keep still.', key:'neutral' },
+  { icon:'😊', label:'SMILE', desc:'Give a natural smile — as if someone just told a good joke.', key:'happy' },
+  { icon:'😮', label:'SURPRISED', desc:'Open your eyes wide and raise your eyebrows, mouth slightly open.', key:'surprise' },
+  { icon:'😠', label:'ANGRY / TENSE', desc:'Furrow your brow, squint slightly, tighten your jaw.', key:'angry' },
+  { icon:'😢', label:'SAD', desc:'Frown — pull the corners of your mouth down, lower your brow.', key:'sad' },
+  { icon:'😑', label:'EYES CLOSED', desc:'Close your eyes gently for the full duration.', key:'eyesClosed' }
+];
+let calibState = { active:false, step:0, timer:0, samples:[], results:{} };
+
+function startCalibration(){
+  toggleSettings(); // close settings if open
+  calibState={active:true,step:0,timer:0,samples:[],results:{}};
+  $('calib-overlay').classList.add('visible');
+  runCalibStep();
+}
+
+function cancelCalibration(){
+  calibState.active=false;
+  $('calib-overlay').classList.remove('visible');
+  log('Calibration cancelled','warn');
+}
+
+function runCalibStep(){
+  if(calibState.step>=calibSteps.length){
+    finishCalibration();
+    return;
+  }
+  const step=calibSteps[calibState.step];
+  $('calib-icon').textContent=step.icon;
+  $('calib-instruction').textContent=step.desc;
+  $('calib-step-status').textContent=`STEP ${calibState.step+1} / ${calibSteps.length}: ${step.label}`;
+  $('calib-progress-fill').style.width=(calibState.step/calibSteps.length*100)+'%';
+
+  // 3 second countdown then 3 seconds of capture
+  calibState.samples=[];
+  let countdown=3;
+  $('calib-countdown').textContent=countdown;
+
+  const cdInterval=setInterval(()=>{
+    countdown--;
+    if(countdown>0){
+      $('calib-countdown').textContent=countdown;
+    } else {
+      clearInterval(cdInterval);
+      $('calib-countdown').textContent='CAPTURING...';
+      // Capture for 3 seconds
+      const captureStart=performance.now();
+      const captureInterval=setInterval(()=>{
+        if(performance.now()-captureStart>3000){
+          clearInterval(captureInterval);
+          // Store calibration data for this step
+          calibState.results[step.key]={
+            au: calibState.samples.length>0 ?
+              Object.keys(calibState.samples[0]).reduce((acc,k)=>{
+                acc[k]=calibState.samples.reduce((s,v)=>s+v[k],0)/calibState.samples.length;
+                return acc;
+              },{}) : {},
+            earValues: calibState.samples.map(s=>s.ear||0.25),
+            count: calibState.samples.length
+          };
+          log('Calibrated: '+step.label+' ('+calibState.samples.length+' samples)','success');
+          calibState.step++;
+          calibState.samples=[];
+          runCalibStep();
+        }
+      },50);
+    }
+  },1000);
+}
+
+function captureCalibSample(){
+  if(!calibState.active||!state._au)return;
+  calibState.samples.push({...state._au});
+}
+
+function finishCalibration(){
+  calibState.active=false;
+  $('calib-overlay').classList.remove('visible');
+  $('calib-progress-fill').style.width='100%';
+
+  // Apply calibration results to state
+  const r=calibState.results;
+  if(r.neutral){
+    state.calibration={
+      neutralSmile: r.neutral.au.smile||0,
+      neutralBrow: r.neutral.au.browRaise||0,
+      neutralSquint: r.neutral.au.squint||0,
+      neutralFrown: r.neutral.au.frown||0,
+      neutralNoseWrinkle: r.neutral.au.noseWrinkle||0,
+      neutralEAR: r.neutral.earValues.length>0?r.neutral.earValues.reduce((a,b)=>a+b,0)/r.neutral.earValues.length:0.25,
+      happySmile: r.happy?r.happy.au.smile||20:20,
+      surpriseBrow: r.surprise?r.surprise.au.browRaise||30:30,
+      angrySquint: r.angry?r.angry.au.squint||25:25,
+      sadFrown: r.sad?r.sad.au.frown||15:15,
+      closedEAR: r.eyesClosed?r.eyesClosed.earValues.reduce((a,b)=>a+b,0)/(r.eyesClosed.earValues.length||1):0.15,
+      isCalibrated: true
+    };
+
+    // Set blink threshold from calibration
+    const openEAR=state.calibration.neutralEAR;
+    const closedEAR=state.calibration.closedEAR;
+    state.earThreshold=closedEAR+(openEAR-closedEAR)*0.4;
+    state.earOpenBaseline=openEAR;
+
+    log('Calibration complete — personal baselines stored','success');
+    // Show calibration status
+    $('calib-status-row').style.display='flex';
+    $('calib-status-text').textContent='CALIBRATED ('+Object.keys(r).length+' EXPRESSIONS)';
+
+    // Save to localStorage
+    try{ localStorage.setItem('biohud_calibration',JSON.stringify(state.calibration)); }catch(e){}
+  }
+}
+
+// Load saved calibration on startup
+function loadSavedCalibration(){
+  try{
+    const saved=localStorage.getItem('biohud_calibration');
+    if(saved){
+      state.calibration=JSON.parse(saved);
+      state.earThreshold=state.calibration.closedEAR+(state.calibration.neutralEAR-state.calibration.closedEAR)*0.4;
+      state.earOpenBaseline=state.calibration.neutralEAR;
+      log('Loaded saved calibration','success');
+      $('calib-status-row').style.display='flex';
+      $('calib-status-text').textContent='CALIBRATED (SAVED)';
+    }
+  }catch(e){}
+}
+
+function resetCalibration(){
+  state.calibration=null;
+  state.earBaseline=null;
+  state.earHistory=[];
+  state.noseBridgeCalibration=[];
+  state.earCalibration=[];
+  try{localStorage.removeItem('biohud_calibration')}catch(e){}
+  $('calib-status-row').style.display='none';
+  log('Calibration reset to defaults','warn');
+}
+
+// ============ DATA RECORDING ============
+let recordingState = { active:false, data:[], startTime:0 };
+
+function toggleRecording(){
+  if(recordingState.active){
+    recordingState.active=false;
+    $('btn-record').textContent='⏺ START RECORDING';
+    $('btn-record').classList.remove('recording');
+    $('tb-record').classList.remove('active');
+    $('recording-status').textContent='STOPPED ('+recordingState.data.length+' frames)';
+    $('recording-status').className='data-value warn';
+    log('Recording stopped: '+recordingState.data.length+' frames captured','warn');
+  } else {
+    recordingState={active:true,data:[],startTime:Date.now()};
+    $('btn-record').textContent='⏹ STOP RECORDING';
+    $('btn-record').classList.add('recording');
+    $('tb-record').classList.add('active');
+    $('recording-status').textContent='RECORDING';
+    $('recording-status').className='data-value alert';
+    log('Recording started','success');
+  }
+}
+
+function recordFrame(){
+  if(!recordingState.active)return;
+  const elapsed=Date.now()-recordingState.startTime;
+  recordingState.data.push({
+    t: elapsed,
+    hr: state.currentHR,
+    hrv: parseFloat($('hrv').textContent)||0,
+    signalQuality: state.signalQuality,
+    bpm: state.currentHR,
+    blinkRate: parseInt($('blink-rate').textContent)||0,
+    attention: Math.round(state.attentionScore),
+    ear: parseFloat($('ear-val').textContent)||0,
+    yaw: parseFloat($('yaw-val').textContent)||0,
+    pitch: parseFloat($('pitch-val').textContent)||0,
+    roll: parseFloat($('roll-val').textContent)||0,
+    emotions: {...state.emotionSmooth},
+    stress: parseInt($('stress-val').textContent)||0,
+    respRate: parseInt($('resp-rate').textContent)||0,
+    faceDetected: state.faceDetected?1:0
+  });
+  $('recorded-frames').textContent=recordingState.data.length;
+}
+
+function exportData(format){
+  if(recordingState.data.length===0){log('No data to export','warn');return}
+  const ts=new Date().toISOString().slice(0,19).replace(/[:-]/g,'');
+  let content,mime,ext;
+  if(format==='json'){
+    content=JSON.stringify({
+      meta:{exported:new Date().toISOString(),frames:recordingState.data.length,duration_ms:recordingState.data[recordingState.data.length-1].t,settings:{...settings},calibration:state.calibration||null},
+      data:recordingState.data
+    },null,2);
+    mime='application/json'; ext='json';
+  } else {
+    // CSV
+    const keys=['t','hr','hrv','signalQuality','blinkRate','attention','ear','yaw','pitch','roll','stress','respRate','faceDetected',
+      'emotions.happy','emotions.sad','emotions.angry','emotions.surprise','emotions.fear','emotions.disgust','emotions.neutral'];
+    const header=keys.join(',');
+    const rows=recordingState.data.map(d=>{
+      return keys.map(k=>{
+        if(k.startsWith('emotions.')){return (d.emotions[k.split('.')[1]]||0).toFixed(1)}
+        return d[k]||0;
+      }).join(',');
+    });
+    content=header+'\n'+rows.join('\n');
+    mime='text/csv'; ext='csv';
+  }
+  const blob=new Blob([content],{type:mime});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='biohud_'+ts+'.'+ext;
+  a.click();
+  log('Exported '+recordingState.data.length+' frames as '+ext.toUpperCase(),'success');
+}
+
+function importData(event){
+  const file=event.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const imported=JSON.parse(e.target.result);
+      if(imported.data&&Array.isArray(imported.data)){
+        recordingState.data=imported.data;
+        recordingState.startTime=Date.now()-imported.data[imported.data.length-1].t;
+        $('recorded-frames').textContent=imported.data.length;
+        $('recording-status').textContent='IMPORTED ('+imported.data.length+' frames)';
+        $('recording-status').className='data-value good';
+        if(imported.meta&&imported.meta.calibration){
+          state.calibration=imported.meta.calibration;
+          log('Imported '+imported.data.length+' frames + calibration','success');
+        } else {
+          log('Imported '+imported.data.length+' frames','success');
+        }
+      }
+    }catch(err){log('Import failed: '+err.message,'error')}
+  };
+  reader.readAsText(file);
+  event.target.value=''; // reset file input
+}
+
+init();
+</script>
+</body>
+</html>
