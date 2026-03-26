@@ -96,6 +96,20 @@ body{background:var(--bg-dark);color:var(--text-bright);font-family:'Share Tech 
 .init-title{font-family:'Orbitron',sans-serif;font-size:22px;color:var(--cyan);letter-spacing:8px;margin-bottom:25px}
 .init-progress{width:300px;height:2px;background:#0a1520;border:1px solid var(--border);margin-bottom:14px}
 .init-progress-fill{height:100%;background:var(--cyan);width:0%;transition:width .3s ease;box-shadow:0 0 10px var(--cyan-glow)}
+/* Module controls: toggle, info, drag handle */
+.module-controls{display:flex;gap:4px;align-items:center}
+.mod-btn{background:none;border:none;color:var(--text-dim);font-size:10px;cursor:pointer;padding:1px 3px;line-height:1}
+.mod-btn:hover{color:var(--cyan)}
+.mod-btn.off{opacity:0.4}
+.module.disabled{opacity:0.25;pointer-events:none;max-height:28px;overflow:hidden}
+.module.disabled .module-header{margin-bottom:0;padding-bottom:0;border-bottom:none}
+.mod-drag{cursor:grab;color:var(--text-dim);font-size:10px;user-select:none}
+.mod-drag:active{cursor:grabbing}
+
+/* Info tooltip */
+.mod-info-popup{display:none;position:absolute;top:100%;left:0;right:0;z-index:100;background:var(--bg-dark);border:1px solid var(--cyan);padding:8px 10px;font-size:10px;color:var(--text-mid);line-height:1.5;max-height:200px;overflow-y:auto}
+.mod-info-popup.visible{display:block}
+
 /* Settings Panel */
 .settings-overlay{position:fixed;inset:0;background:rgba(10,14,20,0.92);z-index:500;display:none;overflow-y:auto;padding:30px}
 .settings-overlay.visible{display:flex;justify-content:center;align-items:flex-start}
@@ -528,7 +542,7 @@ async function init(){
   pFill.style.width='100%'; pStat.textContent='ALL SYSTEMS NOMINAL';
   log('HUD v2 initialized — 12 modules online','success');
   loadSavedCalibration();
-  setTimeout(()=>{ $('init-overlay').classList.add('hidden'); $('hud-container').style.opacity='1'; requestAnimationFrame(loop); },700);
+  setTimeout(()=>{ $('init-overlay').classList.add('hidden'); $('hud-container').style.opacity='1'; initModuleControls(); requestAnimationFrame(loop); },700);
 }
 
 function initCanvases(){
@@ -672,7 +686,8 @@ function detectOcclusions(mesh){
       // Use median of history for stability
       const sorted=[...occ.beardHistory].sort((a,b)=>a-b);
       occ.beardConf=sorted[Math.floor(sorted.length*0.5)];
-      occ.beard=occ.beardConf>35;
+      occ.beard=occ.beardConf>50; // threshold: 50+ = beard detected
+      if(occ.beardHistory.length===30) log(`Beard detection: conf=${Math.round(occ.beardConf)}% dark=${darkerChin.toFixed(1)} rough=${rougherChin.toFixed(1)} color=${differentColor.toFixed(1)} red=${lessRed.toFixed(1)}`,'info');
     }
   }catch(e){}
 
@@ -1294,28 +1309,36 @@ function updateDemographics(mesh,now){
     }
   }catch(e){}
 
-  // Multi-feature age model (empirically tuned)
-  // Base age ~30, adjust based on features
-  let ageEst=30;
-  ageEst += (noseRatio-0.17)*200;       // longer nose = older (+/- 8yr)
-  ageEst += (lowerRatio-0.55)*80;       // more lower face = older (+/- 6yr)
-  ageEst += (foreheadRatio-0.36)*-60;   // less forehead = older
-  ageEst += (fwRatio-0.72)*40;          // wider = older
-  ageEst += (0.44-eyeFaceRatio)*80;     // smaller eye ratio = older
-  ageEst += (mouthChinRatio-0.18)*60;   // longer chin area = older
-  ageEst += Math.min(skinVariance*0.3, 15); // skin texture adds age
+  // Multi-feature age model — log diagnostics on first frames
+  if(state.ageEstimates.length<3){
+    log(`Age ratios: nose=${noseRatio.toFixed(3)} fh=${foreheadRatio.toFixed(3)} fw=${fwRatio.toFixed(3)} eye=${eyeFaceRatio.toFixed(3)} lower=${lowerRatio.toFixed(3)} mouthChin=${mouthChinRatio.toFixed(3)} skinVar=${skinVariance.toFixed(1)}`,'info');
+  }
 
-  // Beard adjustment: beard occlusion means chin/jaw features are unreliable
-  // Don't penalize age for lower-face texture when bearded
   const occ=state.occlusion||{beard:false,beardConf:0};
-  if(occ.beard){
-    // Reduce weight of lower-face features, increase upper-face weight
-    ageEst=30;
-    ageEst += (noseRatio-0.17)*250;       // nose is still visible above beard
-    ageEst += (foreheadRatio-0.36)*-80;   // forehead reliable
-    ageEst += (fwRatio-0.72)*50;          // face width reliable
-    ageEst += (0.44-eyeFaceRatio)*100;    // eye ratio reliable
-    ageEst += Math.min(skinVariance*0.4, 18); // forehead texture reliable
+
+  // Base age from face proportions — use broader coefficients that work across face types
+  let ageEst=32;
+
+  if(!occ.beard){
+    // Full face model
+    ageEst += (noseRatio-0.17)*180;       // nose length: strongest age signal
+    ageEst += (lowerRatio-0.52)*60;       // lower face proportion
+    ageEst += (foreheadRatio-0.35)*-50;   // forehead shrinks with age
+    ageEst += (fwRatio-0.73)*35;          // face widens slightly
+    ageEst += (0.43-eyeFaceRatio)*60;     // eyes appear smaller
+    ageEst += (mouthChinRatio-0.17)*50;   // chin area
+    ageEst += Math.min(skinVariance*0.5, 20); // wrinkle proxy: big contributor
+  } else {
+    // Beard-present model: rely on upper face + nose + forehead texture
+    // Beard itself is an age indicator (most people with full beards are 25+)
+    ageEst=34; // higher base — beard presence skews demographics older
+    ageEst += (noseRatio-0.17)*220;       // nose still fully visible
+    ageEst += (foreheadRatio-0.35)*-60;   // forehead reliable
+    ageEst += (fwRatio-0.73)*40;          // face width reliable
+    ageEst += (0.43-eyeFaceRatio)*80;     // eye ratio: boost weight to compensate
+    ageEst += Math.min(skinVariance*0.6, 22); // forehead texture: boost weight
+    // Beard confidence as age proxy — denser beard detection = likely older
+    ageEst += Math.min(occ.beardConf*0.08, 5);
   }
 
   ageEst=Math.max(18,Math.min(75,ageEst));
@@ -1331,37 +1354,37 @@ function updateDemographics(mesh,now){
   $('age-range').textContent=(avgAge-ageRange)+'–'+(avgAge+ageRange);
   $('age-conf').textContent=Math.round(ageConf)+'%'; $('age-conf-bar').style.width=ageConf+'%';
 
-  // --- GENDER ESTIMATION (multi-feature) ---
-  // Masculine features: wider jaw relative to cheeks, thicker brow ridge, larger nose, squarer face
+  // --- GENDER ESTIMATION (gentler coefficients, beard-aware) ---
   const jawL=mesh[172],jawR=mesh[397];
   const jawWidth=jawL&&jawR?Math.sqrt((jawL[0]-jawR[0])**2+(jawL[1]-jawR[1])**2):faceW;
-  const jawToFaceRatio=jawWidth/(faceW||1); // higher = more masculine (~0.7-0.95)
+  const jawToFaceRatio=jawWidth/(faceW||1);
 
-  // Brow ridge thickness (brow-to-eye distance)
   const lBrow=mesh[65],lEye=mesh[159];
-  const browDist=lBrow&&lEye?Math.abs(lBrow[1]-lEye[1])/(faceH||1):0;
+  const browDist=lBrow&&lEye?Math.abs(lBrow[1]-lEye[1])/(faceH||1):0.05;
 
-  // Nose width
   const noseL=mesh[48],noseR=mesh[278];
   const noseWidth=noseL&&noseR?Math.sqrt((noseL[0]-noseR[0])**2+(noseL[1]-noseR[1])**2):0;
   const noseWidthRatio=noseWidth/(faceW||1);
 
-  // Face shape squareness
-  const squareness=fwRatio; // squarer face = more masculine
-
   let mascScore=50; // start neutral
-  mascScore += (jawToFaceRatio-0.82)*150;   // jaw prominence
-  mascScore += (browDist-0.045)*500;         // brow ridge
-  mascScore += (noseWidthRatio-0.22)*200;   // nose width
-  mascScore += (squareness-0.72)*100;        // face squareness
-  mascScore += (noseRatio-0.17)*150;         // nose length
-  mascScore=Math.max(10,Math.min(90,mascScore));
+  // Only use jaw if NOT bearded (beard inflates jaw width artificially)
+  if(!occ.beard){
+    mascScore += (jawToFaceRatio-0.83)*80;    // jaw prominence (gentler)
+  }
+  mascScore += (browDist-0.050)*200;           // brow ridge (reduced from 500)
+  mascScore += (noseWidthRatio-0.23)*100;      // nose width (reduced from 200)
+  mascScore += (fwRatio-0.73)*50;              // face squareness (reduced from 100)
+  mascScore += (noseRatio-0.18)*80;            // nose length (reduced from 150)
+  mascScore=Math.max(15,Math.min(85,mascScore));
 
   state.genderScores.push(mascScore);if(state.genderScores.length>90)state.genderScores.shift();
   const avgGS=state.genderScores.reduce((a,b)=>a+b,0)/state.genderScores.length;
-  $('gender-est').textContent=avgGS>55?'MASCULINE':avgGS<45?'FEMININE':'ANDROGYNOUS';
+  // Wider androgynous zone: 40-60 instead of 45-55
+  $('gender-est').textContent=avgGS>60?'MASCULINE':avgGS<40?'FEMININE':'ANDROGYNOUS';
   $('gender-ratio').textContent=Math.round(avgGS)+'/'+Math.round(100-avgGS);
   $('gender-bar').style.width=avgGS+'%';
+
+  if(state.genderScores.length===5) log(`Gender ratios: jaw=${jawToFaceRatio.toFixed(3)} brow=${browDist.toFixed(4)} nose=${noseWidthRatio.toFixed(3)} fw=${fwRatio.toFixed(3)} beard=${occ.beard}`,'info');
 
   // Skin tone from cheek
   try{
@@ -1385,93 +1408,141 @@ function updateDemographics(mesh,now){
 
 // ============ MOD 10: RESPIRATION (TUNED) ============
 function updateRespiration(mesh,now){
-  // Track chin AND nose tip Y — use their mean to reduce noise
-  // Also fuse rPPG amplitude modulation (breathing modulates blood flow signal)
   const chin=mesh[152],nose=mesh[4];
   if(!chin||!nose)return;
 
-  // Primary signal: facial landmark vertical motion
-  const signalY=(chin[1]*0.6+nose[1]*0.4); // weight chin more (closer to chest motion)
+  // === THREE-SIGNAL RESPIRATORY FUSION ===
 
-  // Secondary signal: rPPG green channel amplitude envelope
-  let rppgEnvelope=0;
-  if(state.rppgBuffer.length>10){
-    const last10=state.rppgBuffer.slice(-10);
-    const gVals=last10.map(s=>s.g);
+  // SIGNAL 1: rPPG Respiratory Modulation (PRIMARY)
+  let rppgRespSignal=0;
+  if(state.rppgBuffer.length>20){
+    const winSize=15;
+    const end=state.rppgBuffer.length;
+    const start=Math.max(0,end-winSize);
+    const recent=state.rppgBuffer.slice(start,end);
+    const gVals=recent.map(s=>s.g);
     const gMean=gVals.reduce((a,b)=>a+b,0)/gVals.length;
-    rppgEnvelope=Math.sqrt(gVals.reduce((a,v)=>a+(v-gMean)**2,0)/gVals.length);
+    rppgRespSignal=Math.sqrt(gVals.reduce((a,v)=>a+(v-gMean)**2,0)/gVals.length);
   }
 
-  // Fuse: combine landmark Y with rPPG envelope
-  state.respBuffer.push({time:now,y:signalY,env:rppgEnvelope});
+  // SIGNAL 2: Shoulder/Chest Region Brightness
+  let shoulderSignal=0;
+  try{
+    const shoulderY=chin[1]+Math.abs(chin[1]-nose[1])*0.8;
+    const shoulderX=(mesh[234]&&mesh[454])?(mesh[234][0]+mesh[454][0])/2:chin[0];
+    const sz=40;
+    if(shoulderY<overlayCanvas.height-sz/2){
+      const tc=document.createElement('canvas'),ctx=tc.getContext('2d');
+      tc.width=sz;tc.height=sz;
+      ctx.drawImage(video,shoulderX-sz/2,shoulderY-sz/2,sz,sz,0,0,sz,sz);
+      const d=ctx.getImageData(0,0,sz,sz).data;
+      let lumSum=0,px=0;
+      for(let i=0;i<d.length;i+=4){lumSum+=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];px++}
+      shoulderSignal=lumSum/px;
+      overlayCtx.strokeStyle='#ff910030';overlayCtx.lineWidth=1;overlayCtx.setLineDash([2,4]);
+      overlayCtx.strokeRect(shoulderX-sz/2,shoulderY-sz/2,sz,sz);overlayCtx.setLineDash([]);
+    }
+  }catch(e){}
+
+  // SIGNAL 3: Landmark Vertical Motion
+  const landmarkY=chin[1];
+
+  state.respBuffer.push({time:now,rppg:rppgRespSignal,shoulder:shoulderSignal,landmark:landmarkY});
   if(state.respBuffer.length>state.respMaxSamples)state.respBuffer.shift();
+  if(state.respBuffer.length<60)return;
 
-  if(state.respBuffer.length<90)return; // need more data for resp rate
+  const N=state.respBuffer.length;
 
-  // Detrend with larger window for slower resp signal
-  const raw=state.respBuffer.map(s=>s.y),ws=50,det=[];
-  for(let i=0;i<raw.length;i++){let s=Math.max(0,i-ws),e=Math.min(raw.length,i+ws),sm=0;for(let j=s;j<e;j++)sm+=raw[j];det.push(raw[i]-sm/(e-s))}
-
-  // Low-pass: simple moving average over 5 samples to remove high-freq jitter
-  const smoothed=[];
-  for(let i=0;i<det.length;i++){
-    let s=Math.max(0,i-2),e=Math.min(det.length,i+3),sm=0;
-    for(let j=s;j<e;j++)sm+=det[j];
-    smoothed.push(sm/(e-s));
+  function detrendSmooth(vals,dtW,smW){
+    const det=[];
+    for(let i=0;i<vals.length;i++){let s=Math.max(0,i-dtW),e=Math.min(vals.length,i+dtW),sm=0;for(let j=s;j<e;j++)sm+=vals[j];det.push(vals[i]-sm/(e-s))}
+    const out=[];
+    for(let i=0;i<det.length;i++){let s=Math.max(0,i-smW),e=Math.min(det.length,i+smW+1),sm=0;for(let j=s;j<e;j++)sm+=det[j];out.push(sm/(e-s))}
+    return out;
   }
 
-  // Peak detection with minimum prominence
-  const stdDev=Math.sqrt(smoothed.reduce((a,v)=>a+v*v,0)/smoothed.length);
-  const minProm=stdDev*0.3; // adaptive threshold
-
-  const peaks=[];
-  for(let i=4;i<smoothed.length-4;i++){
-    if(smoothed[i]>smoothed[i-1]&&smoothed[i]>smoothed[i-2]&&
-       smoothed[i]>smoothed[i+1]&&smoothed[i]>smoothed[i+2]&&
-       smoothed[i]>minProm) peaks.push(i);
+  function findPks(sig,minP){
+    const pks=[];
+    for(let i=3;i<sig.length-3;i++){if(sig[i]>sig[i-1]&&sig[i]>sig[i-2]&&sig[i]>sig[i-3]&&sig[i]>sig[i+1]&&sig[i]>sig[i+2]&&sig[i]>minP)pks.push(i)}
+    return pks;
   }
 
-  if(peaks.length>=2){
-    const iv=[];
-    for(let i=1;i<peaks.length;i++){
-      const dt=state.respBuffer[peaks[i]].time-state.respBuffer[peaks[i-1]].time;
-      if(dt>2000&&dt<12000)iv.push(dt); // 5-30 BrPM range
-    }
-    if(iv.length>=1){
-      const avgIv=iv.reduce((a,b)=>a+b,0)/iv.length;
-      let rr=60000/avgIv;
-      rr=Math.max(6,Math.min(28,rr));
-      state.respRateHistory.push(rr);if(state.respRateHistory.length>12)state.respRateHistory.shift();
-      const smoothRR=Math.round(state.respRateHistory.reduce((a,b)=>a+b,0)/state.respRateHistory.length);
-      $('resp-rate').textContent=smoothRR+' BrPM';
+  function calcRate(pks,buf){
+    if(pks.length<2)return null;
+    const iv=[];for(let i=1;i<pks.length;i++){const dt=buf[pks[i]].time-buf[pks[i-1]].time;if(dt>2000&&dt<12000)iv.push(dt)}
+    if(iv.length<1)return null;
+    const avg=iv.reduce((a,b)=>a+b,0)/iv.length;
+    return {rate:60000/avg,intervals:iv,avgInterval:avg};
+  }
 
-      const amp=smoothed.length>0?Math.max(...smoothed.map(Math.abs)):0;
-      const maxAmp=Math.max(stdDev*3, 0.5);
-      const depth=Math.min(Math.round(amp/maxAmp*100),100);
-      $('breath-depth').textContent=depth+'%'; $('breath-depth-bar').style.width=depth+'%';
+  function consistency(res){
+    if(!res||res.intervals.length<2)return 0;
+    const iv=res.intervals,avg=res.avgInterval;
+    const std=Math.sqrt(iv.reduce((a,x)=>a+(x-avg)**2,0)/iv.length);
+    return Math.max(0,1-std/avg);
+  }
 
-      // Phase: use slope over last ~10 samples for stable direction
-      const windowEnd=smoothed.length-1;
-      const windowStart=Math.max(0,windowEnd-10);
-      let rising=0,falling=0;
-      for(let i=windowStart+1;i<=windowEnd;i++){
-        if(smoothed[i]>smoothed[i-1]) rising++;
-        else falling++;
-      }
-      const phase=rising>falling?'INHALE':'EXHALE';
-      // Only show phase if we have some resp rate confidence
-      if(state.respRateHistory.length>0){
-        $('resp-phase').textContent=phase;
-        $('resp-phase').className='data-value '+(phase==='INHALE'?'highlight':'orange');
-      }
+  const rppgS=detrendSmooth(state.respBuffer.map(s=>s.rppg),40,4);
+  const rppgStd=Math.sqrt(rppgS.reduce((a,v)=>a+v*v,0)/rppgS.length)||.01;
+  const rppgR=calcRate(findPks(rppgS,rppgStd*.25),state.respBuffer);
+  const rppgC=consistency(rppgR);
 
-      if(iv.length>=2){
-        const ivStd=Math.sqrt(iv.map(x=>(x-avgIv)**2).reduce((a,b)=>a+b,0)/iv.length);
-        const reg=Math.max(0,Math.min(100,Math.round((1-ivStd/avgIv)*100)));
-        $('resp-regularity').textContent=reg+'%'; $('resp-reg-bar').style.width=reg+'%';
-      }
+  const shldS=detrendSmooth(state.respBuffer.map(s=>s.shoulder),50,5);
+  const shldStd=Math.sqrt(shldS.reduce((a,v)=>a+v*v,0)/shldS.length)||.01;
+  const shldR=calcRate(findPks(shldS,shldStd*.3),state.respBuffer);
+  const shldC=consistency(shldR);
+
+  const lmrkS=detrendSmooth(state.respBuffer.map(s=>s.landmark),50,5);
+  const lmrkStd=Math.sqrt(lmrkS.reduce((a,v)=>a+v*v,0)/lmrkS.length)||.01;
+  const lmrkR=calcRate(findPks(lmrkS,lmrkStd*.3),state.respBuffer);
+  const lmrkC=consistency(lmrkR);
+
+  // Weighted fusion — pick best or fuse agreeing signals
+  let bestRate=null,bestConf=0,bestSrc='—';
+  if(rppgR&&rppgC>bestConf){bestRate=rppgR.rate;bestConf=rppgC;bestSrc='rPPG'}
+  if(shldR&&shldC>bestConf){bestRate=shldR.rate;bestConf=shldC;bestSrc='SHOULDER'}
+  if(lmrkR&&lmrkC>bestConf){bestRate=lmrkR.rate;bestConf=lmrkC;bestSrc='LANDMARK'}
+
+  const cands=[rppgR?{r:rppgR.rate,c:rppgC}:null,shldR?{r:shldR.rate,c:shldC}:null,lmrkR?{r:lmrkR.rate,c:lmrkC}:null].filter(x=>x&&x.c>.2);
+  if(cands.length>=2){
+    cands.sort((a,b)=>b.c-a.c);
+    if(Math.abs(cands[0].r-cands[1].r)<3){
+      const tw=cands[0].c+cands[1].c;
+      bestRate=(cands[0].r*cands[0].c+cands[1].r*cands[1].c)/tw;
+      bestConf=(cands[0].c+cands[1].c)/2;bestSrc='FUSED';
     }
   }
+
+  $('resp-source').textContent=bestSrc+(bestConf>0?` ${Math.round(bestConf*100)}%`:'');
+
+  if(bestRate!==null){
+    bestRate=Math.max(6,Math.min(28,bestRate));
+    state.respRateHistory.push(bestRate);if(state.respRateHistory.length>15)state.respRateHistory.shift();
+    $('resp-rate').textContent=Math.round(state.respRateHistory.reduce((a,b)=>a+b,0)/state.respRateHistory.length)+' BrPM';
+    $('resp-regularity').textContent=Math.round(bestConf*100)+'%';$('resp-reg-bar').style.width=(bestConf*100)+'%';
+  }
+
+  // Breath depth from shoulder amplitude
+  if(shldS.length>0){const amp=Math.max(...shldS.map(Math.abs)),mx=Math.max(shldStd*4,1);
+    $('breath-depth').textContent=Math.min(Math.round(amp/mx*100),100)+'%';$('breath-depth-bar').style.width=Math.min(amp/mx*100,100)+'%'}
+
+  // Phase detection: linear regression slope of best signal over last 15 samples
+  let phSig=rppgS;if(bestSrc==='SHOULDER')phSig=shldS;else if(bestSrc==='LANDMARK')phSig=lmrkS;
+  if(phSig.length>15){
+    const tail=phSig.slice(-15);
+    let sX=0,sY=0,sXY=0,sX2=0;
+    for(let i=0;i<tail.length;i++){sX+=i;sY+=tail[i];sXY+=i*tail[i];sX2+=i*i}
+    const n=tail.length,slope=(n*sXY-sX*sY)/(n*sX2-sX*sX);
+    const sigAmp=Math.max(...tail.map(Math.abs))||.01;
+    const strength=Math.abs(slope)/sigAmp*n;
+    if(strength>.3){
+      const ph=slope>0?'INHALE':'EXHALE';
+      $('resp-phase').textContent=ph;$('resp-phase').className='data-value '+(ph==='INHALE'?'highlight':'orange');
+    } else {$('resp-phase').textContent='TRANSITION';$('resp-phase').className='data-value warn'}
+  }
+
+  // Store processed signals for waveform
+  state._respSignals={rppg:rppgS,shoulder:shldS,landmark:lmrkS};
 }
 
 function drawRespWaveform(){
@@ -1480,78 +1551,125 @@ function drawRespWaveform(){
   respCtx.fillStyle='#060c14';respCtx.fillRect(0,0,w,h);
   respCtx.strokeStyle='#00e5ff10';respCtx.lineWidth=.5;
   for(let y=0;y<h;y+=8){respCtx.beginPath();respCtx.moveTo(0,y);respCtx.lineTo(w,y);respCtx.stroke()}
+  const sigs=state._respSignals;if(!sigs)return;
 
-  const buf=state.respBuffer;if(buf.length<2)return;
-  const raw=buf.map(s=>s.y),ws=50,det=[];
-  for(let i=0;i<raw.length;i++){let s=Math.max(0,i-ws),e=Math.min(raw.length,i+ws),sm=0;for(let j=s;j<e;j++)sm+=raw[j];det.push(raw[i]-sm/(e-s))}
-  // Smooth for display
-  const disp=[];
-  for(let i=0;i<det.length;i++){let s=Math.max(0,i-2),e=Math.min(det.length,i+3),sm=0;for(let j=s;j<e;j++)sm+=det[j];disp.push(sm/(e-s))}
-  const mx=Math.max(...disp.map(Math.abs),0.1);
-
-  respCtx.beginPath();respCtx.strokeStyle='#ff9100';respCtx.lineWidth=1.5;respCtx.shadowColor='#ff9100';respCtx.shadowBlur=3;
-  disp.forEach((v,i)=>{const x=(i/state.respMaxSamples)*w,y=h/2-(v/mx)*(h*.4);i===0?respCtx.moveTo(x,y):respCtx.lineTo(x,y)});
-  respCtx.stroke();respCtx.shadowBlur=0;
+  function drawSig(arr,color){
+    if(!arr||arr.length<2)return;
+    const mx=Math.max(...arr.map(Math.abs),.01);
+    respCtx.beginPath();respCtx.strokeStyle=color;respCtx.lineWidth=1.2;
+    arr.forEach((v,i)=>{const x=(i/state.respMaxSamples)*w,y=h/2-(v/mx)*(h*.35);i===0?respCtx.moveTo(x,y):respCtx.lineTo(x,y)});
+    respCtx.stroke();
+  }
+  drawSig(sigs.rppg,'#ff9100');
+  drawSig(sigs.shoulder,'#00e67650');
+  drawSig(sigs.landmark,'#00e5ff25');
+  respCtx.font='8px Share Tech Mono';
+  respCtx.fillStyle='#ff9100';respCtx.fillText('rPPG',4,10);
+  respCtx.fillStyle='#00e67660';respCtx.fillText('SHLD',35,10);
+  respCtx.fillStyle='#00e5ff40';respCtx.fillText('LMRK',65,10);
 }
 
 // ============ MOD 11: STRESS & WELLNESS (TUNED) ============
 function updateStressWellness(now){
-  const hrv=state.hrvHistory.length>0?state.hrvHistory.reduce((a,b)=>a+b,0)/state.hrvHistory.length:50;
-  const blinkRate=state.blinkTimestamps.filter(t=>now-t<60000).length;
-  const motion=state.motionHistory.length>0?state.motionHistory.reduce((a,b)=>a+b,0)/state.motionHistory.length:0;
   const au=state._au||{squint:0,frown:0};
   const att=state.attentionScore;
+  const blinkRate=state.blinkTimestamps.filter(t=>now-t<60000).length;
+  const motion=state.motionHistory.length>0?state.motionHistory.reduce((a,b)=>a+b,0)/state.motionHistory.length:0;
 
-  // --- STRESS INDEX ---
-  // Low HRV is the strongest stress indicator
-  // Normal resting HRV RMSSD: 20-100ms. Under stress: <20ms
-  const hrvStress=hrv>0?Math.max(0, (60-hrv)/60*50):25; // 0-50 contribution
-  // High blink rate (>20/min) suggests stress
-  const blinkStress=Math.max(0, (blinkRate-14)*2); // 0-20 contribution
-  // Facial tension (frown + squint)
-  const facialStress=(au.frown*0.15 + au.squint*0.1); // 0-25 contribution
+  // --- INPUT RELIABILITY CHECKS ---
+  const hrvAvail=state.hrvHistory.length>=3;
+  const hrv=hrvAvail?state.hrvHistory.reduce((a,b)=>a+b,0)/state.hrvHistory.length:0;
+  const blinkAvail=state.totalBlinks>=3 && (Date.now()-state.startTime)>15000; // need 15s+ and some blinks
+  const hrAvail=state.currentHR>0 && state.heartRateHistory.length>=3;
+
+  // --- STRESS INDEX (0-100) ---
+  // Only include components where we have reliable data
+  let stressNumerator=0, stressWeight=0;
+
+  if(hrvAvail){
+    // HRV stress: lower HRV = higher stress. Normal resting: 30-80ms
+    const hrvComponent=Math.max(0,Math.min(100, (50-hrv)/50*100));
+    stressNumerator+=hrvComponent*0.35; stressWeight+=0.35;
+  }
+  if(blinkAvail){
+    // Blink stress: normal 12-20/min. Very high or very low suggests stress
+    const blinkDeviation=Math.abs(blinkRate-16);
+    const blinkComponent=Math.min(100, blinkDeviation*8);
+    stressNumerator+=blinkComponent*0.20; stressWeight+=0.20;
+  }
+  // Facial tension (always available if face detected)
+  if(state.faceDetected){
+    const facialComponent=Math.min(100, au.frown*1.5+au.squint*0.8);
+    stressNumerator+=facialComponent*0.25; stressWeight+=0.25;
+  }
   // Motion restlessness
-  const motionStress=Math.min(motion*2, 15); // 0-15 contribution
+  const motionComponent=Math.min(100, motion*10);
+  stressNumerator+=motionComponent*0.10; stressWeight+=0.10;
 
-  let stress=Math.max(0,Math.min(100, hrvStress + blinkStress + facialStress + motionStress));
+  // Heart rate elevation (if available)
+  if(hrAvail){
+    const hrComponent=Math.max(0,Math.min(100, (state.currentHR-65)*1.5));
+    stressNumerator+=hrComponent*0.10; stressWeight+=0.10;
+  }
+
+  let stress=stressWeight>0?stressNumerator/stressWeight:25; // default moderate if no data
+  stress=Math.max(0,Math.min(100,stress));
+
   state.stressHistory.push(stress);if(state.stressHistory.length>180)state.stressHistory.shift();
   const avgStress=Math.round(state.stressHistory.reduce((a,b)=>a+b,0)/state.stressHistory.length);
   $('stress-val').textContent=avgStress+'%'; $('stress-bar').style.width=avgStress+'%';
-  const sc=avgStress>60?'alert':avgStress>35?'warn':'good';
+  const sc=avgStress>55?'alert':avgStress>30?'warn':'good';
   $('stress-bar').className='bar-fill '+sc; $('stress-val').className='data-value '+sc;
 
-  // --- COGNITIVE LOAD ---
-  // Blink suppression (focused people blink less)
-  const blinkSuppression=Math.max(0, (15-blinkRate)*3); // less blinking = more load
-  // Gaze stability (looking at one point = processing)
-  const gazeStable=$('gaze-dir').textContent.includes('CENTER')?15:0;
-  // Squint (concentration)
-  const concentrationSquint=au.squint*0.3;
+  // --- COGNITIVE LOAD (0-100) ---
+  let cogComponents=[];
+  if(blinkAvail){
+    // Blink suppression: focused people blink less (normal ~16/min)
+    cogComponents.push(Math.max(0, (16-blinkRate)*5));
+  }
+  const gazeCenter=$('gaze-dir').textContent.includes('CENTER');
+  cogComponents.push(gazeCenter?20:5); // gaze stability
+  cogComponents.push(Math.min(au.squint*0.4, 20)); // concentration squint
+  cogComponents.push(Math.max(0, 15-motion*3)); // stillness = focused
 
-  const cogLoad=Math.max(0,Math.min(100, blinkSuppression + gazeStable + concentrationSquint + motion*-3));
+  const cogLoad=Math.max(0,Math.min(100, cogComponents.reduce((a,b)=>a+b,0)));
   $('cogload-val').textContent=Math.round(cogLoad)+'%'; $('cogload-bar').style.width=cogLoad+'%';
 
-  // --- FATIGUE INDEX ---
+  // --- FATIGUE INDEX (0-100) ---
+  let fatigueComponents=[];
   const drowsyText=$('drowsiness').textContent;
-  const drowsyScore=drowsyText==='HIGH'?40:drowsyText==='MODERATE'?20:0;
-  const attFatigue=Math.max(0, (70-att)*0.4); // low attention = fatigued
-  const blinkFatigue=Math.max(0, (blinkRate-18)*1.5); // excessive blinking
-  let fatigue=Math.max(0,Math.min(100, drowsyScore + attFatigue + blinkFatigue));
+  fatigueComponents.push(drowsyText==='HIGH'?45:drowsyText==='MODERATE'?20:0);
+
+  if(blinkAvail){
+    // Excessive blinking suggests fatigue
+    fatigueComponents.push(Math.max(0, (blinkRate-20)*2.5));
+  }
+  // Low attention suggests fatigue
+  fatigueComponents.push(Math.max(0, (60-att)*0.3));
+
+  // Eye openness (if calibrated): consistently narrow eyes = fatigue
+  const earBaseline=state.earOpenBaseline||0.28;
+  const currentEAR=parseFloat($('ear-val').textContent)||0.25;
+  if(earBaseline>0){
+    const eyeFatigue=Math.max(0, (earBaseline-currentEAR)/earBaseline*80);
+    fatigueComponents.push(eyeFatigue*0.3);
+  }
+
+  let fatigue=Math.max(0,Math.min(100, fatigueComponents.reduce((a,b)=>a+b,0)));
   $('fatigue-val').textContent=Math.round(fatigue)+'%'; $('fatigue-bar').style.width=fatigue+'%';
   const fc=fatigue>50?'alert':fatigue>25?'warn':'good';
   $('fatigue-bar').className='bar-fill '+fc; $('fatigue-val').className='data-value '+fc;
 
-  // --- WELLNESS (composite inverse) ---
-  const wellness=Math.max(0,Math.min(100, 100 - avgStress*0.35 - fatigue*0.35 - Math.max(0,30-att)*0.3));
+  // --- WELLNESS (0-100, inverse composite) ---
+  const wellness=Math.max(0,Math.min(100, 100 - avgStress*0.3 - fatigue*0.3 - Math.max(0,40-att)*0.2));
   $('wellness-val').textContent=Math.round(wellness)+'%'; $('wellness-bar').style.width=wellness+'%';
   const wc=wellness>60?'good':wellness>35?'warn':'alert';
   $('wellness-bar').className='bar-fill '+wc; $('wellness-val').className='data-value '+wc;
 
-  // --- BP ESTIMATE (HR + HRV based, anchored to population norms) ---
-  if(state.currentHR>0){
-    // Systolic: base 115, modulated by HR and HRV
-    const sys=Math.round(115 + (state.currentHR-70)*0.4 - (hrv-40)*0.1);
-    const dia=Math.round(75 + (state.currentHR-70)*0.2 - (hrv-40)*0.05);
+  // --- BP ESTIMATE ---
+  if(hrAvail){
+    const sys=Math.round(115 + (state.currentHR-70)*0.4 - (hrvAvail?(hrv-40)*0.1:0));
+    const dia=Math.round(75 + (state.currentHR-70)*0.2 - (hrvAvail?(hrv-40)*0.05:0));
     $('bp-est').textContent=Math.max(90,Math.min(160,sys))+'/'+Math.max(55,Math.min(100,dia))+' mmHg';
   }
 
@@ -2055,6 +2173,158 @@ function importData(event){
   };
   reader.readAsText(file);
   event.target.value=''; // reset file input
+}
+
+// ============ MODULE TOGGLE / INFO / REORDER SYSTEM ============
+const moduleInfo = {
+  'SUBJECT LOCK': 'Detects and tracks your face using TensorFlow.js FaceMesh (468 landmarks). Shows bounding box, face area percentage, detection confidence, and occlusion detection (beard/glasses). Occlusion status affects how other modules weight upper vs lower face features.',
+  'rPPG — CARDIOVASCULAR': 'Measures heart rate contactlessly using remote Photoplethysmography (rPPG). The POS (Plane-Orthogonal-to-Skin) algorithm analyzes subtle skin color changes from blood flow in multiple face regions (forehead + cheeks). Beard detection automatically shifts to forehead-priority sampling. HRV (Heart Rate Variability) is calculated from inter-beat intervals.',
+  'HEAD POSE': 'Estimates 3D head orientation (yaw/pitch/roll) from landmark geometry. Tracks face center position, per-frame motion, posture assessment, and gaze direction. Used by attention and stress modules as input signals.',
+  'FACIAL LANDMARKS': 'Displays key measurements from the 468-point face mesh: Eye Aspect Ratios (EAR) for blink detection, inter-eye distance, nose-to-mouth distance, and bilateral face symmetry. These feed into expression and emotion analysis.',
+  'ATTENTION & BLINKS': 'Auto-calibrating blink detection using adaptive EAR thresholds + velocity-based detection. Multi-signal attention model (35% gaze, 20% blink regularity, 15% stillness, 15% eye openness, 15% presence). Drowsiness uses PERCLOS (% time eyes closed). All thresholds adapt to your personal baseline.',
+  'EXPRESSION ANALYSIS': 'Tracks facial Action Units (AUs): mouth opening, lip corner elevation (smile), brow raise, eye squint, lip corner depression (frown), and nose wrinkle. Beard occlusion reduces confidence on lower-face AUs automatically. Calibration captures your personal neutral baseline.',
+  'EMOTION RECOGNITION': 'Classifies 7 emotions from AU combinations (FACS-inspired). Subtracts your calibrated neutral baseline, then maps to happy/sad/angry/surprised/fearful/disgusted/neutral. Sensitivity and neutral threshold adjustable in Settings. Valence (positive/negative) and arousal (calm/excited) dimensions shown.',
+  'DEMOGRAPHICS EST.': 'Age estimated from 7 facial proportions + forehead skin texture variance. With beard detected, switches to upper-face features only. Gender estimation uses brow ridge, nose width, face shape — jaw excluded when bearded. Distance calculated from inter-pupillary distance.',
+  'RESPIRATION MONITOR': 'Three-signal fusion: (1) rPPG amplitude envelope — breathing modulates heart signal via respiratory sinus arrhythmia, (2) shoulder region brightness — chest movement changes pixel values, (3) chin landmark Y-position. Signals scored for consistency; best signal or weighted fusion used. Phase detection via linear regression slope.',
+  'STRESS & WELLNESS': 'Composite stress index from HRV, blink rate deviation, facial tension, motion, and heart rate — only includes signals with enough data. Cognitive load from blink suppression + gaze stability. Fatigue from drowsiness + eye openness. SpO2 from rPPG AC/DC ratio.',
+  'SKIN & COMPLEXION': 'Samples RGB from forehead and both cheeks. Calculates perceptual luminance, skin hue angle, redness index (R vs G+B), cross-region uniformity, and correlated color temperature. Cheek color swatch shows actual sampled color.',
+  'SESSION DATA': 'Running session statistics: uptime, average/min/max heart rate, face visibility percentage, average attention score, and dominant emotion over time.'
+};
+
+function initModuleControls(){
+  document.querySelectorAll('.module').forEach(mod=>{
+    const header=mod.querySelector('.module-header');
+    if(!header)return;
+    const title=mod.querySelector('.module-title');
+    if(!title)return;
+    const titleText=title.textContent.trim();
+
+    // Add control buttons
+    const controls=document.createElement('div');
+    controls.className='module-controls';
+
+    // Drag handle
+    const drag=document.createElement('span');
+    drag.className='mod-drag';drag.textContent='⋮⋮';drag.title='Drag to reorder';
+    controls.appendChild(drag);
+
+    // Info button
+    const info=document.createElement('button');
+    info.className='mod-btn';info.textContent='ⓘ';info.title='How this works';
+    info.onclick=function(e){
+      e.stopPropagation();
+      let popup=mod.querySelector('.mod-info-popup');
+      if(!popup){
+        popup=document.createElement('div');
+        popup.className='mod-info-popup';
+        popup.textContent=moduleInfo[titleText]||'No information available for this module.';
+        mod.appendChild(popup);
+      }
+      popup.classList.toggle('visible');
+      // Close when clicking elsewhere
+      setTimeout(()=>{
+        const close=()=>{popup.classList.remove('visible');document.removeEventListener('click',close)};
+        document.addEventListener('click',close);
+      },10);
+    };
+    controls.appendChild(info);
+
+    // Toggle button
+    const toggle=document.createElement('button');
+    toggle.className='mod-btn';toggle.textContent='👁';toggle.title='Toggle module';
+    toggle.onclick=function(e){
+      e.stopPropagation();
+      mod.classList.toggle('disabled');
+      toggle.classList.toggle('off');
+    };
+    controls.appendChild(toggle);
+
+    // Insert controls into header (before module-id)
+    const modId=header.querySelector('.module-id');
+    header.insertBefore(controls,modId);
+
+    // Drag reorder
+    drag.addEventListener('mousedown',startDrag);
+    drag.addEventListener('touchstart',startDrag,{passive:false});
+  });
+}
+
+let dragState={el:null,placeholder:null,startY:0,offsetY:0};
+
+function startDrag(e){
+  e.preventDefault();
+  const mod=e.target.closest('.module');
+  if(!mod)return;
+  const panel=mod.parentElement;
+  const rect=mod.getBoundingClientRect();
+
+  dragState.el=mod;
+  dragState.startY=e.clientY||e.touches[0].clientY;
+  dragState.offsetY=dragState.startY-rect.top;
+
+  // Create placeholder
+  dragState.placeholder=document.createElement('div');
+  dragState.placeholder.style.height=rect.height+'px';
+  dragState.placeholder.style.border='1px dashed var(--cyan)';
+  dragState.placeholder.style.opacity='0.3';
+  panel.insertBefore(dragState.placeholder,mod);
+
+  // Float the module
+  mod.style.position='fixed';
+  mod.style.top=rect.top+'px';
+  mod.style.left=rect.left+'px';
+  mod.style.width=rect.width+'px';
+  mod.style.zIndex='999';
+  mod.style.opacity='0.9';
+  mod.style.pointerEvents='none';
+
+  document.addEventListener('mousemove',onDrag);
+  document.addEventListener('mouseup',endDrag);
+  document.addEventListener('touchmove',onDrag,{passive:false});
+  document.addEventListener('touchend',endDrag);
+}
+
+function onDrag(e){
+  if(!dragState.el)return;
+  e.preventDefault();
+  const y=(e.clientY||e.touches[0].clientY);
+  dragState.el.style.top=(y-dragState.offsetY)+'px';
+
+  // Find nearest sibling to move placeholder
+  const panel=dragState.placeholder.parentElement;
+  const siblings=[...panel.querySelectorAll('.module:not([style*="fixed"])')];
+  let closest=null,closestDist=Infinity;
+  siblings.forEach(sib=>{
+    const r=sib.getBoundingClientRect();
+    const dist=Math.abs(y-r.top-r.height/2);
+    if(dist<closestDist){closestDist=dist;closest=sib}
+  });
+  if(closest){
+    const r=closest.getBoundingClientRect();
+    if(y<r.top+r.height/2) panel.insertBefore(dragState.placeholder,closest);
+    else panel.insertBefore(dragState.placeholder,closest.nextSibling);
+  }
+}
+
+function endDrag(){
+  if(!dragState.el)return;
+  const mod=dragState.el;
+  const panel=dragState.placeholder.parentElement;
+
+  // Remove float styles
+  mod.style.position='';mod.style.top='';mod.style.left='';
+  mod.style.width='';mod.style.zIndex='';mod.style.opacity='';
+  mod.style.pointerEvents='';
+
+  // Insert module where placeholder is
+  panel.insertBefore(mod,dragState.placeholder);
+  dragState.placeholder.remove();
+  dragState={el:null,placeholder:null,startY:0,offsetY:0};
+
+  document.removeEventListener('mousemove',onDrag);
+  document.removeEventListener('mouseup',endDrag);
+  document.removeEventListener('touchmove',onDrag);
+  document.removeEventListener('touchend',endDrag);
 }
 
 init();
