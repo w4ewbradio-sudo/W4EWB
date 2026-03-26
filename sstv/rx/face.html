@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Biometric Analysis HUD v2</title>
+<title>Biometric Analysis HUD v3</title>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core@3.20.0/dist/tf-core.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter@3.20.0/dist/tf-converter.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl@3.20.0/dist/tf-backend-webgl.min.js"></script>
@@ -155,7 +155,7 @@ body{background:var(--bg-dark);color:var(--text-bright);font-family:'Share Tech 
 <body>
 
 <div id="init-overlay">
-  <div class="init-title">BIOMETRIC HUD v2</div>
+  <div class="init-title">BIOMETRIC HUD v3</div>
   <div class="init-progress"><div class="init-progress-fill" id="init-progress-fill"></div></div>
   <div id="init-status">INITIALIZING SYSTEMS...</div>
 </div>
@@ -415,6 +415,7 @@ body{background:var(--bg-dark);color:var(--text-bright);font-family:'Share Tech 
     <div class="data-row"><span class="data-label">Wellness</span><div class="bar-container"><div class="bar-track"><div class="bar-fill good" id="wellness-bar" style="width:0%"></div></div><span class="data-value good" id="wellness-val">—</span></div></div>
     <div class="data-row"><span class="data-label">BP Estimate</span><span class="data-value" id="bp-est">—</span></div>
     <div class="data-row"><span class="data-label">SpO2 Est.</span><div class="bar-container"><div class="bar-track"><div class="bar-fill good" id="spo2-bar" style="width:0%"></div></div><span class="data-value good" id="spo2-val">—</span></div></div>
+    <div style="padding:3px 0;font-size:8px;color:var(--yellow);letter-spacing:0.5px;border-top:1px solid var(--border);margin-top:3px">⚠ BP &amp; SpO2 ARE ROUGH ESTIMATES ONLY — NOT MEDICAL DEVICES. DO NOT USE FOR CLINICAL DECISIONS.</div>
   </div>
 
   <!-- MOD 12: SKIN & COMPLEXION (NEW) -->
@@ -446,7 +447,11 @@ body{background:var(--bg-dark);color:var(--text-bright);font-family:'Share Tech 
 
 <script>
 // ============================================================
-// BIOMETRIC HUD v2 — FULL ENGINE WITH 12 MODULES
+// BIOMETRIC HUD v3 — FULL ENGINE WITH 12 MODULES
+// v3 changes: bandpass filtering for rPPG + respiration,
+//   canvas pool (no per-frame allocation), sigmoid emotion
+//   activations with hysteresis, SNR-weighted resp fusion,
+//   medical disclaimers on BP/SpO2
 // ============================================================
 const $ = id => document.getElementById(id);
 
@@ -476,6 +481,114 @@ const state = {
   // Stress (NEW)
   stressHistory: [],
 };
+
+// ============ OFFSCREEN CANVAS POOL (v3: reuse instead of allocating per frame) ============
+const _canvasPool = {};
+function getOffscreenCanvas(name, w, h) {
+  if (!_canvasPool[name]) {
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    _canvasPool[name] = { canvas: c, ctx: c.getContext('2d', { willReadFrequently: true }) };
+  }
+  const entry = _canvasPool[name];
+  if (entry.canvas.width !== w || entry.canvas.height !== h) {
+    entry.canvas.width = w; entry.canvas.height = h;
+  }
+  return entry;
+}
+
+// ============ DSP UTILITIES (v3: bandpass filtering for rPPG and respiration) ============
+// 2nd-order IIR Butterworth bandpass filter
+function designBandpass(fLow, fHigh, sampleRate) {
+  // Attempt a simple biquad bandpass via bilinear transform
+  const w0 = 2 * Math.PI * Math.sqrt(fLow * fHigh) / sampleRate;
+  const bw = 2 * Math.PI * (fHigh - fLow) / sampleRate;
+  const Q = Math.sqrt(fLow * fHigh) / (fHigh - fLow);
+  const alpha = Math.sin(w0) / (2 * Q);
+  const cosw0 = Math.cos(w0);
+  const b0 = alpha, b1 = 0, b2 = -alpha;
+  const a0 = 1 + alpha, a1 = -2 * cosw0, a2 = 1 - alpha;
+  return { b: [b0/a0, b1/a0, b2/a0], a: [1, a1/a0, a2/a0] };
+}
+
+function applyFilter(signal, coeffs) {
+  const { b, a } = coeffs;
+  const out = new Array(signal.length).fill(0);
+  for (let i = 0; i < signal.length; i++) {
+    out[i] = b[0] * signal[i]
+           + (i >= 1 ? b[1] * signal[i-1] - a[1] * out[i-1] : 0)
+           + (i >= 2 ? b[2] * signal[i-2] - a[2] * out[i-2] : 0);
+  }
+  return out;
+}
+
+// Apply filter forward-backward for zero phase shift (filtfilt)
+function filtfilt(signal, coeffs) {
+  const fwd = applyFilter(signal, coeffs);
+  const rev = applyFilter([...fwd].reverse(), coeffs);
+  return rev.reverse();
+}
+
+// Resample irregular-time buffer to uniform sample rate
+function resampleUniform(buffer, targetRate) {
+  if (buffer.length < 2) return { signal: [], times: [] };
+  const tStart = buffer[0].time, tEnd = buffer[buffer.length - 1].time;
+  const duration = (tEnd - tStart) / 1000; // seconds
+  const nSamples = Math.max(2, Math.round(duration * targetRate));
+  const dt = (tEnd - tStart) / (nSamples - 1);
+  const signal = [], times = [];
+  let j = 0;
+  for (let i = 0; i < nSamples; i++) {
+    const t = tStart + i * dt;
+    while (j < buffer.length - 2 && buffer[j + 1].time < t) j++;
+    const t0 = buffer[j].time, t1 = buffer[Math.min(j + 1, buffer.length - 1)].time;
+    const frac = t1 > t0 ? (t - t0) / (t1 - t0) : 0;
+    signal.push(frac);
+    times.push(t);
+  }
+  return { signal, times, dt: dt / 1000, rate: targetRate };
+}
+
+// Resample with actual value interpolation (for specific field)
+function resampleField(buffer, field, targetRate) {
+  if (buffer.length < 2) return [];
+  const tStart = buffer[0].time, tEnd = buffer[buffer.length - 1].time;
+  const nSamples = Math.max(2, Math.round(((tEnd - tStart) / 1000) * targetRate));
+  const dt = (tEnd - tStart) / (nSamples - 1);
+  const out = [];
+  let j = 0;
+  for (let i = 0; i < nSamples; i++) {
+    const t = tStart + i * dt;
+    while (j < buffer.length - 2 && buffer[j + 1].time < t) j++;
+    const v0 = buffer[j][field], v1 = buffer[Math.min(j + 1, buffer.length - 1)][field];
+    const t0 = buffer[j].time, t1 = buffer[Math.min(j + 1, buffer.length - 1)].time;
+    const frac = t1 > t0 ? (t - t0) / (t1 - t0) : 0;
+    out.push(v0 + (v1 - v0) * frac);
+  }
+  return out;
+}
+
+// Find peaks with minimum prominence
+function findPeaksWithProminence(signal, minProminence) {
+  const peaks = [];
+  for (let i = 2; i < signal.length - 2; i++) {
+    if (signal[i] > signal[i-1] && signal[i] > signal[i-2] &&
+        signal[i] > signal[i+1] && signal[i] > signal[i+2]) {
+      // Check prominence: distance from peak to nearest valley on each side
+      let lMin = signal[i], rMin = signal[i];
+      for (let j = i - 1; j >= Math.max(0, i - 20); j--) { lMin = Math.min(lMin, signal[j]); if (signal[j] > signal[i]) break; }
+      for (let j = i + 1; j <= Math.min(signal.length - 1, i + 20); j++) { rMin = Math.min(rMin, signal[j]); if (signal[j] > signal[i]) break; }
+      const prominence = signal[i] - Math.max(lMin, rMin);
+      if (prominence >= minProminence) peaks.push({ idx: i, prominence });
+    }
+  }
+  return peaks;
+}
+
+// Sigmoid activation for smooth thresholding (v3: replaces hard if/else in emotions)
+function sigmoid(x, center, steepness) {
+  return 1 / (1 + Math.exp(-(x - center) * steepness));
+}
 
 function log(msg, type='info') {
   const el = $('system-log');
@@ -540,7 +653,7 @@ async function init(){
   pStat.textContent='CALIBRATING...'; pFill.style.width='85%';
   initCanvases();
   pFill.style.width='100%'; pStat.textContent='ALL SYSTEMS NOMINAL';
-  log('HUD v2 initialized — 12 modules online','success');
+  log('HUD v3 initialized — 12 modules online (bandpass+sigmoid+SNR)','success');
   loadSavedCalibration();
   setTimeout(()=>{ $('init-overlay').classList.add('hidden'); $('hud-container').style.opacity='1'; initModuleControls(); requestAnimationFrame(loop); },700);
 }
@@ -636,8 +749,8 @@ function detectOcclusions(mesh){
     const jawL=mesh[172], jawR=mesh[397]; // jaw sides
 
     if(fhPt&&chinPt){
-      const tc=document.createElement('canvas'),ctx=tc.getContext('2d'),s=24;
-      tc.width=s; tc.height=s;
+      const s=24;
+      const {canvas:tc,ctx}=getOffscreenCanvas('occ_beard',s,s);
 
       // Sample forehead
       ctx.drawImage(video,fhPt[0]-s/2,fhPt[1]-s/2,s,s,0,0,s,s);
@@ -696,8 +809,8 @@ function detectOcclusions(mesh){
   try{
     const bridgePt=mesh[6]; // nose bridge between eyes
     if(bridgePt){
-      const tc=document.createElement('canvas'),ctx=tc.getContext('2d'),s=20;
-      tc.width=s;tc.height=s;
+      const s=20;
+      const {canvas:tc,ctx}=getOffscreenCanvas('occ_glasses',s,s);
       ctx.drawImage(video,bridgePt[0]-s/2,bridgePt[1]-s/2,s,s,0,0,s,s);
       const d=ctx.getImageData(0,0,s,s).data;
       // Check for strong horizontal edges (glasses frame)
@@ -779,8 +892,7 @@ function drawLandmarks(mesh){
 // ============ MOD 02: rPPG with POS Algorithm + Multi-ROI ============
 function sampleROI(cx,cy,sz){
   try{
-    const tc=document.createElement('canvas'),ctx=tc.getContext('2d');
-    tc.width=sz;tc.height=sz;
+    const {canvas:tc,ctx}=getOffscreenCanvas('roi',sz,sz);
     ctx.drawImage(video,cx-sz/2,cy-sz/2,sz,sz,0,0,sz,sz);
     const d=ctx.getImageData(0,0,sz,sz).data;
     let r=0,g=0,b=0,px=0;
@@ -827,7 +939,8 @@ function updateRPPG_POS(mesh,now){
 function computeHR_POS(now){
   const buf=state.rppgBuffer,N=buf.length;if(N<90)return;
   const smW=Math.max(5,Math.min(20,settings.rppgSmoothing));
-  // POS: Plane Orthogonal to Skin
+
+  // v3: POS algorithm to extract pulse signal
   const winLen=Math.min(45,Math.floor(N/2));
   const posSignal=new Array(N).fill(0);
   for(let st=0;st<=N-winLen;st+=Math.floor(winLen/2)){
@@ -842,32 +955,113 @@ function computeHR_POS(now){
     const alpha=std1/std2;
     for(let i=0;i<len;i++){const idx=st+i;if(idx<N)posSignal[idx]+=S1[i]+alpha*S2[i]}
   }
-  // Detrend
-  const ws=20,det=[];
-  for(let i=0;i<N;i++){let s=Math.max(0,i-ws),e=Math.min(N,i+ws),sm=0;for(let j=s;j<e;j++)sm+=posSignal[j];det.push(posSignal[i]-sm/(e-s))}
-  state.posSignal=det;
-  // Peaks
-  const peaks=[];
-  for(let i=2;i<det.length-2;i++){if(det[i]>det[i-1]&&det[i]>det[i-2]&&det[i]>det[i+1]&&det[i]>det[i+2]&&det[i]>0)peaks.push(i)}
-  if(peaks.length>=3){
-    const iv=[];for(let i=1;i<peaks.length;i++){const dt=buf[peaks[i]].time-buf[peaks[i-1]].time;if(dt>300&&dt<2000)iv.push(dt)}
-    if(iv.length>=2){
-      const avg=iv.reduce((a,b)=>a+b,0)/iv.length;
-      let hr=Math.max(45,Math.min(180,60000/avg));
-      state.heartRateHistory.push(hr);if(state.heartRateHistory.length>smW)state.heartRateHistory.shift();
-      state.currentHR=Math.round(state.heartRateHistory.reduce((a,b)=>a+b,0)/state.heartRateHistory.length);
-      $('heart-rate').textContent=state.currentHR+' BPM';
-      if(iv.length>=3){let ss=0;for(let i=1;i<iv.length;i++)ss+=(iv[i]-iv[i-1])**2;
-        const rmssd=Math.sqrt(ss/(iv.length-1));state.hrvHistory.push(rmssd);if(state.hrvHistory.length>8)state.hrvHistory.shift();
-        $('hrv').textContent=Math.round(state.hrvHistory.reduce((a,b)=>a+b,0)/state.hrvHistory.length)+' ms';
+
+  // v3.1: Measure actual sample rate from buffer timestamps
+  const tStart = buf[0].time, tEnd = buf[N-1].time;
+  const duration = (tEnd - tStart) / 1000;
+  const measuredFPS = duration > 0 ? (N - 1) / duration : 15;
+
+  // v3.1: Resample to actual FPS (or slightly below) — NEVER upsample
+  // Upsampling creates interpolation artifacts that look like extra heartbeats
+  const uniformRate = Math.min(measuredFPS * 0.9, 30); // cap at 30, but never above ~actual
+  const nUniform = Math.max(2, Math.round(duration * uniformRate));
+  const dtU = (tEnd - tStart) / (nUniform - 1);
+  const uniformPOS = [];
+  for (let i = 0; i < nUniform; i++) {
+    const t = tStart + i * dtU;
+    let j = 0;
+    while (j < N - 2 && buf[j + 1].time < t) j++;
+    const frac = buf[j + 1] ? (t - buf[j].time) / ((buf[j + 1].time - buf[j].time) || 1) : 0;
+    const v0 = posSignal[j] || 0, v1 = posSignal[Math.min(j + 1, N - 1)] || 0;
+    uniformPOS.push(v0 + (v1 - v0) * Math.max(0, Math.min(1, frac)));
+  }
+
+  // v3.1: Bandpass filter adapted to actual sample rate
+  // Nyquist = uniformRate / 2. Ensure high cutoff is below Nyquist * 0.8
+  const nyquist = uniformRate / 2;
+  const bpLow = 0.7;  // 42 BPM
+  const bpHigh = Math.min(3.5, nyquist * 0.8); // don't exceed 80% of Nyquist
+  let filtered;
+  if (uniformPOS.length >= 20 && bpHigh > bpLow * 1.5) {
+    const bpCoeffs = designBandpass(bpLow, bpHigh, uniformRate);
+    filtered = filtfilt(uniformPOS, bpCoeffs);
+  } else {
+    // Fallback: simple detrend if sample rate too low for proper bandpass
+    const ws = Math.max(5, Math.round(uniformPOS.length / 6));
+    filtered = uniformPOS.map((v, i) => {
+      const s = Math.max(0, i - ws), e = Math.min(uniformPOS.length, i + ws);
+      let sm = 0; for (let j = s; j < e; j++) sm += uniformPOS[j];
+      return v - sm / (e - s);
+    });
+  }
+
+  state.posSignal = filtered;
+
+  // v3.1: Tighter peak detection — require 50% of RMS as prominence (up from 30%)
+  if (filtered.length < 20) return;
+  const sigStd = Math.sqrt(filtered.reduce((a, v) => a + v * v, 0) / filtered.length) || 0.001;
+  const minProm = sigStd * 0.5;
+  const peaks = findPeaksWithProminence(filtered, minProm);
+
+  if (peaks.length >= 3) {
+    const peakTimes = peaks.map(p => tStart + p.idx * dtU);
+    const iv = [];
+    for (let i = 1; i < peakTimes.length; i++) {
+      const dt = peakTimes[i] - peakTimes[i - 1];
+      if (dt > 333 && dt < 1500) iv.push(dt); // v3.1: tighter range: 40-180 BPM
+    }
+
+    if (iv.length >= 2) {
+      // v3.1: Outlier rejection — remove intervals > 1.5 IQR from median
+      const sorted = [...iv].sort((a, b) => a - b);
+      const q1 = sorted[Math.floor(sorted.length * 0.25)];
+      const q3 = sorted[Math.floor(sorted.length * 0.75)];
+      const iqr = q3 - q1;
+      const lo = q1 - 1.5 * iqr, hi = q3 + 1.5 * iqr;
+      const cleanIV = iv.filter(x => x >= lo && x <= hi);
+
+      if (cleanIV.length >= 2) {
+        const avg = cleanIV.reduce((a, b) => a + b, 0) / cleanIV.length;
+        let hr = Math.max(45, Math.min(180, 60000 / avg));
+        state.heartRateHistory.push(hr);
+        if (state.heartRateHistory.length > smW) state.heartRateHistory.shift();
+        state.currentHR = Math.round(state.heartRateHistory.reduce((a, b) => a + b, 0) / state.heartRateHistory.length);
+        $('heart-rate').textContent = state.currentHR + ' BPM';
+
+        if (cleanIV.length >= 3) {
+          let ss = 0;
+          for (let i = 1; i < cleanIV.length; i++) ss += (cleanIV[i] - cleanIV[i - 1]) ** 2;
+          const rmssd = Math.sqrt(ss / (cleanIV.length - 1));
+          state.hrvHistory.push(rmssd);
+          if (state.hrvHistory.length > 8) state.hrvHistory.shift();
+          $('hrv').textContent = Math.round(state.hrvHistory.reduce((a, b) => a + b, 0) / state.hrvHistory.length) + ' ms';
+        }
+
+        // Signal quality: interval consistency + prominence + rejection ratio
+        const std = Math.sqrt(cleanIV.map(x => (x - avg) ** 2).reduce((a, b) => a + b, 0) / cleanIV.length);
+        const consistency = Math.max(0, 1 - std / avg * 2);
+        const avgProm = peaks.reduce((a, p) => a + p.prominence, 0) / peaks.length;
+        const promScore = Math.min(1, avgProm / (sigStd * 2));
+        // v3.1: penalize quality if many intervals were rejected as outliers
+        const rejectionPenalty = iv.length > 0 ? cleanIV.length / iv.length : 0;
+        // v3.1: penalize quality at low FPS
+        const fpsPenalty = Math.min(1, measuredFPS / 20); // full credit at 20+ FPS, linear penalty below
+        state.signalQuality = Math.max(0, Math.min(100, Math.round(
+          (consistency * 0.4 + promScore * 0.25 + rejectionPenalty * 0.15 + fpsPenalty * 0.2) * 100
+        )));
       }
-      const std=Math.sqrt(iv.map(x=>(x-avg)**2).reduce((a,b)=>a+b,0)/iv.length);
-      state.signalQuality=Math.max(0,Math.min(100,Math.round((1-std/avg*2)*100)));
     }
   }
+
   const sq=state.signalQuality;$('signal-quality').textContent=sq+'%';$('signal-bar').style.width=sq+'%';
   const sc=sq>60?'good':sq>30?'warn':'alert';$('signal-bar').className='bar-fill '+sc;$('signal-quality').className='data-value '+sc;
   if(state.currentHR>0){state.hrSum+=state.currentHR;state.hrCount++;state.hrMin=Math.min(state.hrMin,state.currentHR);state.hrMax=Math.max(state.hrMax,state.currentHR)}
+
+  // v3.1: Log sample rate info once early on
+  if (state.frameCount > 100 && !state._rppgRateLogged) {
+    state._rppgRateLogged = true;
+    log(`rPPG: measured ${measuredFPS.toFixed(1)} FPS → resample ${uniformRate.toFixed(1)} Hz, BP ${bpLow}-${bpHigh.toFixed(1)} Hz`, 'info');
+  }
 }
 
 function drawWaveform(){
@@ -960,20 +1154,29 @@ function updateAttentionBlinks(mesh,now){
 
   // Two-criteria blink: EITHER below adaptive threshold OR rapid velocity drop
   const belowThreshold=avg<blinkThreshold;
-  const rapidDrop=earVelocity>0.02 && avg<(state.earOpenBaseline||0.28)*0.85;
+  // v3.1: scale velocity threshold to FPS — at low FPS each frame spans more time
+  const currentFPS = state.fpsFrames.length || 15;
+  const velThresh = 0.02 * (currentFPS / 30); // lower threshold at lower FPS
+  const rapidDrop=earVelocity>velThresh && avg<(state.earOpenBaseline||0.28)*0.85;
   const eyeClosing=belowThreshold||rapidDrop;
 
   if(eyeClosing&&!state.wasEyeClosed){
     state.eyeClosedFrames=1;
-    state.blinkStartEAR=prevEar; // remember the open EAR before blink
+    state.blinkStartTime=now; // v3.1: track blink start TIME not just frames
+    state.blinkStartEAR=prevEar;
   } else if(eyeClosing){
     state.eyeClosedFrames++;
   } else if(!eyeClosing&&state.wasEyeClosed){
     // Eye just opened — was it a blink?
-    const duration=state.eyeClosedFrames;
-    const earDrop=(state.blinkStartEAR||0.3)-avg;
-    // Blink: 1-20 frames duration, with meaningful EAR drop
-    if(duration>=1 && duration<20){
+    // v3.1: Use elapsed time instead of frame count for duration check
+    const blinkDurationMs = now - (state.blinkStartTime || now);
+    const minBlinkMs = 50;  // minimum 50ms (not a detection glitch)
+    const maxBlinkMs = 500; // maximum 500ms (beyond this it's an extended close, not a blink)
+    // v3.1: Cooldown — require at least 150ms between blinks (no double-counting)
+    const timeSinceLastBlink = now - (state.lastBlinkTime || 0);
+    const cooldownOk = timeSinceLastBlink > 150;
+
+    if(blinkDurationMs >= minBlinkMs && blinkDurationMs <= maxBlinkMs && cooldownOk){
       state.totalBlinks++;
       state.blinkTimestamps.push(now);
       state.lastBlinkTime=now;
@@ -1160,12 +1363,12 @@ function updateExpressions(mesh){
     lowerConf,upperConf};
 }
 
-// ============ MOD 08: EMOTION RECOGNITION (TUNED) ============
+// ============ MOD 08: EMOTION RECOGNITION (v3: sigmoid activations + hysteresis) ============
 function updateEmotions(mesh,now){
   const au=state._au||{mouthOpen:0,smile:0,browRaise:0,squint:0,ear:.25,frown:0,noseWrinkle:0};
   const sym=parseFloat($('face-symmetry').textContent)||95;
   const asymmetry=Math.max(0,100-sym);
-  const sens=settings.emoSensitivity/100; // sensitivity multiplier
+  const sens=settings.emoSensitivity/100;
   const cal=state.calibration||null;
 
   // Subtract personal neutral baselines if calibrated
@@ -1175,10 +1378,9 @@ function updateEmotions(mesh,now){
   const adjFrown=cal?Math.max(0,au.frown-cal.neutralFrown*0.7):au.frown;
   const adjNoseWrinkle=cal?Math.max(0,au.noseWrinkle-cal.neutralNoseWrinkle*0.8):au.noseWrinkle;
 
-  // Scale by sensitivity
   const s=adjSmile*sens, b=adjBrow*sens, sq=adjSquint*sens, f=adjFrown*sens, nw=adjNoseWrinkle*sens;
 
-  // Dynamic range: if calibrated, scale relative to calibrated expression peaks
+  // Dynamic range with calibration
   const smileRange=cal&&cal.happySmile>0?(s/cal.happySmile*60):s*0.85;
   const browRange=cal&&cal.surpriseBrow>0?(b/cal.surpriseBrow*60):b*0.5;
   const squintRange=cal&&cal.angrySquint>0?(sq/cal.angrySquint*50):sq*0.4;
@@ -1187,25 +1389,29 @@ function updateEmotions(mesh,now){
   const baseline=state.earOpenBaseline||state.earBaseline||0.28;
   const eyeWiden=Math.max(0,(au.ear-baseline)/baseline*80)*sens;
 
-  // Emotion scores
-  let happy=Math.min(100, smileRange + (s>8?sq*0.1:0));
-  let surprise=Math.min(100, browRange + au.mouthOpen*0.25*sens + eyeWiden*0.3);
-  let angry=Math.min(100, (sq>10&&f>3)?(squintRange+frownRange*0.6+Math.max(0,asymmetry-8)*0.2):(sq*0.08+f*0.08));
-  let sad=Math.min(100, frownRange*0.8 + (f>3?Math.max(0,(8-s)*0.15):0));
-  let fear=Math.min(100, browRange*0.4 + eyeWiden*0.5 + (au.mouthOpen>5&&au.mouthOpen<30?au.mouthOpen*0.2*sens:0));
+  // v3: Sigmoid-based emotion scoring (smooth transitions instead of hard thresholds)
+  // Each emotion uses sigmoid activation — output ramps smoothly from 0 to max
+  // sigmoid(x, center, steepness) -> 0..1, multiplied by a ceiling
+
+  let happy = sigmoid(smileRange, 12, 0.15) * Math.min(100, smileRange * 1.5 + (s > 8 ? sq * 0.1 : 0));
+  let surprise = sigmoid(browRange + au.mouthOpen * 0.25 * sens, 10, 0.12) * Math.min(100, browRange + au.mouthOpen * 0.25 * sens + eyeWiden * 0.3);
+  let angry = sigmoid(sq + f, 15, 0.10) * Math.min(100, (sq > 8 && f > 2) ? (squintRange + frownRange * 0.4 + Math.max(0, asymmetry - 8) * 0.2) : (sq * 0.06 + f * 0.06));
+  // v3: Reduced frown weight — frown AU is unreliable from FaceMesh, halved its contribution
+  let sad = sigmoid(frownRange, 15, 0.10) * Math.min(100, frownRange * 0.5 + (f > 3 ? Math.max(0, (8 - s) * 0.1) : 0));
+  let fear = sigmoid(browRange * 0.4 + eyeWiden * 0.5, 8, 0.12) * Math.min(100, browRange * 0.4 + eyeWiden * 0.5 + (au.mouthOpen > 5 && au.mouthOpen < 30 ? au.mouthOpen * 0.2 * sens : 0));
   if(au.mouthOpen>35) fear*=0.3;
-  let disgust=Math.min(100, nw>5 ? nw*0.6 + (nw>10?sq*0.1:0) : 0);
+  let disgust = sigmoid(nw, 8, 0.15) * Math.min(100, nw > 5 ? nw * 0.6 + (nw > 10 ? sq * 0.1 : 0) : 0);
 
   // Clamp
   happy=Math.max(0,happy); surprise=Math.max(0,surprise); angry=Math.max(0,angry);
   sad=Math.max(0,sad); fear=Math.max(0,fear); disgust=Math.max(0,disgust);
 
-  // Neutral: use configurable threshold
+  // Neutral with smooth threshold
   const neutralThresh=settings.neutralThreshold;
   const emotionSum=happy+surprise+angry+sad+fear+disgust;
   let neutral;
   if(emotionSum<neutralThresh){
-    neutral=100-emotionSum*(100/(neutralThresh+1)); // smooth transition
+    neutral=100-emotionSum*(100/(neutralThresh+1));
   } else {
     neutral=Math.max(0, neutralThresh*2-emotionSum);
   }
@@ -1214,7 +1420,7 @@ function updateEmotions(mesh,now){
   let total=happy+surprise+angry+sad+fear+disgust+neutral;
   if(total>0){happy=happy/total*100;surprise=surprise/total*100;angry=angry/total*100;sad=sad/total*100;fear=fear/total*100;disgust=disgust/total*100;neutral=neutral/total*100}
 
-  // Adaptive smoothing from settings
+  // Adaptive smoothing
   const sm=state.emotionSmooth;
   const baseAlpha=Math.max(0.03,Math.min(0.3, 1/(settings.emoSmoothing+1)));
   for(const k of ['happy','sad','angry','surprise','fear','disgust','neutral']){
@@ -1229,13 +1435,30 @@ function updateEmotions(mesh,now){
 
   for(const k in emos){$('emo-'+k).style.width=emos[k]+'%';$('emo-'+k+'-pct').textContent=Math.round(emos[k])+'%'}
 
-  // Dominant (require threshold to override neutral)
-  let dom='NEUTRAL',domV=sm.neutral;
-  const minDom=cal?8:12; // lower threshold when calibrated
-  for(const k of ['happy','sad','angry','surprise','fear','disgust']){
-    if(sm[k]>domV&&sm[k]>minDom){domV=sm[k];dom=k.toUpperCase()}
+  // v3: Dominant emotion with temporal hysteresis
+  // Require a new emotion to win for 8+ consecutive frames before switching
+  if (!state._emoDomHistory) state._emoDomHistory = { current: 'NEUTRAL', candidate: 'NEUTRAL', candidateFrames: 0 };
+  const domH = state._emoDomHistory;
+  const minDom = cal ? 8 : 12;
+  let frameDom = 'NEUTRAL', frameDomV = sm.neutral;
+  for (const k of ['happy','sad','angry','surprise','fear','disgust']) {
+    if (sm[k] > frameDomV && sm[k] > minDom) { frameDomV = sm[k]; frameDom = k.toUpperCase(); }
   }
-  $('emotion-dominant').textContent=dom;
+  // Hysteresis: candidate must persist for several frames
+  if (frameDom === domH.current) {
+    domH.candidate = frameDom;
+    domH.candidateFrames = 0;
+  } else if (frameDom === domH.candidate) {
+    domH.candidateFrames++;
+    if (domH.candidateFrames >= 8) { // 8 frames ≈ ~270ms at 30fps
+      domH.current = frameDom;
+      domH.candidateFrames = 0;
+    }
+  } else {
+    domH.candidate = frameDom;
+    domH.candidateFrames = 1;
+  }
+  $('emotion-dominant').textContent = domH.current;
 
   const valence=((sm.happy*1.0+sm.surprise*0.2)-(sm.sad+sm.angry+sm.fear*0.8+sm.disgust))/100;
   $('valence-val').textContent=valence.toFixed(2); $('valence-bar').style.width=Math.max(0,Math.min(100,50+valence*50))+'%';
@@ -1297,7 +1520,8 @@ function updateDemographics(mesh,now){
   // 7. Skin texture proxy: luminance variance from forehead (wrinkles = more variance)
   let skinVariance=0;
   try{
-    const tc=document.createElement('canvas'),ctx=tc.getContext('2d'),sz=30;tc.width=sz;tc.height=sz;
+    const sz=30;
+    const {canvas:tc,ctx}=getOffscreenCanvas('demo_skin',sz,sz);
     const fhPt=mesh[151]; // center forehead
     if(fhPt){
       ctx.drawImage(video,fhPt[0]-sz/2,fhPt[1]-sz/2,sz,sz,0,0,sz,sz);
@@ -1390,7 +1614,8 @@ function updateDemographics(mesh,now){
   try{
     const ck=mesh[205];
     if(ck){
-      const tc=document.createElement('canvas'),ctx=tc.getContext('2d'),s=20;tc.width=s;tc.height=s;
+      const s=20;
+      const {canvas:tc,ctx}=getOffscreenCanvas('demo_tone',s,s);
       ctx.drawImage(video,ck[0]-s/2,ck[1]-s/2,s,s,0,0,s,s);
       const d=ctx.getImageData(0,0,s,s).data;
       let r=0,g=0,b=0,px=0;for(let i=0;i<d.length;i+=4){r+=d[i];g+=d[i+1];b+=d[i+2];px++}
@@ -1406,14 +1631,14 @@ function updateDemographics(mesh,now){
   $('dist-camera').textContent=distCM+' cm';
 }
 
-// ============ MOD 10: RESPIRATION (TUNED) ============
+// ============ MOD 10: RESPIRATION (v3: bandpass filtered + SNR-weighted fusion) ============
 function updateRespiration(mesh,now){
   const chin=mesh[152],nose=mesh[4];
   if(!chin||!nose)return;
 
   // === THREE-SIGNAL RESPIRATORY FUSION ===
 
-  // SIGNAL 1: rPPG Respiratory Modulation (PRIMARY)
+  // SIGNAL 1: rPPG Respiratory Modulation
   let rppgRespSignal=0;
   if(state.rppgBuffer.length>20){
     const winSize=15;
@@ -1432,8 +1657,7 @@ function updateRespiration(mesh,now){
     const shoulderX=(mesh[234]&&mesh[454])?(mesh[234][0]+mesh[454][0])/2:chin[0];
     const sz=40;
     if(shoulderY<overlayCanvas.height-sz/2){
-      const tc=document.createElement('canvas'),ctx=tc.getContext('2d');
-      tc.width=sz;tc.height=sz;
+      const {canvas:tc,ctx}=getOffscreenCanvas('resp_shoulder',sz,sz);
       ctx.drawImage(video,shoulderX-sz/2,shoulderY-sz/2,sz,sz,0,0,sz,sz);
       const d=ctx.getImageData(0,0,sz,sz).data;
       let lumSum=0,px=0;
@@ -1451,98 +1675,130 @@ function updateRespiration(mesh,now){
   if(state.respBuffer.length>state.respMaxSamples)state.respBuffer.shift();
   if(state.respBuffer.length<60)return;
 
-  const N=state.respBuffer.length;
+  // v3.1: Adapt resample rate to actual FPS (never upsample)
+  const respBufDuration = (state.respBuffer[state.respBuffer.length-1].time - state.respBuffer[0].time) / 1000;
+  const respMeasuredFPS = respBufDuration > 0 ? (state.respBuffer.length - 1) / respBufDuration : 10;
+  const respSR = Math.min(respMeasuredFPS * 0.9, 10); // cap at 10 Hz for resp, never above actual
+  const rppgU = resampleField(state.respBuffer, 'rppg', respSR);
+  const shldU = resampleField(state.respBuffer, 'shoulder', respSR);
+  const lmrkU = resampleField(state.respBuffer, 'landmark', respSR);
 
-  function detrendSmooth(vals,dtW,smW){
-    const det=[];
-    for(let i=0;i<vals.length;i++){let s=Math.max(0,i-dtW),e=Math.min(vals.length,i+dtW),sm=0;for(let j=s;j<e;j++)sm+=vals[j];det.push(vals[i]-sm/(e-s))}
-    const out=[];
-    for(let i=0;i<det.length;i++){let s=Math.max(0,i-smW),e=Math.min(det.length,i+smW+1),sm=0;for(let j=s;j<e;j++)sm+=det[j];out.push(sm/(e-s))}
-    return out;
+  if (rppgU.length < 30) return;
+
+  // v3.1: Ensure bandpass high cutoff is below Nyquist
+  const respNyquist = respSR / 2;
+  const respBpHigh = Math.min(0.50, respNyquist * 0.8);
+  const respBP = (respBpHigh > 0.20) ? designBandpass(0.15, respBpHigh, respSR) : null;
+  const rppgS = (respBP && rppgU.length >= 20) ? filtfilt(rppgU, respBP) : rppgU;
+  const shldS = (respBP && shldU.length >= 20) ? filtfilt(shldU, respBP) : shldU;
+  const lmrkS = (respBP && lmrkU.length >= 20) ? filtfilt(lmrkU, respBP) : lmrkU;
+
+  // v3: Compute SNR for dynamic weighting
+  function channelSNR(filtered, original) {
+    if (filtered.length < 10) return 0;
+    const sigP = filtered.reduce((a, v) => a + v * v, 0) / filtered.length;
+    const noiseP = original.map((v, i) => v - filtered[i]).reduce((a, v) => a + v * v, 0) / original.length;
+    return noiseP > 0 ? sigP / noiseP : 0;
   }
+  const rppgSNR = channelSNR(rppgS, rppgU);
+  const shldSNR = channelSNR(shldS, shldU);
+  const lmrkSNR = channelSNR(lmrkS, lmrkU);
 
-  function findPks(sig,minP){
-    const pks=[];
-    for(let i=3;i<sig.length-3;i++){if(sig[i]>sig[i-1]&&sig[i]>sig[i-2]&&sig[i]>sig[i-3]&&sig[i]>sig[i+1]&&sig[i]>sig[i+2]&&sig[i]>minP)pks.push(i)}
+  function findPks(sig, minP) {
+    const pks = [];
+    for (let i = 3; i < sig.length - 3; i++) {
+      if (sig[i] > sig[i-1] && sig[i] > sig[i-2] && sig[i] > sig[i-3] && sig[i] > sig[i+1] && sig[i] > sig[i+2] && sig[i] > minP) pks.push(i);
+    }
     return pks;
   }
 
-  function calcRate(pks,buf){
-    if(pks.length<2)return null;
-    const iv=[];for(let i=1;i<pks.length;i++){const dt=buf[pks[i]].time-buf[pks[i-1]].time;if(dt>2000&&dt<12000)iv.push(dt)}
-    if(iv.length<1)return null;
-    const avg=iv.reduce((a,b)=>a+b,0)/iv.length;
-    return {rate:60000/avg,intervals:iv,avgInterval:avg};
+  function calcRate(pks, sr) {
+    if (pks.length < 2) return null;
+    const iv = [];
+    for (let i = 1; i < pks.length; i++) { const dt = (pks[i] - pks[i-1]) / sr; if (dt > 2 && dt < 12) iv.push(dt); }
+    if (iv.length < 1) return null;
+    const avg = iv.reduce((a, b) => a + b, 0) / iv.length;
+    return { rate: 60 / avg, intervals: iv, avgInterval: avg };
   }
 
-  function consistency(res){
-    if(!res||res.intervals.length<2)return 0;
-    const iv=res.intervals,avg=res.avgInterval;
-    const std=Math.sqrt(iv.reduce((a,x)=>a+(x-avg)**2,0)/iv.length);
-    return Math.max(0,1-std/avg);
+  function consistency(res) {
+    if (!res || res.intervals.length < 2) return 0;
+    const iv = res.intervals, avg = res.avgInterval;
+    const std = Math.sqrt(iv.reduce((a, x) => a + (x - avg) ** 2, 0) / iv.length);
+    return Math.max(0, 1 - std / avg);
   }
 
-  const rppgS=detrendSmooth(state.respBuffer.map(s=>s.rppg),40,4);
-  const rppgStd=Math.sqrt(rppgS.reduce((a,v)=>a+v*v,0)/rppgS.length)||.01;
-  const rppgR=calcRate(findPks(rppgS,rppgStd*.25),state.respBuffer);
-  const rppgC=consistency(rppgR);
+  const rppgStd = Math.sqrt(rppgS.reduce((a, v) => a + v * v, 0) / rppgS.length) || 0.01;
+  const rppgR = calcRate(findPks(rppgS, rppgStd * 0.25), respSR);
+  const rppgC = consistency(rppgR);
 
-  const shldS=detrendSmooth(state.respBuffer.map(s=>s.shoulder),50,5);
-  const shldStd=Math.sqrt(shldS.reduce((a,v)=>a+v*v,0)/shldS.length)||.01;
-  const shldR=calcRate(findPks(shldS,shldStd*.3),state.respBuffer);
-  const shldC=consistency(shldR);
+  const shldStd = Math.sqrt(shldS.reduce((a, v) => a + v * v, 0) / shldS.length) || 0.01;
+  const shldR = calcRate(findPks(shldS, shldStd * 0.3), respSR);
+  const shldC = consistency(shldR);
 
-  const lmrkS=detrendSmooth(state.respBuffer.map(s=>s.landmark),50,5);
-  const lmrkStd=Math.sqrt(lmrkS.reduce((a,v)=>a+v*v,0)/lmrkS.length)||.01;
-  const lmrkR=calcRate(findPks(lmrkS,lmrkStd*.3),state.respBuffer);
-  const lmrkC=consistency(lmrkR);
+  const lmrkStd = Math.sqrt(lmrkS.reduce((a, v) => a + v * v, 0) / lmrkS.length) || 0.01;
+  const lmrkR = calcRate(findPks(lmrkS, lmrkStd * 0.3), respSR);
+  const lmrkC = consistency(lmrkR);
 
-  // Weighted fusion — pick best or fuse agreeing signals
-  let bestRate=null,bestConf=0,bestSrc='—';
-  if(rppgR&&rppgC>bestConf){bestRate=rppgR.rate;bestConf=rppgC;bestSrc='rPPG'}
-  if(shldR&&shldC>bestConf){bestRate=shldR.rate;bestConf=shldC;bestSrc='SHOULDER'}
-  if(lmrkR&&lmrkC>bestConf){bestRate=lmrkR.rate;bestConf=lmrkC;bestSrc='LANDMARK'}
+  // v3: SNR-weighted fusion with landmark bias
+  const LANDMARK_BIAS = 1.5;
+  const rW = rppgC * Math.min(rppgSNR, 5) * 1.0;
+  const sW = shldC * Math.min(shldSNR, 5) * 0.7;
+  const lW = lmrkC * Math.min(lmrkSNR, 5) * LANDMARK_BIAS;
 
-  const cands=[rppgR?{r:rppgR.rate,c:rppgC}:null,shldR?{r:shldR.rate,c:shldC}:null,lmrkR?{r:lmrkR.rate,c:lmrkC}:null].filter(x=>x&&x.c>.2);
-  if(cands.length>=2){
-    cands.sort((a,b)=>b.c-a.c);
-    if(Math.abs(cands[0].r-cands[1].r)<3){
-      const tw=cands[0].c+cands[1].c;
-      bestRate=(cands[0].r*cands[0].c+cands[1].r*cands[1].c)/tw;
-      bestConf=(cands[0].c+cands[1].c)/2;bestSrc='FUSED';
-    }
+  const cands = [
+    rppgR ? { r: rppgR.rate, w: rW, src: 'rPPG' } : null,
+    shldR ? { r: shldR.rate, w: sW, src: 'SHOULDER' } : null,
+    lmrkR ? { r: lmrkR.rate, w: lW, src: 'LANDMARK' } : null
+  ].filter(x => x && x.w > 0.1);
+
+  let bestRate = null, bestConf = 0, bestSrc = '—';
+  if (cands.length >= 2) {
+    cands.sort((a, b) => b.w - a.w);
+    const anchor = cands[0];
+    const agreeing = cands.filter(c => Math.abs(c.r - anchor.r) < 4);
+    if (agreeing.length >= 2) {
+      const totalW = agreeing.reduce((a, c) => a + c.w, 0);
+      bestRate = agreeing.reduce((a, c) => a + c.r * c.w, 0) / totalW;
+      bestConf = agreeing.reduce((a, c) => a + Math.min(1, c.w), 0) / agreeing.length;
+      bestSrc = 'FUSED';
+    } else { bestRate = anchor.r; bestConf = Math.min(1, anchor.w); bestSrc = anchor.src; }
+  } else if (cands.length === 1) {
+    bestRate = cands[0].r; bestConf = Math.min(1, cands[0].w); bestSrc = cands[0].src;
   }
 
-  $('resp-source').textContent=bestSrc+(bestConf>0?` ${Math.round(bestConf*100)}%`:'');
+  $('resp-source').textContent = bestSrc + (bestConf > 0 ? ` ${Math.round(bestConf * 100)}%` : '');
 
-  if(bestRate!==null){
-    bestRate=Math.max(6,Math.min(28,bestRate));
-    state.respRateHistory.push(bestRate);if(state.respRateHistory.length>15)state.respRateHistory.shift();
-    $('resp-rate').textContent=Math.round(state.respRateHistory.reduce((a,b)=>a+b,0)/state.respRateHistory.length)+' BrPM';
-    $('resp-regularity').textContent=Math.round(bestConf*100)+'%';$('resp-reg-bar').style.width=(bestConf*100)+'%';
+  if (bestRate !== null) {
+    bestRate = Math.max(6, Math.min(28, bestRate));
+    state.respRateHistory.push(bestRate);
+    if (state.respRateHistory.length > 15) state.respRateHistory.shift();
+    $('resp-rate').textContent = Math.round(state.respRateHistory.reduce((a, b) => a + b, 0) / state.respRateHistory.length) + ' BrPM';
+    $('resp-regularity').textContent = Math.round(bestConf * 100) + '%';
+    $('resp-reg-bar').style.width = (bestConf * 100) + '%';
   }
 
-  // Breath depth from shoulder amplitude
-  if(shldS.length>0){const amp=Math.max(...shldS.map(Math.abs)),mx=Math.max(shldStd*4,1);
-    $('breath-depth').textContent=Math.min(Math.round(amp/mx*100),100)+'%';$('breath-depth-bar').style.width=Math.min(amp/mx*100,100)+'%'}
+  // Breath depth
+  if (shldS.length > 0) { const amp = Math.max(...shldS.map(Math.abs)), mx = Math.max(shldStd * 4, 1);
+    $('breath-depth').textContent = Math.min(Math.round(amp / mx * 100), 100) + '%'; $('breath-depth-bar').style.width = Math.min(amp / mx * 100, 100) + '%'; }
 
-  // Phase detection: linear regression slope of best signal over last 15 samples
-  let phSig=rppgS;if(bestSrc==='SHOULDER')phSig=shldS;else if(bestSrc==='LANDMARK')phSig=lmrkS;
-  if(phSig.length>15){
-    const tail=phSig.slice(-15);
-    let sX=0,sY=0,sXY=0,sX2=0;
-    for(let i=0;i<tail.length;i++){sX+=i;sY+=tail[i];sXY+=i*tail[i];sX2+=i*i}
-    const n=tail.length,slope=(n*sXY-sX*sY)/(n*sX2-sX*sX);
-    const sigAmp=Math.max(...tail.map(Math.abs))||.01;
-    const strength=Math.abs(slope)/sigAmp*n;
-    if(strength>.3){
-      const ph=slope>0?'INHALE':'EXHALE';
-      $('resp-phase').textContent=ph;$('resp-phase').className='data-value '+(ph==='INHALE'?'highlight':'orange');
-    } else {$('resp-phase').textContent='TRANSITION';$('resp-phase').className='data-value warn'}
+  // Phase detection — v3: default to landmark signal
+  let phSig = lmrkS;
+  if (bestSrc === 'rPPG') phSig = rppgS; else if (bestSrc === 'SHOULDER') phSig = shldS;
+  if (phSig.length > 15) {
+    const tail = phSig.slice(-15);
+    let sX = 0, sY = 0, sXY = 0, sX2 = 0;
+    for (let i = 0; i < tail.length; i++) { sX += i; sY += tail[i]; sXY += i * tail[i]; sX2 += i * i; }
+    const n = tail.length, slope = (n * sXY - sX * sY) / (n * sX2 - sX * sX);
+    const sigAmp = Math.max(...tail.map(Math.abs)) || 0.01;
+    const strength = Math.abs(slope) / sigAmp * n;
+    if (strength > 0.3) {
+      const ph = slope > 0 ? 'INHALE' : 'EXHALE';
+      $('resp-phase').textContent = ph; $('resp-phase').className = 'data-value ' + (ph === 'INHALE' ? 'highlight' : 'orange');
+    } else { $('resp-phase').textContent = 'TRANSITION'; $('resp-phase').className = 'data-value warn'; }
   }
 
-  // Store processed signals for waveform
-  state._respSignals={rppg:rppgS,shoulder:shldS,landmark:lmrkS};
+  state._respSignals = { rppg: rppgS, shoulder: shldS, landmark: lmrkS };
 }
 
 function drawRespWaveform(){
@@ -1557,7 +1813,7 @@ function drawRespWaveform(){
     if(!arr||arr.length<2)return;
     const mx=Math.max(...arr.map(Math.abs),.01);
     respCtx.beginPath();respCtx.strokeStyle=color;respCtx.lineWidth=1.2;
-    arr.forEach((v,i)=>{const x=(i/state.respMaxSamples)*w,y=h/2-(v/mx)*(h*.35);i===0?respCtx.moveTo(x,y):respCtx.lineTo(x,y)});
+    arr.forEach((v,i)=>{const x=(i/(arr.length-1))*w,y=h/2-(v/mx)*(h*.35);i===0?respCtx.moveTo(x,y):respCtx.lineTo(x,y)});
     respCtx.stroke();
   }
   drawSig(sigs.rppg,'#ff9100');
@@ -1701,7 +1957,8 @@ function updateSkinAnalysis(mesh){
   try{
     for(const pt of regions){
       if(!pt)continue;
-      const tc=document.createElement('canvas'),ctx=tc.getContext('2d'),s=20;tc.width=s;tc.height=s;
+      const s=20;
+      const {canvas:tc,ctx}=getOffscreenCanvas('skin_sample',s,s);
       ctx.drawImage(video,pt[0]-s/2,pt[1]-s/2,s,s,0,0,s,s);
       const d=ctx.getImageData(0,0,s,s).data;
       let r=0,g=0,b=0,px=0;
@@ -2178,15 +2435,15 @@ function importData(event){
 // ============ MODULE TOGGLE / INFO / REORDER SYSTEM ============
 const moduleInfo = {
   'SUBJECT LOCK': 'Detects and tracks your face using TensorFlow.js FaceMesh (468 landmarks). Shows bounding box, face area percentage, detection confidence, and occlusion detection (beard/glasses). Occlusion status affects how other modules weight upper vs lower face features.',
-  'rPPG — CARDIOVASCULAR': 'Measures heart rate contactlessly using remote Photoplethysmography (rPPG). The POS (Plane-Orthogonal-to-Skin) algorithm analyzes subtle skin color changes from blood flow in multiple face regions (forehead + cheeks). Beard detection automatically shifts to forehead-priority sampling. HRV (Heart Rate Variability) is calculated from inter-beat intervals.',
+  'rPPG — CARDIOVASCULAR': 'v3: Measures heart rate contactlessly using remote Photoplethysmography (rPPG). The POS (Plane-Orthogonal-to-Skin) algorithm analyzes subtle skin color changes, now with Butterworth bandpass filtering (0.7-3.5 Hz) on uniformly resampled data and prominence-based peak detection for more reliable BPM. HRV from inter-beat intervals. Signal quality factors in both interval consistency and peak prominence.',
   'HEAD POSE': 'Estimates 3D head orientation (yaw/pitch/roll) from landmark geometry. Tracks face center position, per-frame motion, posture assessment, and gaze direction. Used by attention and stress modules as input signals.',
   'FACIAL LANDMARKS': 'Displays key measurements from the 468-point face mesh: Eye Aspect Ratios (EAR) for blink detection, inter-eye distance, nose-to-mouth distance, and bilateral face symmetry. These feed into expression and emotion analysis.',
   'ATTENTION & BLINKS': 'Auto-calibrating blink detection using adaptive EAR thresholds + velocity-based detection. Multi-signal attention model (35% gaze, 20% blink regularity, 15% stillness, 15% eye openness, 15% presence). Drowsiness uses PERCLOS (% time eyes closed). All thresholds adapt to your personal baseline.',
   'EXPRESSION ANALYSIS': 'Tracks facial Action Units (AUs): mouth opening, lip corner elevation (smile), brow raise, eye squint, lip corner depression (frown), and nose wrinkle. Beard occlusion reduces confidence on lower-face AUs automatically. Calibration captures your personal neutral baseline.',
-  'EMOTION RECOGNITION': 'Classifies 7 emotions from AU combinations (FACS-inspired). Subtracts your calibrated neutral baseline, then maps to happy/sad/angry/surprised/fearful/disgusted/neutral. Sensitivity and neutral threshold adjustable in Settings. Valence (positive/negative) and arousal (calm/excited) dimensions shown.',
+  'EMOTION RECOGNITION': 'v3: Classifies 7 emotions from AU combinations (FACS-inspired) using sigmoid activation functions for smooth transitions (no threshold jitter). Frown AU weight reduced due to FaceMesh reliability limits. Dominant emotion uses temporal hysteresis (8-frame persistence) to prevent flicker. Subtracts calibrated neutral baseline.',
   'DEMOGRAPHICS EST.': 'Age estimated from 7 facial proportions + forehead skin texture variance. With beard detected, switches to upper-face features only. Gender estimation uses brow ridge, nose width, face shape — jaw excluded when bearded. Distance calculated from inter-pupillary distance.',
-  'RESPIRATION MONITOR': 'Three-signal fusion: (1) rPPG amplitude envelope — breathing modulates heart signal via respiratory sinus arrhythmia, (2) shoulder region brightness — chest movement changes pixel values, (3) chin landmark Y-position. Signals scored for consistency; best signal or weighted fusion used. Phase detection via linear regression slope.',
-  'STRESS & WELLNESS': 'Composite stress index from HRV, blink rate deviation, facial tension, motion, and heart rate — only includes signals with enough data. Cognitive load from blink suppression + gaze stability. Fatigue from drowsiness + eye openness. SpO2 from rPPG AC/DC ratio.',
+  'RESPIRATION MONITOR': 'v3: Three-signal fusion with Butterworth bandpass filtering (0.15-0.5 Hz) on uniformly resampled data. Each channel scored by SNR (signal-to-noise ratio) for dynamic weighting. Landmark signal biased 1.5x higher (most mechanically reliable). Agreeing channels within 4 BrPM are fused by SNR-weighted average.',
+  'STRESS & WELLNESS': 'Composite stress index from HRV, blink rate deviation, facial tension, motion, and heart rate — only includes signals with enough data. Cognitive load from blink suppression + gaze stability. Fatigue from drowsiness + eye openness. BP and SpO2 are rough estimates only — not medical devices.',
   'SKIN & COMPLEXION': 'Samples RGB from forehead and both cheeks. Calculates perceptual luminance, skin hue angle, redness index (R vs G+B), cross-region uniformity, and correlated color temperature. Cheek color swatch shows actual sampled color.',
   'SESSION DATA': 'Running session statistics: uptime, average/min/max heart rate, face visibility percentage, average attention score, and dominant emotion over time.'
 };
