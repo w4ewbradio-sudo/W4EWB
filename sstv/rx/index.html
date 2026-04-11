@@ -187,10 +187,46 @@
     </nav>
     
     <div class="stats">
-      Showing <span id="visible-count">50</span> of <span id="total-count">1643</span> images
+      Showing <span id="visible-count">50</span> of <span id="total-count">1647</span> images
     </div>
     
     <div class="grid" id="gallery">
+      <div class="card" data-month="2026-04">
+        <a href="full/20260411_160133_Hist26.jpg" target="_blank">
+          <img src="thumbs/20260411_160133_Hist26.jpg" loading="lazy" alt="SSTV image received 2026-04-11 16:02">
+          <div class="meta">
+            <div class="filename">20260411_160133_Hist26.jpg</div>
+            <div class="timestamp">2026-04-11 16:02</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-04">
+        <a href="full/20260411_160016_Hist25.jpg" target="_blank">
+          <img src="thumbs/20260411_160016_Hist25.jpg" loading="lazy" alt="SSTV image received 2026-04-11 16:02">
+          <div class="meta">
+            <div class="filename">20260411_160016_Hist25.jpg</div>
+            <div class="timestamp">2026-04-11 16:02</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-04">
+        <a href="full/20260411_155846_Hist24.jpg" target="_blank">
+          <img src="thumbs/20260411_155846_Hist24.jpg" loading="lazy" alt="SSTV image received 2026-04-11 16:02">
+          <div class="meta">
+            <div class="filename">20260411_155846_Hist24.jpg</div>
+            <div class="timestamp">2026-04-11 16:02</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-04">
+        <a href="full/20260411_155713_Hist23.jpg" target="_blank">
+          <img src="thumbs/20260411_155713_Hist23.jpg" loading="lazy" alt="SSTV image received 2026-04-11 16:02">
+          <div class="meta">
+            <div class="filename">20260411_155713_Hist23.jpg</div>
+            <div class="timestamp">2026-04-11 16:02</div>
+          </div>
+        </a>
+      </div>
       <div class="card" data-month="2026-04">
         <a href="full/20260411_155435_Hist22.jpg" target="_blank">
           <img src="thumbs/20260411_155435_Hist22.jpg" loading="lazy" alt="SSTV image received 2026-04-11 15:57">
@@ -7554,15 +7590,6 @@
         </a>
       </div>
       <div class="card" data-month="2026-03">
-        <a href="full/20260220_183758_Hist4.jpg" target="_blank">
-          <img src="thumbs/20260220_183758_Hist4.jpg" loading="lazy" alt="SSTV image received 2026-03-22 14:32">
-          <div class="meta">
-            <div class="filename">20260220_183758_Hist4.jpg</div>
-            <div class="timestamp">2026-03-22 14:32</div>
-          </div>
-        </a>
-      </div>
-      <div class="card" data-month="2026-03">
         <a href="full/20260220_190417_Hist5.jpg" target="_blank">
           <img src="thumbs/20260220_190417_Hist5.jpg" loading="lazy" alt="SSTV image received 2026-03-22 14:32">
           <div class="meta">
@@ -7572,10 +7599,10 @@
         </a>
       </div>
       <div class="card" data-month="2026-03">
-        <a href="full/20260220_183357_Hist3.jpg" target="_blank">
-          <img src="thumbs/20260220_183357_Hist3.jpg" loading="lazy" alt="SSTV image received 2026-03-22 14:32">
+        <a href="full/20260220_183758_Hist4.jpg" target="_blank">
+          <img src="thumbs/20260220_183758_Hist4.jpg" loading="lazy" alt="SSTV image received 2026-03-22 14:32">
           <div class="meta">
-            <div class="filename">20260220_183357_Hist3.jpg</div>
+            <div class="filename">20260220_183758_Hist4.jpg</div>
             <div class="timestamp">2026-03-22 14:32</div>
           </div>
         </a>
@@ -7585,6 +7612,15 @@
           <img src="thumbs/20260220_183106_Hist2.jpg" loading="lazy" alt="SSTV image received 2026-03-22 14:32">
           <div class="meta">
             <div class="filename">20260220_183106_Hist2.jpg</div>
+            <div class="timestamp">2026-03-22 14:32</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-03">
+        <a href="full/20260220_183357_Hist3.jpg" target="_blank">
+          <img src="thumbs/20260220_183357_Hist3.jpg" loading="lazy" alt="SSTV image received 2026-03-22 14:32">
+          <div class="meta">
+            <div class="filename">20260220_183357_Hist3.jpg</div>
             <div class="timestamp">2026-03-22 14:32</div>
           </div>
         </a>
@@ -15034,62 +15070,4 @@
           filtered[i].style.display = '';
         }
         
-        loadedCount = end;
-        countEl.textContent = loadedCount;
-        
-        // Show/hide load more button
-        if (loadedCount >= filtered.length) {
-          loadMoreContainer.style.display = 'none';
-        } else {
-          loadMoreContainer.style.display = 'block';
-        }
-        
-        noResults.style.display = loadedCount === 0 ? 'block' : 'none';
-      }
-      
-      // Filter by month
-      function filterByMonth(month) {
-        currentFilter = month;
-        loadedCount = 0;
-        
-        // Hide all cards first
-        hideAllCards();
-        
-        // Update total count for this filter
-        const filtered = getFilteredCards();
-        totalEl.textContent = filtered.length;
-        
-        // Show first batch
-        showNextBatch();
-      }
-      
-      // Initialize
-      hideAllCards();
-      totalEl.textContent = allCards.length;
-      showNextBatch();
-      
-      // Month button clicks
-      buttons.forEach(btn => {
-        btn.addEventListener('click', function() {
-          buttons.forEach(b => b.classList.remove('active'));
-          this.classList.add('active');
-          filterByMonth(this.getAttribute('data-month'));
-        });
-      });
-      
-      // Load more button click
-      loadMoreBtn.addEventListener('click', showNextBatch);
-      
-      // Infinite scroll - load more when near bottom
-      window.addEventListener('scroll', function() {
-        if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) {
-          const filtered = getFilteredCards();
-          if (loadedCount < filtered.length) {
-            showNextBatch();
-          }
-        }
-      });
-    })();
-  </script>
-</body>
-</html>
+        l
