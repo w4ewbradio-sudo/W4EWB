@@ -187,10 +187,28 @@
     </nav>
     
     <div class="stats">
-      Showing <span id="visible-count">50</span> of <span id="total-count">1647</span> images
+      Showing <span id="visible-count">50</span> of <span id="total-count">1649</span> images
     </div>
     
     <div class="grid" id="gallery">
+      <div class="card" data-month="2026-04">
+        <a href="full/20260411_160624_Hist28.jpg" target="_blank">
+          <img src="thumbs/20260411_160624_Hist28.jpg" loading="lazy" alt="SSTV image received 2026-04-11 16:07">
+          <div class="meta">
+            <div class="filename">20260411_160624_Hist28.jpg</div>
+            <div class="timestamp">2026-04-11 16:07</div>
+          </div>
+        </a>
+      </div>
+      <div class="card" data-month="2026-04">
+        <a href="full/20260411_160429_Hist27.jpg" target="_blank">
+          <img src="thumbs/20260411_160429_Hist27.jpg" loading="lazy" alt="SSTV image received 2026-04-11 16:07">
+          <div class="meta">
+            <div class="filename">20260411_160429_Hist27.jpg</div>
+            <div class="timestamp">2026-04-11 16:07</div>
+          </div>
+        </a>
+      </div>
       <div class="card" data-month="2026-04">
         <a href="full/20260411_160133_Hist26.jpg" target="_blank">
           <img src="thumbs/20260411_160133_Hist26.jpg" loading="lazy" alt="SSTV image received 2026-04-11 16:02">
@@ -15070,4 +15088,62 @@
           filtered[i].style.display = '';
         }
         
-        l
+        loadedCount = end;
+        countEl.textContent = loadedCount;
+        
+        // Show/hide load more button
+        if (loadedCount >= filtered.length) {
+          loadMoreContainer.style.display = 'none';
+        } else {
+          loadMoreContainer.style.display = 'block';
+        }
+        
+        noResults.style.display = loadedCount === 0 ? 'block' : 'none';
+      }
+      
+      // Filter by month
+      function filterByMonth(month) {
+        currentFilter = month;
+        loadedCount = 0;
+        
+        // Hide all cards first
+        hideAllCards();
+        
+        // Update total count for this filter
+        const filtered = getFilteredCards();
+        totalEl.textContent = filtered.length;
+        
+        // Show first batch
+        showNextBatch();
+      }
+      
+      // Initialize
+      hideAllCards();
+      totalEl.textContent = allCards.length;
+      showNextBatch();
+      
+      // Month button clicks
+      buttons.forEach(btn => {
+        btn.addEventListener('click', function() {
+          buttons.forEach(b => b.classList.remove('active'));
+          this.classList.add('active');
+          filterByMonth(this.getAttribute('data-month'));
+        });
+      });
+      
+      // Load more button click
+      loadMoreBtn.addEventListener('click', showNextBatch);
+      
+      // Infinite scroll - load more when near bottom
+      window.addEventListener('scroll', function() {
+        if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) {
+          const filtered = getFilteredCards();
+          if (loadedCount < filtered.length) {
+            showNextBatch();
+          }
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
