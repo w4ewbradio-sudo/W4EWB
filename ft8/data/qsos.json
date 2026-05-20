@@ -58,5 +58,29 @@
         "rstRcvd":  "+04",
         "mode":  "FT8",
         "lat":  42.5
+    },
+    {
+        "grid":  "FM29",
+        "rstSent":  "-10",
+        "call":  "W2GLH",
+        "lon":  -75,
+        "band":  "20m",
+        "time":  "12:27",
+        "date":  "2026-05-19",
+        "rstRcvd":  "+04",
+        "mode":  "FT8",
+        "lat":  39.5
+    },
+    {
+        "grid":  "DM79",
+        "rstSent":  "-14",
+        "call":  "N0SZ",
+        "lon":  -105,
+        "band":  "20m",
+        "time":  "12:30",
+        "date":  "2026-05-19",
+        "rstRcvd":  "+03",
+        "mode":  "FT8",
+        "lat":  39.5
     }
 ]
