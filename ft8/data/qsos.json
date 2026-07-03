@@ -94,5 +94,29 @@
         "rstRcvd":  "-09",
         "mode":  "FT8",
         "lat":  35.5
+    },
+    {
+        "grid":  "DN37",
+        "rstSent":  "-18",
+        "call":  "W7DGM",
+        "lon":  -113,
+        "band":  "20m",
+        "time":  "23:29",
+        "date":  "2026-07-03",
+        "rstRcvd":  "-23",
+        "mode":  "FT8",
+        "lat":  47.5
+    },
+    {
+        "grid":  "FK49",
+        "rstSent":  "+01",
+        "call":  "HI3WWA",
+        "lon":  -71,
+        "band":  "20m",
+        "time":  "23:32",
+        "date":  "2026-07-03",
+        "rstRcvd":  "-08",
+        "mode":  "FT8",
+        "lat":  19.5
     }
 ]
