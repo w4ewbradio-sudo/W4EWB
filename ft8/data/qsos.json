@@ -154,5 +154,17 @@
         "rstRcvd":  "-01",
         "mode":  "FT8",
         "lat":  null
+    },
+    {
+        "grid":  "FM19",
+        "rstSent":  "-10",
+        "call":  "AI3KS",
+        "lon":  -77,
+        "band":  "20m",
+        "time":  "13:25",
+        "date":  "2026-07-16",
+        "rstRcvd":  "+02",
+        "mode":  "FT8",
+        "lat":  39.5
     }
 ]
