@@ -3,60 +3,6 @@
                           {
                               "timestamp":  "2026-05-31 01:16",
                               "band":  "20m",
-                              "grid":  "EL15",
-                              "lon":  -97,
-                              "snr":  6,
-                              "lat":  25.5,
-                              "call":  "KJ5LDV"
-                          },
-                          {
-                              "timestamp":  "2026-05-31 01:16",
-                              "band":  "20m",
-                              "grid":  "EL96",
-                              "lon":  -81,
-                              "snr":  -11,
-                              "lat":  26.5,
-                              "call":  "KM4SXE"
-                          },
-                          {
-                              "timestamp":  "2026-05-31 01:16",
-                              "band":  "20m",
-                              "grid":  "EM15",
-                              "lon":  -97,
-                              "snr":  -11,
-                              "lat":  35.5,
-                              "call":  "KO6GQH"
-                          },
-                          {
-                              "timestamp":  "2026-05-31 01:16",
-                              "band":  "20m",
-                              "grid":  "JN54",
-                              "lon":  11,
-                              "snr":  -23,
-                              "lat":  44.5,
-                              "call":  "VK2JXB"
-                          },
-                          {
-                              "timestamp":  "2026-05-31 01:16",
-                              "band":  "20m",
-                              "grid":  "FK68",
-                              "lon":  -67,
-                              "snr":  -9,
-                              "lat":  18.5,
-                              "call":  "NP3DM"
-                          },
-                          {
-                              "timestamp":  "2026-05-31 01:16",
-                              "band":  "20m",
-                              "grid":  "FM29",
-                              "lon":  -75,
-                              "snr":  -19,
-                              "lat":  39.5,
-                              "call":  "KT3S"
-                          },
-                          {
-                              "timestamp":  "2026-05-31 01:16",
-                              "band":  "20m",
                               "grid":  "FJ08",
                               "lon":  -79,
                               "snr":  -4,
@@ -8999,14 +8945,68 @@
                               "snr":  -4,
                               "lat":  38.5,
                               "call":  "TA4SSK"
+                          },
+                          {
+                              "timestamp":  "2026-05-31 01:44",
+                              "band":  "20m",
+                              "grid":  "FK49",
+                              "lon":  -71,
+                              "snr":  0,
+                              "lat":  19.5,
+                              "call":  "HI3QMT"
+                          },
+                          {
+                              "timestamp":  "2026-05-31 01:44",
+                              "band":  "20m",
+                              "grid":  "RR73",
+                              "lon":  175,
+                              "snr":  -12,
+                              "lat":  83.5,
+                              "call":  "N7KB"
+                          },
+                          {
+                              "timestamp":  "2026-05-31 01:44",
+                              "band":  "20m",
+                              "grid":  "DM13",
+                              "lon":  -117,
+                              "snr":  -17,
+                              "lat":  33.5,
+                              "call":  "AD6DL"
+                          },
+                          {
+                              "timestamp":  "2026-05-31 01:44",
+                              "band":  "20m",
+                              "grid":  "EM13",
+                              "lon":  -97,
+                              "snr":  -5,
+                              "lat":  33.5,
+                              "call":  "KJ5LDV"
+                          },
+                          {
+                              "timestamp":  "2026-05-31 01:44",
+                              "band":  "20m",
+                              "grid":  "EL96",
+                              "lon":  -81,
+                              "snr":  -12,
+                              "lat":  26.5,
+                              "call":  "W6ZD"
+                          },
+                          {
+                              "timestamp":  "2026-05-31 01:44",
+                              "band":  "20m",
+                              "grid":  "DM43",
+                              "lon":  -111,
+                              "snr":  -16,
+                              "lat":  33.5,
+                              "call":  "NC7C"
                           }
                       ],
-    "generated":  "2026-07-16 05:41:09",
+    "generated":  "2026-07-16 05:51:21",
     "bands":  {
                   "20m":  [
                               {
                                   "hour":  "2026-05-31 01",
-                                  "count":  2212,
+                                  "count":  2205,
                                   "avgSnr":  -10.4
                               },
                               {
@@ -9341,8 +9341,8 @@
                               },
                               {
                                   "hour":  "2026-07-16 09",
-                                  "count":  95,
-                                  "avgSnr":  -15.9
+                                  "count":  102,
+                                  "avgSnr":  -15.7
                               }
                           ],
                   "other":  [
