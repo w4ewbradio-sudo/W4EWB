@@ -3,24 +3,6 @@
                           {
                               "timestamp":  "2026-05-31 01:16",
                               "band":  "20m",
-                              "grid":  "FJ08",
-                              "lon":  -79,
-                              "snr":  -4,
-                              "lat":  8.5,
-                              "call":  "HP1VS"
-                          },
-                          {
-                              "timestamp":  "2026-05-31 01:16",
-                              "band":  "20m",
-                              "grid":  "EL99",
-                              "lon":  -81,
-                              "snr":  -14,
-                              "lat":  29.5,
-                              "call":  "K3LUE"
-                          },
-                          {
-                              "timestamp":  "2026-05-31 01:16",
-                              "band":  "20m",
                               "grid":  "CN85",
                               "lon":  -123,
                               "snr":  -14,
@@ -8999,14 +8981,32 @@
                               "snr":  -16,
                               "lat":  33.5,
                               "call":  "NC7C"
+                          },
+                          {
+                              "timestamp":  "2026-05-31 01:44",
+                              "band":  "20m",
+                              "grid":  "EN04",
+                              "lon":  -99,
+                              "snr":  5,
+                              "lat":  44.5,
+                              "call":  "AD5MO"
+                          },
+                          {
+                              "timestamp":  "2026-05-31 01:44",
+                              "band":  "20m",
+                              "grid":  "FJ08",
+                              "lon":  -79,
+                              "snr":  -7,
+                              "lat":  8.5,
+                              "call":  "HP1VS"
                           }
                       ],
-    "generated":  "2026-07-16 05:51:21",
+    "generated":  "2026-07-16 06:01:17",
     "bands":  {
                   "20m":  [
                               {
                                   "hour":  "2026-05-31 01",
-                                  "count":  2205,
+                                  "count":  2203,
                                   "avgSnr":  -10.4
                               },
                               {
