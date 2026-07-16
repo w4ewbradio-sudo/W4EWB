@@ -3,24 +3,6 @@
                           {
                               "timestamp":  "2026-05-31 01:16",
                               "band":  "20m",
-                              "grid":  "CN85",
-                              "lon":  -123,
-                              "snr":  -14,
-                              "lat":  45.5,
-                              "call":  "KO6GQH"
-                          },
-                          {
-                              "timestamp":  "2026-05-31 01:16",
-                              "band":  "20m",
-                              "grid":  "FM18",
-                              "lon":  -77,
-                              "snr":  -23,
-                              "lat":  38.5,
-                              "call":  "KM7FTZ"
-                          },
-                          {
-                              "timestamp":  "2026-05-31 01:16",
-                              "band":  "20m",
                               "grid":  "EN26",
                               "lon":  -95,
                               "snr":  -3,
@@ -8999,14 +8981,32 @@
                               "snr":  -7,
                               "lat":  8.5,
                               "call":  "HP1VS"
+                          },
+                          {
+                              "timestamp":  "2026-05-31 01:44",
+                              "band":  "20m",
+                              "grid":  "RR73",
+                              "lon":  175,
+                              "snr":  -10,
+                              "lat":  83.5,
+                              "call":  "HC2THN"
+                          },
+                          {
+                              "timestamp":  "2026-05-31 01:44",
+                              "band":  "20m",
+                              "grid":  "FK68",
+                              "lon":  -67,
+                              "snr":  -19,
+                              "lat":  18.5,
+                              "call":  "NP3DM"
                           }
                       ],
-    "generated":  "2026-07-16 06:01:17",
+    "generated":  "2026-07-16 06:10:28",
     "bands":  {
                   "20m":  [
                               {
                                   "hour":  "2026-05-31 01",
-                                  "count":  2203,
+                                  "count":  2200,
                                   "avgSnr":  -10.4
                               },
                               {
