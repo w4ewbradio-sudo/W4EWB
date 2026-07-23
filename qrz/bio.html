@@ -8,8 +8,12 @@
   <!-- ===== LCARS ELBOW HEADER ===== -->
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
     <tr>
-      <td width="132" valign="bottom" style="background:#ff9966;height:60px;border-top-left-radius:46px;padding:0 0 9px 18px;">
-        <div style="font-family:'Arial Narrow',Arial,sans-serif;font-weight:bold;font-size:13px;letter-spacing:2px;color:#1a1005;">STARDATE 47<span style="color:#7a3d1f;">&middot;</span>EM78</div>
+      <!-- STARDATE: static value - QRZ blocks scripts, so it can't tick live.
+           Year-2000 scale = (year - 2000) * 1000 + (dayOfYear / daysInYear) * 1000.
+           Re-stamp whenever you like: 2026-07-23 (day 204/365) = 26558.9 -->
+      <td width="132" valign="bottom" style="background:#ff9966;height:60px;border-top-left-radius:46px;padding:0 0 8px 18px;">
+        <div style="font-family:'Arial Narrow',Arial,sans-serif;font-weight:bold;font-size:11px;letter-spacing:3px;color:#7a3d1f;line-height:1.1;">STARDATE</div>
+        <div style="font-family:'Arial Narrow',Arial,sans-serif;font-weight:bold;font-size:18px;letter-spacing:1px;color:#1a1005;line-height:1.05;">26558.9</div>
       </td>
       <td width="8"></td>
       <td valign="top" style="padding:0;">
