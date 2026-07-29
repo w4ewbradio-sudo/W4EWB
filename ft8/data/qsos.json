@@ -286,5 +286,29 @@
         "rstRcvd":  "+06",
         "mode":  "FT8",
         "lat":  37.5
+    },
+    {
+        "grid":  "FN00",
+        "rstSent":  "-14",
+        "call":  "KC3LVG",
+        "lon":  -79,
+        "band":  "20m",
+        "time":  "12:42",
+        "date":  "2026-07-29",
+        "rstRcvd":  "-10",
+        "mode":  "FT8",
+        "lat":  40.5
+    },
+    {
+        "grid":  "EN81",
+        "rstSent":  "-11",
+        "call":  "N8DH",
+        "lon":  -83,
+        "band":  "20m",
+        "time":  "12:49",
+        "date":  "2026-07-29",
+        "rstRcvd":  "+01",
+        "mode":  "FT8",
+        "lat":  41.5
     }
 ]
