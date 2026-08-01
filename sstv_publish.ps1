@@ -30,6 +30,22 @@ if (-not $magick) {
   exit 1
 }
 
+# ---- extract capture time from the filename so ordering is stable across machines.
+#      Matches MMSSTV '{stamp}_Hist#' and the Pi's QSSTV '{mode}_{stamp}' names.
+#      (git does not preserve file mtimes, so the Pi can't rely on LastWriteTime.) ----
+function Get-StampFromName {
+  param($Name, $Fallback)
+  if ($Name -match '(\d{8})_(\d{6})') {
+    try { return [datetime]::ParseExact(($matches[1] + $matches[2]), 'yyyyMMddHHmmss', $null) } catch {}
+  }
+  return $Fallback
+}
+
+# ---- pull first: the Pi also pushes captures into sstv/rx, so sync before we build/push ----
+Push-Location $RepoRoot
+try { git pull --rebase --autostash 2>&1 | Out-Null } catch {}
+Pop-Location
+
 # ---- load state (tracks already-published BMP writes) ----
 $state = @{ processed = @{} }
 
@@ -93,21 +109,25 @@ if ($fullFiles.Count -gt $MaxImages) {
   }
 }
 
-# ---- update latest.jpg to newest full image ----
-$latest = Get-ChildItem $FullDir -Filter "*.jpg" -File | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+# ---- update latest.jpg to newest full image (by filename timestamp) ----
+$latest = Get-ChildItem $FullDir -Filter "*.jpg" -File |
+  ForEach-Object { $_ | Add-Member -NotePropertyName Stamp -NotePropertyValue (Get-StampFromName $_.Name $_.LastWriteTime) -PassThru } |
+  Sort-Object Stamp -Descending | Select-Object -First 1
 if ($latest) {
   & magick "$($latest.FullName)" -auto-orient -strip -quality 85 "$LatestFile"
 }
 
-# ---- rebuild gallery HTML ----
-$items = Get-ChildItem $FullDir -Filter "*.jpg" -File | Sort-Object LastWriteTime -Descending
+# ---- rebuild gallery HTML (order by filename timestamp so it matches the Pi's builds) ----
+$items = Get-ChildItem $FullDir -Filter "*.jpg" -File |
+  ForEach-Object { $_ | Add-Member -NotePropertyName Stamp -NotePropertyValue (Get-StampFromName $_.Name $_.LastWriteTime) -PassThru } |
+  Sort-Object Stamp -Descending
 
 # Build list of unique months (for navigation)
 $monthsHash = @{}
 foreach ($it in $items) {
-  $monthKey = $it.LastWriteTime.ToString("yyyy-MM")
+  $monthKey = $it.Stamp.ToString("yyyy-MM")
   if (-not $monthsHash.ContainsKey($monthKey)) {
-    $monthsHash[$monthKey] = $it.LastWriteTime
+    $monthsHash[$monthKey] = $it.Stamp
   }
 }
 $sortedMonths = $monthsHash.Keys | Sort-Object -Descending
@@ -321,8 +341,8 @@ $cards = foreach ($it in $items) {
   $base = [IO.Path]::GetFileNameWithoutExtension($it.Name)
   $thumb = "thumbs/$base.jpg"
   $full  = "full/$($it.Name)"
-  $stamp = $it.LastWriteTime.ToString("yyyy-MM-dd HH:mm")
-  $monthData = $it.LastWriteTime.ToString("yyyy-MM")
+  $stamp = $it.Stamp.ToString("yyyy-MM-dd HH:mm")
+  $monthData = $it.Stamp.ToString("yyyy-MM")
 @"
       <div class="card" data-month="$monthData">
         <a href="$full" target="_blank">
