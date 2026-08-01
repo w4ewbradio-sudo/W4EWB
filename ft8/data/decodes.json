@@ -1,42 +1,6 @@
 ﻿{
     "recentDecodes":  [
                           {
-                              "timestamp":  "2026-07-20 22:22",
-                              "band":  "20m",
-                              "grid":  "RR73",
-                              "lon":  175,
-                              "snr":  -16,
-                              "lat":  83.5,
-                              "call":  "HA3KZ"
-                          },
-                          {
-                              "timestamp":  "2026-07-20 22:22",
-                              "band":  "20m",
-                              "grid":  "IM58",
-                              "lon":  -9,
-                              "snr":  -21,
-                              "lat":  38.5,
-                              "call":  "CR7BRV"
-                          },
-                          {
-                              "timestamp":  "2026-07-20 22:23",
-                              "band":  "20m",
-                              "grid":  "RR73",
-                              "lon":  175,
-                              "snr":  13,
-                              "lat":  83.5,
-                              "call":  "US5EQF"
-                          },
-                          {
-                              "timestamp":  "2026-07-20 22:23",
-                              "band":  "20m",
-                              "grid":  "EM21",
-                              "lon":  -95,
-                              "snr":  -7,
-                              "lat":  31.5,
-                              "call":  "AC3NJ"
-                          },
-                          {
                               "timestamp":  "2026-07-20 22:23",
                               "band":  "20m",
                               "grid":  "EM28",
@@ -8999,14 +8963,50 @@
                               "snr":  -8,
                               "lat":  39.5,
                               "call":  "VP5G"
+                          },
+                          {
+                              "timestamp":  "2026-07-20 23:15",
+                              "band":  "20m",
+                              "grid":  "FN41",
+                              "lon":  -71,
+                              "snr":  -9,
+                              "lat":  41.5,
+                              "call":  "KA1MXL"
+                          },
+                          {
+                              "timestamp":  "2026-07-20 23:15",
+                              "band":  "20m",
+                              "grid":  "EM00",
+                              "lon":  -99,
+                              "snr":  -14,
+                              "lat":  30.5,
+                              "call":  "KC1UBT"
+                          },
+                          {
+                              "timestamp":  "2026-07-20 23:15",
+                              "band":  "20m",
+                              "grid":  "DM79",
+                              "lon":  -105,
+                              "snr":  -6,
+                              "lat":  39.5,
+                              "call":  "KJ5JPL"
+                          },
+                          {
+                              "timestamp":  "2026-07-20 23:15",
+                              "band":  "20m",
+                              "grid":  "DN13",
+                              "lon":  -117,
+                              "snr":  -12,
+                              "lat":  43.5,
+                              "call":  "W4DXM"
                           }
                       ],
-    "generated":  "2026-08-01 14:18:16",
+    "generated":  "2026-08-01 14:28:14",
     "bands":  {
                   "20m":  [
                               {
                                   "hour":  "2026-07-20 22",
-                                  "count":  963,
+                                  "count":  952,
                                   "avgSnr":  -12.8
                               },
                               {
@@ -9328,8 +9328,8 @@
                               },
                               {
                                   "hour":  "2026-08-01 18",
-                                  "count":  90,
-                                  "avgSnr":  -15.4
+                                  "count":  102,
+                                  "avgSnr":  -14.9
                               }
                           ]
               }
