@@ -1,762 +1,6 @@
 ﻿{
     "recentDecodes":  [
                           {
-                              "timestamp":  "2026-08-03 23:12",
-                              "band":  "20m",
-                              "grid":  "FF46",
-                              "lon":  -71,
-                              "snr":  -20,
-                              "lat":  -33.5,
-                              "call":  "CE3TSK"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "EM11",
-                              "lon":  -97,
-                              "snr":  -16,
-                              "lat":  31.5,
-                              "call":  "N5WIN"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "JI75",
-                              "lon":  15,
-                              "snr":  -8,
-                              "lat":  -4.5,
-                              "call":  "TN8GD"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "EK09",
-                              "lon":  -99,
-                              "snr":  -2,
-                              "lat":  19.5,
-                              "call":  "XE1RK"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "RR73",
-                              "lon":  175,
-                              "snr":  0,
-                              "lat":  83.5,
-                              "call":  "N5WXB"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "RR73",
-                              "lon":  175,
-                              "snr":  -6,
-                              "lat":  83.5,
-                              "call":  "KJ5HUU"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "EM05",
-                              "lon":  -99,
-                              "snr":  -16,
-                              "lat":  35.5,
-                              "call":  "N5CH"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "EM60",
-                              "lon":  -87,
-                              "snr":  -17,
-                              "lat":  30.5,
-                              "call":  "Z62NS"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "CM99",
-                              "lon":  -121,
-                              "snr":  -18,
-                              "lat":  39.5,
-                              "call":  "WV6C"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "JI75",
-                              "lon":  15,
-                              "snr":  -8,
-                              "lat":  -4.5,
-                              "call":  "TN8GD"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "RR73",
-                              "lon":  175,
-                              "snr":  -6,
-                              "lat":  83.5,
-                              "call":  "KJ5HUU"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "RR73",
-                              "lon":  175,
-                              "snr":  -1,
-                              "lat":  83.5,
-                              "call":  "N5WXB"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "EM11",
-                              "lon":  -97,
-                              "snr":  -15,
-                              "lat":  31.5,
-                              "call":  "N5WIN"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "EM05",
-                              "lon":  -99,
-                              "snr":  -16,
-                              "lat":  35.5,
-                              "call":  "N5CH"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "EM60",
-                              "lon":  -87,
-                              "snr":  -17,
-                              "lat":  30.5,
-                              "call":  "Z62NS"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "CM99",
-                              "lon":  -121,
-                              "snr":  -18,
-                              "lat":  39.5,
-                              "call":  "WV6C"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "EK09",
-                              "lon":  -99,
-                              "snr":  -1,
-                              "lat":  19.5,
-                              "call":  "XE1RK"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "FN59",
-                              "lon":  -69,
-                              "snr":  -6,
-                              "lat":  49.5,
-                              "call":  "NA4EB"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "RR73",
-                              "lon":  175,
-                              "snr":  -11,
-                              "lat":  83.5,
-                              "call":  "KF0SVO"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "RR73",
-                              "lon":  175,
-                              "snr":  -16,
-                              "lat":  83.5,
-                              "call":  "G8KHF"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "EM29",
-                              "lon":  -95,
-                              "snr":  -15,
-                              "lat":  39.5,
-                              "call":  "W7DGM"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "EM15",
-                              "lon":  -97,
-                              "snr":  -14,
-                              "lat":  35.5,
-                              "call":  "N7EHL"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "EM29",
-                              "lon":  -95,
-                              "snr":  -10,
-                              "lat":  39.5,
-                              "call":  "KR4DWD"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "FF81",
-                              "lon":  -63,
-                              "snr":  -20,
-                              "lat":  -38.5,
-                              "call":  "LW2EDM"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "EK57",
-                              "lon":  -89,
-                              "snr":  -11,
-                              "lat":  17.5,
-                              "call":  "NA4EB"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "EM94",
-                              "lon":  -81,
-                              "snr":  -22,
-                              "lat":  34.5,
-                              "call":  "K4CAE"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "CN85",
-                              "lon":  -123,
-                              "snr":  -18,
-                              "lat":  45.5,
-                              "call":  "KO4YIN"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "EM23",
-                              "lon":  -95,
-                              "snr":  -21,
-                              "lat":  33.5,
-                              "call":  "KJ5CRW"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "FF46",
-                              "lon":  -71,
-                              "snr":  -21,
-                              "lat":  -33.5,
-                              "call":  "CE3TSK"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "EK57",
-                              "lon":  -89,
-                              "snr":  -9,
-                              "lat":  17.5,
-                              "call":  "NA4EB"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "EM29",
-                              "lon":  -95,
-                              "snr":  -15,
-                              "lat":  39.5,
-                              "call":  "W7DGM"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "EM15",
-                              "lon":  -97,
-                              "snr":  -13,
-                              "lat":  35.5,
-                              "call":  "N7EHL"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "RR73",
-                              "lon":  175,
-                              "snr":  -9,
-                              "lat":  83.5,
-                              "call":  "KF0SVO"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "EM29",
-                              "lon":  -95,
-                              "snr":  -10,
-                              "lat":  39.5,
-                              "call":  "KR4DWD"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "RR73",
-                              "lon":  175,
-                              "snr":  -15,
-                              "lat":  83.5,
-                              "call":  "G8KHF"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "FF81",
-                              "lon":  -63,
-                              "snr":  -22,
-                              "lat":  -38.5,
-                              "call":  "LW2EDM"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "FN59",
-                              "lon":  -69,
-                              "snr":  -5,
-                              "lat":  49.5,
-                              "call":  "NA4EB"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "EM23",
-                              "lon":  -95,
-                              "snr":  -20,
-                              "lat":  33.5,
-                              "call":  "KJ5CRW"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "EM94",
-                              "lon":  -81,
-                              "snr":  -23,
-                              "lat":  34.5,
-                              "call":  "K4CAE"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "CN85",
-                              "lon":  -123,
-                              "snr":  -18,
-                              "lat":  45.5,
-                              "call":  "KO4YIN"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "FF46",
-                              "lon":  -71,
-                              "snr":  -23,
-                              "lat":  -33.5,
-                              "call":  "CE3TSK"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "EM11",
-                              "lon":  -97,
-                              "snr":  -18,
-                              "lat":  31.5,
-                              "call":  "N5WIN"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "EM00",
-                              "lon":  -99,
-                              "snr":  -7,
-                              "lat":  30.5,
-                              "call":  "KM4DR"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "EM05",
-                              "lon":  -99,
-                              "snr":  -9,
-                              "lat":  35.5,
-                              "call":  "N5CH"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "RR73",
-                              "lon":  175,
-                              "snr":  -1,
-                              "lat":  83.5,
-                              "call":  "AE8JF"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "JI75",
-                              "lon":  15,
-                              "snr":  -9,
-                              "lat":  -4.5,
-                              "call":  "TN8GD"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "EK09",
-                              "lon":  -99,
-                              "snr":  -1,
-                              "lat":  19.5,
-                              "call":  "XE1RK"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "DN62",
-                              "lon":  -107,
-                              "snr":  -17,
-                              "lat":  42.5,
-                              "call":  "CE3TSK"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "DM67",
-                              "lon":  -107,
-                              "snr":  -17,
-                              "lat":  37.5,
-                              "call":  "N0ZC"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "JI75",
-                              "lon":  15,
-                              "snr":  -9,
-                              "lat":  -4.5,
-                              "call":  "TN8GD"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "EM00",
-                              "lon":  -99,
-                              "snr":  -5,
-                              "lat":  30.5,
-                              "call":  "KM4DR"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "RR73",
-                              "lon":  175,
-                              "snr":  -1,
-                              "lat":  83.5,
-                              "call":  "AE8JF"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "EK09",
-                              "lon":  -99,
-                              "snr":  -1,
-                              "lat":  19.5,
-                              "call":  "XE1RK"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "EM05",
-                              "lon":  -99,
-                              "snr":  -9,
-                              "lat":  35.5,
-                              "call":  "N5CH"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "DN62",
-                              "lon":  -107,
-                              "snr":  -15,
-                              "lat":  42.5,
-                              "call":  "CE3TSK"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "EM11",
-                              "lon":  -97,
-                              "snr":  -17,
-                              "lat":  31.5,
-                              "call":  "N5WIN"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "DM67",
-                              "lon":  -107,
-                              "snr":  -21,
-                              "lat":  37.5,
-                              "call":  "N0ZC"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "FN59",
-                              "lon":  -69,
-                              "snr":  -8,
-                              "lat":  49.5,
-                              "call":  "NA4EB"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "RR73",
-                              "lon":  175,
-                              "snr":  -13,
-                              "lat":  83.5,
-                              "call":  "KE7WVV"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "EK57",
-                              "lon":  -89,
-                              "snr":  -14,
-                              "lat":  17.5,
-                              "call":  "NA4EB"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "FK49",
-                              "lon":  -71,
-                              "snr":  -8,
-                              "lat":  19.5,
-                              "call":  "HI8UD"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "EM23",
-                              "lon":  -95,
-                              "snr":  -14,
-                              "lat":  33.5,
-                              "call":  "KJ5CRW"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "EM15",
-                              "lon":  -97,
-                              "snr":  -16,
-                              "lat":  35.5,
-                              "call":  "N7EHL"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "EM26",
-                              "lon":  -95,
-                              "snr":  -12,
-                              "lat":  36.5,
-                              "call":  "XE1RK"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "FF81",
-                              "lon":  -63,
-                              "snr":  -15,
-                              "lat":  -38.5,
-                              "call":  "LW2EDM"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "EM84",
-                              "lon":  -83,
-                              "snr":  -17,
-                              "lat":  34.5,
-                              "call":  "SV1CQN"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "FF81",
-                              "lon":  -63,
-                              "snr":  -21,
-                              "lat":  -38.5,
-                              "call":  "LW2EDM"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "FK49",
-                              "lon":  -71,
-                              "snr":  -7,
-                              "lat":  19.5,
-                              "call":  "HI8UD"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "EK57",
-                              "lon":  -89,
-                              "snr":  -8,
-                              "lat":  17.5,
-                              "call":  "NA4EB"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "FN59",
-                              "lon":  -69,
-                              "snr":  -8,
-                              "lat":  49.5,
-                              "call":  "NA4EB"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "EM26",
-                              "lon":  -95,
-                              "snr":  -10,
-                              "lat":  36.5,
-                              "call":  "XE1RK"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "EM23",
-                              "lon":  -95,
-                              "snr":  -14,
-                              "lat":  33.5,
-                              "call":  "KJ5CRW"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "EM15",
-                              "lon":  -97,
-                              "snr":  -16,
-                              "lat":  35.5,
-                              "call":  "N7EHL"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "EM84",
-                              "lon":  -83,
-                              "snr":  -18,
-                              "lat":  34.5,
-                              "call":  "SV1CQN"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:13",
-                              "band":  "20m",
-                              "grid":  "RR73",
-                              "lon":  175,
-                              "snr":  -13,
-                              "lat":  83.5,
-                              "call":  "KE7WVV"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:14",
-                              "band":  "20m",
-                              "grid":  "EM00",
-                              "lon":  -99,
-                              "snr":  -5,
-                              "lat":  30.5,
-                              "call":  "KM4DR"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:14",
-                              "band":  "20m",
-                              "grid":  "JI75",
-                              "lon":  15,
-                              "snr":  -10,
-                              "lat":  -4.5,
-                              "call":  "TN8GD"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:14",
-                              "band":  "20m",
-                              "grid":  "EL98",
-                              "lon":  -81,
-                              "snr":  -15,
-                              "lat":  28.5,
-                              "call":  "KF9JF"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:14",
-                              "band":  "20m",
-                              "grid":  "EM05",
-                              "lon":  -99,
-                              "snr":  -20,
-                              "lat":  35.5,
-                              "call":  "N5CH"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:14",
-                              "band":  "20m",
-                              "grid":  "EM11",
-                              "lon":  -97,
-                              "snr":  -14,
-                              "lat":  31.5,
-                              "call":  "N5WIN"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:14",
-                              "band":  "20m",
-                              "grid":  "EM00",
-                              "lon":  -99,
-                              "snr":  -3,
-                              "lat":  30.5,
-                              "call":  "KM4DR"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:14",
-                              "band":  "20m",
-                              "grid":  "JI75",
-                              "lon":  15,
-                              "snr":  -10,
-                              "lat":  -4.5,
-                              "call":  "TN8GD"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:14",
-                              "band":  "20m",
-                              "grid":  "EM11",
-                              "lon":  -97,
-                              "snr":  -12,
-                              "lat":  31.5,
-                              "call":  "N5WIN"
-                          },
-                          {
-                              "timestamp":  "2026-08-03 23:14",
-                              "band":  "20m",
-                              "grid":  "EM05",
-                              "lon":  -99,
-                              "snr":  -22,
-                              "lat":  35.5,
-                              "call":  "N5CH"
-                          },
-                          {
                               "timestamp":  "2026-08-03 23:14",
                               "band":  "20m",
                               "grid":  "EL98",
@@ -8999,14 +8243,770 @@
                               "snr":  -20,
                               "lat":  30.5,
                               "call":  "KJ4PIU"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:30",
+                              "band":  "20m",
+                              "grid":  "DN37",
+                              "lon":  -113,
+                              "snr":  -17,
+                              "lat":  47.5,
+                              "call":  "K3ENV"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:30",
+                              "band":  "20m",
+                              "grid":  "DN36",
+                              "lon":  -113,
+                              "snr":  -18,
+                              "lat":  46.5,
+                              "call":  "TN8GD"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:30",
+                              "band":  "20m",
+                              "grid":  "FN84",
+                              "lon":  -63,
+                              "snr":  -20,
+                              "lat":  44.5,
+                              "call":  "VE1LAW"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:30",
+                              "band":  "20m",
+                              "grid":  "FN59",
+                              "lon":  -69,
+                              "snr":  -16,
+                              "lat":  49.5,
+                              "call":  "KC9JFX"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:30",
+                              "band":  "20m",
+                              "grid":  "EN20",
+                              "lon":  -95,
+                              "snr":  -7,
+                              "lat":  40.5,
+                              "call":  "N5CH"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:30",
+                              "band":  "20m",
+                              "grid":  "FN84",
+                              "lon":  -63,
+                              "snr":  -19,
+                              "lat":  44.5,
+                              "call":  "VE1LAW"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:30",
+                              "band":  "20m",
+                              "grid":  "EM00",
+                              "lon":  -99,
+                              "snr":  -4,
+                              "lat":  30.5,
+                              "call":  "K3ENV"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:30",
+                              "band":  "20m",
+                              "grid":  "FF46",
+                              "lon":  -71,
+                              "snr":  -20,
+                              "lat":  -33.5,
+                              "call":  "CE3TSK"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:30",
+                              "band":  "20m",
+                              "grid":  "DN36",
+                              "lon":  -113,
+                              "snr":  -17,
+                              "lat":  46.5,
+                              "call":  "TN8GD"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:30",
+                              "band":  "20m",
+                              "grid":  "IM13",
+                              "lon":  -17,
+                              "snr":  -15,
+                              "lat":  33.5,
+                              "call":  "CT3MD"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:30",
+                              "band":  "20m",
+                              "grid":  "RR73",
+                              "lon":  175,
+                              "snr":  -12,
+                              "lat":  83.5,
+                              "call":  "EI9IB"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:30",
+                              "band":  "20m",
+                              "grid":  "DN37",
+                              "lon":  -113,
+                              "snr":  -17,
+                              "lat":  47.5,
+                              "call":  "K3ENV"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:30",
+                              "band":  "20m",
+                              "grid":  "EM70",
+                              "lon":  -85,
+                              "snr":  -20,
+                              "lat":  30.5,
+                              "call":  "KJ4PIU"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:30",
+                              "band":  "20m",
+                              "grid":  "KN02",
+                              "lon":  21,
+                              "snr":  -24,
+                              "lat":  42.5,
+                              "call":  "Z62NS"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "DM13",
+                              "lon":  -117,
+                              "snr":  -12,
+                              "lat":  33.5,
+                              "call":  "ZX2O"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "RR73",
+                              "lon":  175,
+                              "snr":  -19,
+                              "lat":  83.5,
+                              "call":  "VE9RK"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "RR73",
+                              "lon":  175,
+                              "snr":  -12,
+                              "lat":  83.5,
+                              "call":  "KE4IHI"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "EM13",
+                              "lon":  -97,
+                              "snr":  -17,
+                              "lat":  33.5,
+                              "call":  "ZX2O"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "EM10",
+                              "lon":  -97,
+                              "snr":  -22,
+                              "lat":  30.5,
+                              "call":  "W5JSS"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "FK78",
+                              "lon":  -65,
+                              "snr":  -22,
+                              "lat":  18.5,
+                              "call":  "WP4UV"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "RR73",
+                              "lon":  175,
+                              "snr":  -12,
+                              "lat":  83.5,
+                              "call":  "KE4IHI"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "EM13",
+                              "lon":  -97,
+                              "snr":  -14,
+                              "lat":  33.5,
+                              "call":  "ZX2O"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "RR73",
+                              "lon":  175,
+                              "snr":  -19,
+                              "lat":  83.5,
+                              "call":  "VE9RK"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "FK78",
+                              "lon":  -65,
+                              "snr":  -22,
+                              "lat":  18.5,
+                              "call":  "WP4UV"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "DM13",
+                              "lon":  -117,
+                              "snr":  -12,
+                              "lat":  33.5,
+                              "call":  "ZX2O"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "EM11",
+                              "lon":  -97,
+                              "snr":  -21,
+                              "lat":  31.5,
+                              "call":  "N5WIN"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "EM10",
+                              "lon":  -97,
+                              "snr":  -21,
+                              "lat":  30.5,
+                              "call":  "W5JSS"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "IM13",
+                              "lon":  -17,
+                              "snr":  -13,
+                              "lat":  33.5,
+                              "call":  "CT3MD"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "FN59",
+                              "lon":  -69,
+                              "snr":  -12,
+                              "lat":  49.5,
+                              "call":  "K3ENV"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "DN36",
+                              "lon":  -113,
+                              "snr":  -17,
+                              "lat":  46.5,
+                              "call":  "TN8GD"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "KN02",
+                              "lon":  21,
+                              "snr":  -16,
+                              "lat":  42.5,
+                              "call":  "Z62NS"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "EM70",
+                              "lon":  -85,
+                              "snr":  -18,
+                              "lat":  30.5,
+                              "call":  "KJ4PIU"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "FF46",
+                              "lon":  -71,
+                              "snr":  -19,
+                              "lat":  -33.5,
+                              "call":  "CE3TSK"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "FK49",
+                              "lon":  -71,
+                              "snr":  -13,
+                              "lat":  19.5,
+                              "call":  "HI8UD"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "FN59",
+                              "lon":  -69,
+                              "snr":  -12,
+                              "lat":  49.5,
+                              "call":  "K3ENV"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "DN36",
+                              "lon":  -113,
+                              "snr":  -17,
+                              "lat":  46.5,
+                              "call":  "TN8GD"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "IM13",
+                              "lon":  -17,
+                              "snr":  -13,
+                              "lat":  33.5,
+                              "call":  "CT3MD"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "EM70",
+                              "lon":  -85,
+                              "snr":  -19,
+                              "lat":  30.5,
+                              "call":  "KJ4PIU"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "KN02",
+                              "lon":  21,
+                              "snr":  -24,
+                              "lat":  42.5,
+                              "call":  "Z62NS"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "FK49",
+                              "lon":  -71,
+                              "snr":  -10,
+                              "lat":  19.5,
+                              "call":  "HI8UD"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "FF46",
+                              "lon":  -71,
+                              "snr":  -22,
+                              "lat":  -33.5,
+                              "call":  "CE3TSK"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "EM94",
+                              "lon":  -81,
+                              "snr":  -21,
+                              "lat":  34.5,
+                              "call":  "K4CAE"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "EM32",
+                              "lon":  -93,
+                              "snr":  -15,
+                              "lat":  32.5,
+                              "call":  "AI5DQ"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "RR73",
+                              "lon":  175,
+                              "snr":  -15,
+                              "lat":  83.5,
+                              "call":  "KF9UG"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "RR73",
+                              "lon":  175,
+                              "snr":  -11,
+                              "lat":  83.5,
+                              "call":  "AD2LN"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "JI75",
+                              "lon":  15,
+                              "snr":  -16,
+                              "lat":  -4.5,
+                              "call":  "TN8GD"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "EM13",
+                              "lon":  -97,
+                              "snr":  -20,
+                              "lat":  33.5,
+                              "call":  "ZX2O"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "DM13",
+                              "lon":  -117,
+                              "snr":  -12,
+                              "lat":  33.5,
+                              "call":  "K1PAP"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "RR73",
+                              "lon":  175,
+                              "snr":  -15,
+                              "lat":  83.5,
+                              "call":  "KF9UG"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "JI75",
+                              "lon":  15,
+                              "snr":  -15,
+                              "lat":  -4.5,
+                              "call":  "TN8GD"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "RR73",
+                              "lon":  175,
+                              "snr":  -10,
+                              "lat":  83.5,
+                              "call":  "AD2LN"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "EM32",
+                              "lon":  -93,
+                              "snr":  -15,
+                              "lat":  32.5,
+                              "call":  "AI5DQ"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "EM13",
+                              "lon":  -97,
+                              "snr":  -20,
+                              "lat":  33.5,
+                              "call":  "ZX2O"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "DM13",
+                              "lon":  -117,
+                              "snr":  -11,
+                              "lat":  33.5,
+                              "call":  "K1PAP"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "FK49",
+                              "lon":  -71,
+                              "snr":  -6,
+                              "lat":  19.5,
+                              "call":  "HI8UD"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "EM15",
+                              "lon":  -97,
+                              "snr":  -15,
+                              "lat":  35.5,
+                              "call":  "KX4Z"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "FN59",
+                              "lon":  -69,
+                              "snr":  -8,
+                              "lat":  49.5,
+                              "call":  "K3ENV"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "RR73",
+                              "lon":  175,
+                              "snr":  -15,
+                              "lat":  83.5,
+                              "call":  "DJ0MAB"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "DN36",
+                              "lon":  -113,
+                              "snr":  -16,
+                              "lat":  46.5,
+                              "call":  "TN8GD"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "EM94",
+                              "lon":  -81,
+                              "snr":  -21,
+                              "lat":  34.5,
+                              "call":  "K4CAE"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:31",
+                              "band":  "20m",
+                              "grid":  "CN88",
+                              "lon":  -123,
+                              "snr":  -15,
+                              "lat":  48.5,
+                              "call":  "N1UGL"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:32",
+                              "band":  "20m",
+                              "grid":  "JI75",
+                              "lon":  15,
+                              "snr":  -19,
+                              "lat":  -4.5,
+                              "call":  "TN8GD"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:32",
+                              "band":  "20m",
+                              "grid":  "RR73",
+                              "lon":  175,
+                              "snr":  -8,
+                              "lat":  83.5,
+                              "call":  "WB0MOR"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:32",
+                              "band":  "20m",
+                              "grid":  "EM13",
+                              "lon":  -97,
+                              "snr":  -18,
+                              "lat":  33.5,
+                              "call":  "ZX2O"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:32",
+                              "band":  "20m",
+                              "grid":  "EM32",
+                              "lon":  -93,
+                              "snr":  -12,
+                              "lat":  32.5,
+                              "call":  "AI5DQ"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:32",
+                              "band":  "20m",
+                              "grid":  "EM11",
+                              "lon":  -97,
+                              "snr":  -13,
+                              "lat":  31.5,
+                              "call":  "N5WIN"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:32",
+                              "band":  "20m",
+                              "grid":  "DM13",
+                              "lon":  -117,
+                              "snr":  -13,
+                              "lat":  33.5,
+                              "call":  "K1PAP"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:32",
+                              "band":  "20m",
+                              "grid":  "EM32",
+                              "lon":  -93,
+                              "snr":  -12,
+                              "lat":  32.5,
+                              "call":  "AI5DQ"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:32",
+                              "band":  "20m",
+                              "grid":  "RR73",
+                              "lon":  175,
+                              "snr":  -16,
+                              "lat":  83.5,
+                              "call":  "WB0MOR"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:32",
+                              "band":  "20m",
+                              "grid":  "JI75",
+                              "lon":  15,
+                              "snr":  -17,
+                              "lat":  -4.5,
+                              "call":  "TN8GD"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:32",
+                              "band":  "20m",
+                              "grid":  "EM11",
+                              "lon":  -97,
+                              "snr":  -13,
+                              "lat":  31.5,
+                              "call":  "N5WIN"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:32",
+                              "band":  "20m",
+                              "grid":  "DM13",
+                              "lon":  -117,
+                              "snr":  -12,
+                              "lat":  33.5,
+                              "call":  "K1PAP"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:32",
+                              "band":  "20m",
+                              "grid":  "EM13",
+                              "lon":  -97,
+                              "snr":  -18,
+                              "lat":  33.5,
+                              "call":  "ZX2O"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:32",
+                              "band":  "20m",
+                              "grid":  "DN37",
+                              "lon":  -113,
+                              "snr":  -8,
+                              "lat":  47.5,
+                              "call":  "KC9JJS"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:32",
+                              "band":  "20m",
+                              "grid":  "EM25",
+                              "lon":  -95,
+                              "snr":  -14,
+                              "lat":  35.5,
+                              "call":  "KR3Y"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:32",
+                              "band":  "20m",
+                              "grid":  "FK49",
+                              "lon":  -71,
+                              "snr":  -4,
+                              "lat":  19.5,
+                              "call":  "HI8UD"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:32",
+                              "band":  "20m",
+                              "grid":  "GG87",
+                              "lon":  -43,
+                              "snr":  -9,
+                              "lat":  -22.5,
+                              "call":  "PY1ZV"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:32",
+                              "band":  "20m",
+                              "grid":  "RR73",
+                              "lon":  175,
+                              "snr":  -20,
+                              "lat":  83.5,
+                              "call":  "DJ0MAB"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:32",
+                              "band":  "20m",
+                              "grid":  "FN59",
+                              "lon":  -69,
+                              "snr":  -6,
+                              "lat":  49.5,
+                              "call":  "K3ENV"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:32",
+                              "band":  "20m",
+                              "grid":  "FN84",
+                              "lon":  -63,
+                              "snr":  -15,
+                              "lat":  44.5,
+                              "call":  "VE1ZZ"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:32",
+                              "band":  "20m",
+                              "grid":  "RR73",
+                              "lon":  175,
+                              "snr":  -4,
+                              "lat":  83.5,
+                              "call":  "SV1MOZ"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:32",
+                              "band":  "20m",
+                              "grid":  "EM15",
+                              "lon":  -97,
+                              "snr":  -18,
+                              "lat":  35.5,
+                              "call":  "KX4Z"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:32",
+                              "band":  "20m",
+                              "grid":  "EM94",
+                              "lon":  -81,
+                              "snr":  -20,
+                              "lat":  34.5,
+                              "call":  "K4CAE"
+                          },
+                          {
+                              "timestamp":  "2026-08-03 23:32",
+                              "band":  "20m",
+                              "grid":  "RR73",
+                              "lon":  175,
+                              "snr":  -6,
+                              "lat":  83.5,
+                              "call":  "PD1WD"
                           }
                       ],
-    "generated":  "2026-08-05 07:28:58",
+    "generated":  "2026-08-05 07:40:05",
     "bands":  {
                   "20m":  [
                               {
                                   "hour":  "2026-08-03 23",
-                                  "count":  4506,
+                                  "count":  4383,
                                   "avgSnr":  -12.3
                               },
                               {
@@ -9176,8 +9176,8 @@
                               },
                               {
                                   "hour":  "2026-08-05 11",
-                                  "count":  309,
-                                  "avgSnr":  -12
+                                  "count":  427,
+                                  "avgSnr":  -12.1
                               }
                           ],
                   "40m":  [
