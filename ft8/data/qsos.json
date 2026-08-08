@@ -346,5 +346,29 @@
         "rstRcvd":  "-13",
         "mode":  "FT8",
         "lat":  36.5
+    },
+    {
+        "grid":  "JO21",
+        "rstSent":  "-09",
+        "call":  "PI4DX",
+        "lon":  5,
+        "band":  "40m",
+        "time":  "02:10",
+        "date":  "2026-08-08",
+        "rstRcvd":  "-13",
+        "mode":  "FT8",
+        "lat":  51.5
+    },
+    {
+        "grid":  "DL90",
+        "rstSent":  "-10",
+        "call":  "XE1YO",
+        "lon":  -101,
+        "band":  "40m",
+        "time":  "02:14",
+        "date":  "2026-08-08",
+        "rstRcvd":  "-13",
+        "mode":  "FT8",
+        "lat":  20.5
     }
 ]
