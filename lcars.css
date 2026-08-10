@@ -1,0 +1,74 @@
+/* W4EWB LCARS theme — Star Trek TNG. Shared across the site. */
+@import url('https://fonts.googleapis.com/css2?family=Antonio:wght@400;500;600;700&display=swap');
+
+:root{
+  --black:#000; --panel:#111;
+  --orange:#f96; --gold:#fc6; --lilac:#c9c; --peri:#99f; --salmon:#c67; --ice:#9cf; --beige:#fc9; --red:#c55;
+  --ink:#fc9; --dim:#caa;
+  --rail:150px; --gap:8px; --rad:32px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--black)}
+body{color:var(--ink);font-family:'Antonio','Arial Narrow','Roboto Condensed',sans-serif;
+  letter-spacing:.05em;-webkit-text-size-adjust:100%;line-height:1.35;min-height:100vh}
+a{color:inherit;text-decoration:none}
+.up{text-transform:uppercase}
+
+/* frame: left rail + content column */
+.lcars{display:flex;gap:var(--gap);max-width:1200px;margin:0 auto;padding:var(--gap);align-items:flex-start;min-height:100vh}
+.rail{width:var(--rail);flex:none;display:flex;flex-direction:column;gap:var(--gap)}
+.cap{height:70px;background:var(--orange);border-radius:var(--rad) 0 0 0}
+.blk{padding:14px 12px 12px;color:#000;font-weight:700;text-transform:uppercase;font-size:13px;text-align:right;
+  border-radius:0 0 0 8px;min-height:48px;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden}
+.blk small{display:block;font-weight:500;opacity:.75;font-size:11px}
+.blk.o{background:var(--orange)} .blk.g{background:var(--gold)} .blk.l{background:var(--lilac)}
+.blk.p{background:var(--peri)} .blk.s{background:var(--salmon)} .blk.i{background:var(--ice)} .blk.b{background:var(--beige)}
+.railfill{flex:1;min-height:40px;background:var(--lilac);border-radius:0 0 0 var(--rad)}
+
+.col{flex:1;min-width:0;display:flex;flex-direction:column;gap:var(--gap)}
+.hdr{height:70px;background:var(--gold);border-radius:0 var(--rad) 0 0;display:flex;align-items:flex-end;
+  justify-content:flex-end;gap:14px;padding:0 22px 10px;color:#000}
+.hdr .title{font-weight:700;text-transform:uppercase;font-size:clamp(20px,4.4vw,34px);line-height:1}
+.hdr .sub{font-weight:600;opacity:.7;font-size:12px;text-transform:uppercase;padding-bottom:3px;display:none}
+@media(min-width:900px){.hdr .sub{display:block}}
+.content{flex:1;background:transparent;padding:4px 2px}
+.foot{background:var(--salmon);color:#000;border-radius:0 0 var(--rad) var(--rad);padding:9px 22px;
+  font-weight:600;text-transform:uppercase;font-size:12px;text-align:right;letter-spacing:.1em}
+
+/* intro strip under header */
+.strip{color:var(--dim);text-transform:uppercase;font-size:12px;letter-spacing:.14em;padding:2px 6px 12px}
+
+/* card grid (hub links + gallery images) */
+.grid{display:grid;gap:var(--gap);grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+.card{background:var(--panel);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;
+  border-left:10px solid var(--orange)}
+.card:nth-child(6n+2){border-left-color:var(--peri)} .card:nth-child(6n+3){border-left-color:var(--lilac)}
+.card:nth-child(6n+4){border-left-color:var(--gold)} .card:nth-child(6n+5){border-left-color:var(--ice)}
+.card:nth-child(6n){border-left-color:var(--salmon)}
+.card img{width:100%;height:230px;object-fit:cover;display:block;background:#000}
+.card .cap2{padding:12px 14px}
+.card .t{font-weight:700;text-transform:uppercase;font-size:17px;color:var(--gold)}
+.card .d{color:var(--dim);font-size:13px;margin-top:2px}
+
+/* hub link cards (bigger, hover) */
+.hub .card{padding:0;transition:transform .12s,box-shadow .12s;min-height:150px}
+.hub .card:hover{transform:translateY(-3px);box-shadow:0 0 0 2px var(--gold) inset}
+.hub .card .cap2{padding:16px 16px 18px;display:flex;flex-direction:column;gap:4px;height:100%}
+.hub .card .ic{font-size:26px;line-height:1}
+.hub .card .t{font-size:20px}
+.hub .card .go{margin-top:auto;color:var(--orange);font-weight:700;text-transform:uppercase;font-size:12px;letter-spacing:.1em}
+
+.empty{color:var(--dim);text-transform:uppercase;letter-spacing:.1em;text-align:center;padding:46px 10px;line-height:1.9;font-size:13px}
+
+/* mobile: rail becomes a horizontal strip */
+@media(max-width:680px){
+  :root{--rad:22px}
+  .lcars{flex-direction:column}
+  .rail{width:auto;flex-direction:row;flex-wrap:wrap;order:2}
+  .cap{display:none}
+  .blk{flex:1 1 90px;min-height:36px;padding:8px 10px;border-radius:6px;font-size:11px}
+  .railfill{display:none}
+  .col{order:1}
+  .hdr{border-radius:var(--rad) var(--rad) 0 0;height:60px}
+  .card img{height:200px}
+}
