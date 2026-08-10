@@ -1,27 +1,31 @@
 <!doctype html><html lang=en><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width,initial-scale=1">
-<title>W4EWB</title><style>
-:root{--bg:#0a0f16;--card:#131b26;--edge:#22303f;--ink:#e6eef7;--dim:#8ba0b3;--accent:#5cc8ff}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,Segoe UI,Roboto,sans-serif}
-header{padding:34px 18px 18px;border-bottom:1px solid var(--edge);text-align:center}
-h1{margin:0;font-size:30px;letter-spacing:.5px}h1 span{color:var(--accent)}
-.sub{color:var(--dim);font-size:13px;margin-top:6px}
-.wrap{max-width:1000px;margin:0 auto;padding:22px 16px}
-.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
-.card{background:var(--card);border:1px solid var(--edge);border-radius:12px;padding:18px 18px 16px;display:block;transition:border-color .15s,transform .15s}
-.card:hover{border-color:var(--accent);transform:translateY(-2px)}
-.card .ic{font-size:26px}
-.card .t{font-weight:700;color:var(--accent);font-size:17px;margin:8px 0 4px}
-.card .d{color:var(--dim);font-size:13px}
-footer{color:var(--dim);font-size:12px;text-align:center;padding:26px}
-a{color:inherit;text-decoration:none}
-</style></head><body>
-<header><h1><span>W4EWB</span> &middot; Ham Radio</h1>
-<div class=sub>Eric &middot; Louisville KY &middot; grid EM78 &middot; live galleries from the hamsdr &amp; home-beast ground stations</div></header>
-<div class=wrap><div class=grid>
-<a class=card href="goes/"><div class=ic>&#128506;&#65039;</div><div class=t>GOES-19 Full Disk</div><div class=d>Geostationary weather-satellite imagery decoded from 1694.1 MHz HRIT on home-beast.</div></a>
-<a class=card href="wx/"><div class=ic>&#127758;</div><div class=t>Weather Satellites</div><div class=d>NOAA &amp; Meteor-M2 polar-orbit passes received on the hamsdr RTL-SDR.</div></a>
-<a class=card href="sstv/rx/"><div class=ic>&#128248;</div><div class=t>SSTV Gallery</div><div class=d>Slow-scan TV images received off the HF bands, shack + hamsdr.</div></a>
-<a class=card href="ft8/"><div class=ic>&#128225;</div><div class=t>FT8 Dashboard</div><div class=d>Live FT8 spots, QSOs, and worldwide reception from the station.</div></a>
+<title>W4EWB</title>
+<link rel="stylesheet" href="/W4EWB/lcars.css">
+</head><body>
+<div class=lcars>
+  <div class=rail>
+    <div class=cap></div>
+    <div class="blk o">W4EWB<small>NCC&middot;EM78</small></div>
+    <div class="blk l">Galleries<small>&#215;04</small></div>
+    <div class="blk p">hamSDR<small>RX Array</small></div>
+    <div class="blk s">home-beast<small>Ground Stn</small></div>
+    <div class="blk i">1701<small>Louisville</small></div>
+    <div class=railfill></div>
+    <div class="blk g">73<small>de W4EWB</small></div>
+  </div>
+  <div class=col>
+    <div class=hdr><span class=title>W4EWB</span><span class=sub>Ham Radio &middot; Grid EM78</span></div>
+    <div class=strip>Eric &middot; Louisville KY &middot; Live galleries from the hamSDR &amp; home-beast ground stations</div>
+    <div class="content hub">
+      <div class=grid>
+        <a class=card href="goes/"><div class=cap2><div class=ic>&#128225;</div><div class=t>GOES-19 Full Disk</div><div class=d>Geostationary weather-satellite imagery decoded from 1694.1 MHz HRIT on home-beast.</div><div class=go>Open &#9656;</div></div></a>
+        <a class=card href="wx/"><div class=cap2><div class=ic>&#127758;</div><div class=t>Weather Satellites</div><div class=d>NOAA &amp; Meteor-M2 polar-orbit passes received on the hamSDR RTL-SDR.</div><div class=go>Open &#9656;</div></div></a>
+        <a class=card href="sstv/rx/"><div class=cap2><div class=ic>&#128250;</div><div class=t>SSTV Gallery</div><div class=d>Slow-scan TV images pulled off the HF bands &mdash; shack + hamSDR.</div><div class=go>Open &#9656;</div></div></a>
+        <a class=card href="ft8/"><div class=cap2><div class=ic>&#128246;</div><div class=t>FT8 Dashboard</div><div class=d>Live FT8 spots, QSOs, and worldwide reception from the station.</div><div class=go>Open &#9656;</div></div></a>
+      </div>
+    </div>
+    <div class=foot>W4EWB &middot; Standing by on all frequencies &middot; 73</div>
+  </div>
 </div>
-<footer>W4EWB &middot; 73</footer></div></body></html>
+</body></html>
