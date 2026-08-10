@@ -139,37 +139,183 @@ $head = @"
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>W4EWB's SSTV RX Gallery</title>
-  <link rel="stylesheet" href="/W4EWB/lcars.css">
   <style>
-    .month-nav{display:flex;flex-wrap:wrap;gap:6px;padding:6px 2px 12px}
-    .month-btn{padding:6px 15px;background:var(--peri);color:#000;border:none;border-radius:16px;font-family:inherit;font-weight:600;text-transform:uppercase;font-size:12px;letter-spacing:.05em;cursor:pointer}
-    .month-btn:hover{background:var(--ice)} .month-btn.active{background:var(--gold)}
-    .stats{color:var(--dim);text-transform:uppercase;font-size:12px;letter-spacing:.12em;padding:0 4px 10px}
-    .stats span{color:var(--gold)}
-    .grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
-    .card a{display:block;color:inherit} .card img{height:auto;aspect-ratio:1}
-    .card .meta{padding:9px 12px}
-    .card .filename{font-size:12px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase}
-    .card .timestamp{font-size:12px;color:var(--dim)} .card.hidden{display:none}
-    .no-results{grid-column:1/-1;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;text-align:center;padding:50px 20px}
-    #load-more-btn{background:var(--orange);color:#000;border:none;padding:12px 34px;border-radius:22px;font-family:inherit;font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:15px;cursor:pointer}
+    :root {
+      --bg: #0d1117;
+      --card-bg: #161b22;
+      --border: #30363d;
+      --text: #c9d1d9;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --accent-hover: #79b8ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .container { max-width: 1400px; margin: 0 auto; }
+    
+    /* Header */
+    .header { margin-bottom: 24px; }
+    .header h1 {
+      margin: 0 0 8px 0;
+      font-size: 1.8rem;
+      font-weight: 600;
+      color: #fff;
+    }
+    .header .callsign { color: var(--accent); }
+    .header .subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-bottom: 12px;
+    }
+    .header .subtitle a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .header .subtitle a:hover { text-decoration: underline; }
+    .header .latest-link {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 6px 14px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.85rem;
+    }
+    .header .latest-link:hover {
+      background: #21262d;
+      border-color: var(--accent);
+    }
+    
+    /* Month Navigation */
+    .month-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .month-btn {
+      padding: 6px 14px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .month-btn:hover {
+      border-color: var(--accent);
+      color: var(--text);
+    }
+    .month-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #0d1117;
+      font-weight: 500;
+    }
+    
+    /* Stats bar */
+    .stats {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+    .stats span { color: var(--text); font-weight: 500; }
+    
+    /* Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent);
+    }
+    .card a { display: block; text-decoration: none; color: inherit; }
+    .card img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      background: #000;
+    }
+    .card .meta {
+      padding: 10px 12px;
+    }
+    .card .filename {
+      font-size: 0.8rem;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 2px;
+    }
+    .card .timestamp {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+    .card.hidden { display: none; }
+    
+    /* No results */
+    .no-results {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+    
+    /* Footer */
+    .footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .footer a { color: var(--accent); text-decoration: none; }
+    .footer a:hover { text-decoration: underline; }
+    
+    @media (max-width: 600px) {
+      body { padding: 12px; }
+      .header h1 { font-size: 1.4rem; }
+      .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+      .month-btn { padding: 5px 10px; font-size: 0.8rem; }
+    }
   </style>
 </head>
 <body>
-  <div class="lcars">
-    <div class="rail">
-      <div class="cap"></div>
-      <a class="blk o" href="/W4EWB/">&#9666; W4EWB<small>Home</small></a>
-      <div class="blk p">SSTV<small>RX</small></div>
-      <div class="blk l">FT-710<small>HF</small></div>
-      <a class="blk i" href="latest.jpg">Latest<small>View RX</small></a>
-      <div class="railfill"></div>
-      <a class="blk g" href="https://www.qrz.com/db/W4EWB">QRZ<small>W4EWB</small></a>
-    </div>
-    <div class="col">
-      <div class="hdr"><span class="title">SSTV RX Gallery</span><span class="sub">W4EWB &middot; FT-710</span></div>
-      <div class="strip">Slow-scan TV received on the Yaesu FT-710 &middot; Louisville KY &middot; auto-updated via MMSSTV</div>
-      <nav class="month-nav">
+  <div class="container">
+    <header class="header">
+      <h1><span class="callsign">W4EWB</span>'s SSTV RX Gallery</h1>
+      <p class="subtitle">
+        A collection of SSTV images received on my Yaesu FT-710 in Louisville, KY.<br>
+        <a href="https://www.qrz.com/db/W4EWB" target="_blank" rel="noopener">QRZ Profile</a> &#8226;
+        <a href="../../ft8/">FT8 Dashboard</a>
+      </p>
+      <a href="latest.jpg" class="latest-link">&#128225; View Latest RX</a>
+    </header>
+    
+    <nav class="month-nav">
       <button class="month-btn active" data-month="all">All Images</button>
 "@
 
@@ -182,9 +328,12 @@ $monthButtons = foreach ($m in $sortedMonths) {
 
 $navClose = @"
     </nav>
-      <div class="stats">Showing <span id="visible-count">50</span> of <span id="total-count">$($items.Count)</span> images</div>
-      <div class="content">
-      <div class="grid" id="gallery">
+    
+    <div class="stats">
+      Showing <span id="visible-count">50</span> of <span id="total-count">$($items.Count)</span> images
+    </div>
+    
+    <div class="grid" id="gallery">
 "@
 
 # Generate cards with data-month attribute
@@ -208,15 +357,22 @@ $cards = foreach ($it in $items) {
 }
 
 $foot = @"
-        <div class="no-results" id="no-results" style="display:none;">No images found for this month.</div>
+      <div class="no-results" id="no-results" style="display:none;">
+        No images found for this month.
       </div>
-      <div id="load-more-container" style="text-align:center;padding:30px 20px;display:none;">
-        <button id="load-more-btn">Load More Images</button>
-        <p style="color:var(--dim);font-size:12px;margin-top:8px;text-transform:uppercase;letter-spacing:.1em">Or just keep scrolling</p>
-      </div>
-      </div>
-      <div class="foot">73 de W4EWB &middot; SSTV RX &middot; auto-updated via MMSSTV</div>
     </div>
+    
+    <div id="load-more-container" style="text-align: center; padding: 30px 20px; display: none;">
+      <button id="load-more-btn" style="background: var(--accent); color: #000; border: none; padding: 12px 32px; border-radius: 6px; cursor: pointer; font-size: 1rem; font-weight: 500;">Load More Images</button>
+      <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: 8px;">Or just keep scrolling</p>
+    </div>
+    
+    <footer class="footer">
+      73 de W4EWB &bull; 
+      <a href="https://www.qrz.com/db/W4EWB">QRZ</a> &#8226;
+      <a href="../../ft8/">FT8 Dashboard</a> &#8226;
+      Gallery auto-updated via MMSSTV
+    </footer>
   </div>
   
   <script>
