@@ -1,4 +1,4 @@
-# =========================
+﻿# =========================
 # SSTV Auto-Publish (MMSTV -> GitHub Pages)
 # Repo:   C:\w4ewb\W4EWB
 # Source: C:\Ham\MMSSTV\History (BMP files like Hist1.bmp)
@@ -139,7 +139,7 @@ $head = @"
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>W4EWB's SSTV RX Gallery</title>
-  <link rel="stylesheet" href="/W4EWB/lcars.css">
+  <link rel="stylesheet" href="/lcars.css">
   <style>
     .month-nav{display:flex;flex-wrap:wrap;gap:6px;padding:6px 2px 12px}
     .month-btn{padding:6px 15px;background:var(--peri);color:#000;border:none;border-radius:16px;font-family:inherit;font-weight:600;text-transform:uppercase;font-size:12px;letter-spacing:.05em;cursor:pointer}
@@ -159,7 +159,7 @@ $head = @"
   <div class="lcars">
     <div class="rail">
       <div class="cap"></div>
-      <a class="blk o" href="/W4EWB/">&#9666; W4EWB<small>Home</small></a>
+      <a class="blk o" href="/">&#9666; W4EWB<small>Home</small></a>
       <div class="blk p">SSTV<small>RX</small></div>
       <div class="blk l">FT-710<small>HF</small></div>
       <a class="blk i" href="latest.jpg">Latest<small>View RX</small></a>

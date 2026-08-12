@@ -1,4 +1,4 @@
-# =========================
+﻿# =========================
 # FT8 Dashboard Auto-Publish (WSJT-X -> GitHub Pages)
 # Repo:   C:\w4ewb\W4EWB
 # Source: WSJT-X log files (wsjtx_log.adi, ALL.TXT)
@@ -363,7 +363,7 @@ $html = @"
   <title>$MyCallsign FT8 Dashboard</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <link rel="stylesheet" href="/W4EWB/lcars.css">
+  <link rel="stylesheet" href="/lcars.css">
   <style>
     :root {
       --bg:#000; --card-bg:#111; --border:#3a3a4d;
@@ -489,7 +489,7 @@ $html = @"
 <div class="lcars">
   <div class="rail">
     <div class="cap"></div>
-    <a class="blk o" href="/W4EWB/">&#9666; W4EWB<small>Home</small></a>
+    <a class="blk o" href="/">&#9666; W4EWB<small>Home</small></a>
     <div class="blk p">FT8<small>Digital</small></div>
     <div class="blk l">FT-710<small>HF</small></div>
     <div class="blk s">EM78<small>Louisville</small></div>
