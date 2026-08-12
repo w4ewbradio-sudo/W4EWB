@@ -46,6 +46,10 @@ a{color:inherit;text-decoration:none}
 .card:nth-child(6n+4){border-left-color:var(--gold)} .card:nth-child(6n+5){border-left-color:var(--ice)}
 .card:nth-child(6n){border-left-color:var(--salmon)}
 .card img{width:100%;height:230px;object-fit:cover;display:block;background:#000}
+/* Full-disk imagery is square and must not be cropped: the whole globe has to
+   stay in frame, so trade the fixed height for a square tile that letterboxes
+   against the black card background. */
+.card.disk img,.card.disk video{height:auto;aspect-ratio:1;object-fit:contain}
 .card .cap2{padding:12px 14px}
 .card .t{font-weight:700;text-transform:uppercase;font-size:17px;color:var(--gold)}
 .card .d{color:var(--dim);font-size:13px;margin-top:2px}
