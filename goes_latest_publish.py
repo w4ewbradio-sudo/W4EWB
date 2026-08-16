@@ -17,6 +17,7 @@ Reads frames from the local clone (home-beast pushes them there), so it needs no
 network beyond git. Writes only goes/latest-city-lights.jpg and never touches the
 timestamped history.
 """
+import json
 import os
 import re
 import subprocess
@@ -27,6 +28,11 @@ from PIL import Image, ImageStat
 REPO = r"C:\w4ewb\W4EWB"
 SRC = os.path.join(REPO, "goes", "h", "city-lights")
 DST = os.path.join(REPO, "goes", "latest-city-lights.jpg")
+# Sidecar naming the frame the alias currently holds. The TV box's calendar slide
+# reads it for the on-screen caption: the alias may deliberately lag the newest
+# frame when recent ones fail screening, so the caption has to come from here
+# rather than from whatever is newest in the gallery.
+DSTJSON = os.path.join(REPO, "goes", "latest-city-lights.json")
 CANDIDATES = 8          # how far back to look before giving up
 MIN_CHROMA = 3.0        # mean R/G/B spread; below this the frame is greyscale
 STAMP = re.compile(r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.jpg$")
@@ -91,18 +97,22 @@ def main():
             log("skip %s: %s" % (name, why))
             continue
 
+        stamp = name[:-4]
         new = open(path, "rb").read()
-        if os.path.exists(DST) and open(DST, "rb").read() == new:
+        if (os.path.exists(DST) and open(DST, "rb").read() == new
+                and os.path.exists(DSTJSON)):
             log("alias already current (%s)" % name)
             return 0
         open(DST, "wb").write(new)
+        with open(DSTJSON, "w", encoding="utf-8") as f:
+            json.dump({"frame": stamp, "product": "city-lights"}, f)
         log("alias <- %s (%s)" % (name, why))
 
-        git("add", "goes/latest-city-lights.jpg")
+        git("add", "goes/latest-city-lights.jpg", "goes/latest-city-lights.json")
         if not git("diff", "--cached", "--quiet", check=False).returncode:
             log("nothing staged; done")
             return 0
-        git("commit", "--quiet", "-m", "Auto GOES alias update %s" % name[:-4])
+        git("commit", "--quiet", "-m", "Auto GOES alias update %s" % stamp)
         for attempt in range(1, 6):          # publishers collide; rebase and retry
             if git("push", "--quiet", check=False).returncode == 0:
                 log("pushed")
