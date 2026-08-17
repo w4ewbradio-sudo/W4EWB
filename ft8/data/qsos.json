@@ -418,5 +418,17 @@
         "rstRcvd":  "-10",
         "mode":  "FT8",
         "lat":  10.5
+    },
+    {
+        "grid":  "FL20",
+        "rstSent":  "+01",
+        "call":  "CO8LY",
+        "lon":  -75,
+        "band":  "20m",
+        "time":  "12:13",
+        "date":  "2026-08-17",
+        "rstRcvd":  "-08",
+        "mode":  "FT8",
+        "lat":  20.5
     }
 ]
