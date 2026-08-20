@@ -3,24 +3,6 @@
                           {
                               "timestamp":  "2026-08-19 12:26",
                               "band":  "other",
-                              "grid":  "FM05",
-                              "lon":  -79,
-                              "snr":  -16,
-                              "lat":  35.5,
-                              "call":  "KR4EOD"
-                          },
-                          {
-                              "timestamp":  "2026-08-19 12:26",
-                              "band":  "other",
-                              "grid":  "DM42",
-                              "lon":  -111,
-                              "snr":  -14,
-                              "lat":  32.5,
-                              "call":  "WA5YHN"
-                          },
-                          {
-                              "timestamp":  "2026-08-19 12:26",
-                              "band":  "other",
                               "grid":  "EN57",
                               "lon":  -89,
                               "snr":  -10,
@@ -8999,14 +8981,32 @@
                               "snr":  -18,
                               "lat":  42.5,
                               "call":  "KY6AA"
+                          },
+                          {
+                              "timestamp":  "2026-08-19 12:52",
+                              "band":  "other",
+                              "grid":  "EM94",
+                              "lon":  -81,
+                              "snr":  -11,
+                              "lat":  34.5,
+                              "call":  "W4WDK"
+                          },
+                          {
+                              "timestamp":  "2026-08-19 12:52",
+                              "band":  "other",
+                              "grid":  "EN62",
+                              "lon":  -87,
+                              "snr":  -22,
+                              "lat":  42.5,
+                              "call":  "KY6AA"
                           }
                       ],
-    "generated":  "2026-08-20 15:08:35",
+    "generated":  "2026-08-20 15:18:18",
     "bands":  {
                   "other":  [
                                 {
                                     "hour":  "2026-08-19 12",
-                                    "count":  2304,
+                                    "count":  2302,
                                     "avgSnr":  -12.5
                                 },
                                 {
@@ -9158,6 +9158,11 @@
                                     "hour":  "2026-08-20 18",
                                     "count":  111,
                                     "avgSnr":  -16.7
+                                },
+                                {
+                                    "hour":  "2026-08-20 19",
+                                    "count":  2,
+                                    "avgSnr":  -19
                                 }
                             ]
               }
