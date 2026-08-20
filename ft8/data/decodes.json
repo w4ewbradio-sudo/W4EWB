@@ -3,51 +3,6 @@
                           {
                               "timestamp":  "2026-08-19 12:23",
                               "band":  "other",
-                              "grid":  "DN13",
-                              "lon":  -117,
-                              "snr":  -14,
-                              "lat":  43.5,
-                              "call":  "KI0E"
-                          },
-                          {
-                              "timestamp":  "2026-08-19 12:23",
-                              "band":  "other",
-                              "grid":  "EM35",
-                              "lon":  -93,
-                              "snr":  -20,
-                              "lat":  35.5,
-                              "call":  "WA5YHN"
-                          },
-                          {
-                              "timestamp":  "2026-08-19 12:23",
-                              "band":  "other",
-                              "grid":  "EM10",
-                              "lon":  -97,
-                              "snr":  -23,
-                              "lat":  30.5,
-                              "call":  "W5XO"
-                          },
-                          {
-                              "timestamp":  "2026-08-19 12:23",
-                              "band":  "other",
-                              "grid":  "DM41",
-                              "lon":  -111,
-                              "snr":  -22,
-                              "lat":  31.5,
-                              "call":  "KI7OXA"
-                          },
-                          {
-                              "timestamp":  "2026-08-19 12:23",
-                              "band":  "other",
-                              "grid":  "EN57",
-                              "lon":  -89,
-                              "snr":  -10,
-                              "lat":  47.5,
-                              "call":  "N8KWC"
-                          },
-                          {
-                              "timestamp":  "2026-08-19 12:23",
-                              "band":  "other",
                               "grid":  "EN96",
                               "lon":  -81,
                               "snr":  -9,
@@ -8999,15 +8954,60 @@
                               "snr":  -16,
                               "lat":  35.5,
                               "call":  "KM4FZA"
+                          },
+                          {
+                              "timestamp":  "2026-08-19 12:50",
+                              "band":  "other",
+                              "grid":  "EL49",
+                              "lon":  -91,
+                              "snr":  -18,
+                              "lat":  29.5,
+                              "call":  "W4WDK"
+                          },
+                          {
+                              "timestamp":  "2026-08-19 12:50",
+                              "band":  "other",
+                              "grid":  "EM16",
+                              "lon":  -97,
+                              "snr":  -15,
+                              "lat":  36.5,
+                              "call":  "KK5JY"
+                          },
+                          {
+                              "timestamp":  "2026-08-19 12:50",
+                              "band":  "other",
+                              "grid":  "FN24",
+                              "lon":  -75,
+                              "snr":  -15,
+                              "lat":  44.5,
+                              "call":  "W4WDK"
+                          },
+                          {
+                              "timestamp":  "2026-08-19 12:50",
+                              "band":  "other",
+                              "grid":  "EN34",
+                              "lon":  -93,
+                              "snr":  -14,
+                              "lat":  44.5,
+                              "call":  "KF6FIR"
+                          },
+                          {
+                              "timestamp":  "2026-08-19 12:50",
+                              "band":  "other",
+                              "grid":  "EM13",
+                              "lon":  -97,
+                              "snr":  -15,
+                              "lat":  33.5,
+                              "call":  "AF0FY"
                           }
                       ],
-    "generated":  "2026-08-20 12:28:27",
+    "generated":  "2026-08-20 12:38:17",
     "bands":  {
                   "other":  [
                                 {
                                     "hour":  "2026-08-19 12",
-                                    "count":  2478,
-                                    "avgSnr":  -12.7
+                                    "count":  2471,
+                                    "avgSnr":  -12.6
                                 },
                                 {
                                     "hour":  "2026-08-19 13",
@@ -9146,8 +9146,8 @@
                                 },
                                 {
                                     "hour":  "2026-08-20 16",
-                                    "count":  12,
-                                    "avgSnr":  -15.8
+                                    "count":  20,
+                                    "avgSnr":  -17.4
                                 }
                             ]
               }
