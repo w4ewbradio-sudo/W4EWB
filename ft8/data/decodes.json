@@ -3,42 +3,6 @@
                           {
                               "timestamp":  "2026-08-20 12:22",
                               "band":  "other",
-                              "grid":  "DN17",
-                              "lon":  -117,
-                              "snr":  -11,
-                              "lat":  47.5,
-                              "call":  "VK2LAW"
-                          },
-                          {
-                              "timestamp":  "2026-08-20 12:22",
-                              "band":  "other",
-                              "grid":  "EM37",
-                              "lon":  -93,
-                              "snr":  -12,
-                              "lat":  37.5,
-                              "call":  "AA6X"
-                          },
-                          {
-                              "timestamp":  "2026-08-20 12:22",
-                              "band":  "other",
-                              "grid":  "FN41",
-                              "lon":  -71,
-                              "snr":  -17,
-                              "lat":  41.5,
-                              "call":  "KA1MXL"
-                          },
-                          {
-                              "timestamp":  "2026-08-20 12:22",
-                              "band":  "other",
-                              "grid":  "DM67",
-                              "lon":  -107,
-                              "snr":  -17,
-                              "lat":  37.5,
-                              "call":  "KO4VYT"
-                          },
-                          {
-                              "timestamp":  "2026-08-20 12:22",
-                              "band":  "other",
                               "grid":  "FN14",
                               "lon":  -77,
                               "snr":  -21,
@@ -8999,14 +8963,50 @@
                               "snr":  3,
                               "lat":  37.5,
                               "call":  "AA6X"
+                          },
+                          {
+                              "timestamp":  "2026-08-20 12:39",
+                              "band":  "other",
+                              "grid":  "RR73",
+                              "lon":  175,
+                              "snr":  -11,
+                              "lat":  83.5,
+                              "call":  "KZ4OZ"
+                          },
+                          {
+                              "timestamp":  "2026-08-20 12:39",
+                              "band":  "other",
+                              "grid":  "DM13",
+                              "lon":  -117,
+                              "snr":  -19,
+                              "lat":  33.5,
+                              "call":  "KF6JXM"
+                          },
+                          {
+                              "timestamp":  "2026-08-20 12:39",
+                              "band":  "other",
+                              "grid":  "FN41",
+                              "lon":  -71,
+                              "snr":  -22,
+                              "lat":  41.5,
+                              "call":  "KA1MXL"
+                          },
+                          {
+                              "timestamp":  "2026-08-20 12:39",
+                              "band":  "other",
+                              "grid":  "EM37",
+                              "lon":  -93,
+                              "snr":  4,
+                              "lat":  37.5,
+                              "call":  "AA6X"
                           }
                       ],
-    "generated":  "2026-08-21 14:29:07",
+    "generated":  "2026-08-21 14:38:44",
     "bands":  {
                   "other":  [
                                 {
                                     "hour":  "2026-08-20 12",
-                                    "count":  2822,
+                                    "count":  2817,
                                     "avgSnr":  -11.8
                                 },
                                 {
@@ -9156,8 +9156,8 @@
                                 },
                                 {
                                     "hour":  "2026-08-21 18",
-                                    "count":  44,
-                                    "avgSnr":  -6.7
+                                    "count":  50,
+                                    "avgSnr":  -6.6
                                 }
                             ]
               }
