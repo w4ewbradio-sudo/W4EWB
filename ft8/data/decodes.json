@@ -1,24 +1,6 @@
 ﻿{
     "recentDecodes":  [
                           {
-                              "timestamp":  "2026-08-20 12:22",
-                              "band":  "other",
-                              "grid":  "FN14",
-                              "lon":  -77,
-                              "snr":  -21,
-                              "lat":  44.5,
-                              "call":  "VA3WW"
-                          },
-                          {
-                              "timestamp":  "2026-08-20 12:23",
-                              "band":  "other",
-                              "grid":  "EM17",
-                              "lon":  -97,
-                              "snr":  -3,
-                              "lat":  37.5,
-                              "call":  "WA4CB"
-                          },
-                          {
                               "timestamp":  "2026-08-20 12:23",
                               "band":  "other",
                               "grid":  "EM10",
@@ -8999,14 +8981,32 @@
                               "snr":  4,
                               "lat":  37.5,
                               "call":  "AA6X"
+                          },
+                          {
+                              "timestamp":  "2026-08-20 12:39",
+                              "band":  "other",
+                              "grid":  "EL88",
+                              "lon":  -83,
+                              "snr":  -15,
+                              "lat":  28.5,
+                              "call":  "AB8KP"
+                          },
+                          {
+                              "timestamp":  "2026-08-20 12:39",
+                              "band":  "other",
+                              "grid":  "DN40",
+                              "lon":  -111,
+                              "snr":  -11,
+                              "lat":  40.5,
+                              "call":  "VK2LAW"
                           }
                       ],
-    "generated":  "2026-08-21 14:48:59",
+    "generated":  "2026-08-21 14:58:59",
     "bands":  {
                   "other":  [
                                 {
                                     "hour":  "2026-08-20 12",
-                                    "count":  2817,
+                                    "count":  2815,
                                     "avgSnr":  -11.8
                                 },
                                 {
