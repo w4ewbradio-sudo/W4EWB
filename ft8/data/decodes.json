@@ -3,24 +3,6 @@
                           {
                               "timestamp":  "2026-08-21 13:39",
                               "band":  "other",
-                              "grid":  "EN31",
-                              "lon":  -93,
-                              "snr":  -3,
-                              "lat":  41.5,
-                              "call":  "W0C"
-                          },
-                          {
-                              "timestamp":  "2026-08-21 13:39",
-                              "band":  "other",
-                              "grid":  "FM08",
-                              "lon":  -79,
-                              "snr":  -2,
-                              "lat":  38.5,
-                              "call":  "N4YSA"
-                          },
-                          {
-                              "timestamp":  "2026-08-21 13:39",
-                              "band":  "other",
                               "grid":  "EM72",
                               "lon":  -85,
                               "snr":  -14,
@@ -8999,15 +8981,33 @@
                               "snr":  -19,
                               "lat":  32.5,
                               "call":  "K4TMR"
+                          },
+                          {
+                              "timestamp":  "2026-08-21 14:37",
+                              "band":  "other",
+                              "grid":  "EN53",
+                              "lon":  -89,
+                              "snr":  -7,
+                              "lat":  43.5,
+                              "call":  "W3GO"
+                          },
+                          {
+                              "timestamp":  "2026-08-21 14:37",
+                              "band":  "other",
+                              "grid":  "EN53",
+                              "lon":  -89,
+                              "snr":  -7,
+                              "lat":  43.5,
+                              "call":  "W3GO"
                           }
                       ],
-    "generated":  "2026-08-22 13:48:35",
+    "generated":  "2026-08-22 13:58:40",
     "bands":  {
                   "other":  [
                                 {
                                     "hour":  "2026-08-21 13",
-                                    "count":  581,
-                                    "avgSnr":  -10
+                                    "count":  579,
+                                    "avgSnr":  -10.1
                                 },
                                 {
                                     "hour":  "2026-08-21 14",
@@ -9146,8 +9146,8 @@
                                 },
                                 {
                                     "hour":  "2026-08-22 17",
-                                    "count":  22,
-                                    "avgSnr":  -14.1
+                                    "count":  24,
+                                    "avgSnr":  -14
                                 }
                             ]
               }
