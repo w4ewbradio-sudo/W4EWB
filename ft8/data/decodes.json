@@ -3,24 +3,6 @@
                           {
                               "timestamp":  "2026-08-21 13:39",
                               "band":  "other",
-                              "grid":  "EL09",
-                              "lon":  -99,
-                              "snr":  -17,
-                              "lat":  29.5,
-                              "call":  "KG5SFT"
-                          },
-                          {
-                              "timestamp":  "2026-08-21 13:39",
-                              "band":  "other",
-                              "grid":  "FM08",
-                              "lon":  -79,
-                              "snr":  -4,
-                              "lat":  38.5,
-                              "call":  "N4YSA"
-                          },
-                          {
-                              "timestamp":  "2026-08-21 13:39",
-                              "band":  "other",
                               "grid":  "EN11",
                               "lon":  -97,
                               "snr":  -8,
@@ -8999,14 +8981,32 @@
                               "snr":  -1,
                               "lat":  41.5,
                               "call":  "KB5YNF"
+                          },
+                          {
+                              "timestamp":  "2026-08-21 14:38",
+                              "band":  "other",
+                              "grid":  "EN31",
+                              "lon":  -93,
+                              "snr":  -24,
+                              "lat":  41.5,
+                              "call":  "W0I"
+                          },
+                          {
+                              "timestamp":  "2026-08-21 14:39",
+                              "band":  "other",
+                              "grid":  "EN53",
+                              "lon":  -89,
+                              "snr":  -12,
+                              "lat":  43.5,
+                              "call":  "KB5YNF"
                           }
                       ],
-    "generated":  "2026-08-22 14:09:01",
+    "generated":  "2026-08-22 14:18:35",
     "bands":  {
                   "other":  [
                                 {
                                     "hour":  "2026-08-21 13",
-                                    "count":  565,
+                                    "count":  559,
                                     "avgSnr":  -10.1
                                 },
                                 {
@@ -9151,8 +9151,8 @@
                                 },
                                 {
                                     "hour":  "2026-08-22 18",
-                                    "count":  2,
-                                    "avgSnr":  -12
+                                    "count":  10,
+                                    "avgSnr":  -7.7
                                 }
                             ]
               }
