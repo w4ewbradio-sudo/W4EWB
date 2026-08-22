@@ -3,60 +3,6 @@
                           {
                               "timestamp":  "2026-08-21 13:39",
                               "band":  "other",
-                              "grid":  "RR73",
-                              "lon":  175,
-                              "snr":  -10,
-                              "lat":  83.5,
-                              "call":  "N9AOT"
-                          },
-                          {
-                              "timestamp":  "2026-08-21 13:39",
-                              "band":  "other",
-                              "grid":  "EN61",
-                              "lon":  -87,
-                              "snr":  0,
-                              "lat":  41.5,
-                              "call":  "WB9JOX"
-                          },
-                          {
-                              "timestamp":  "2026-08-21 13:39",
-                              "band":  "other",
-                              "grid":  "FN20",
-                              "lon":  -75,
-                              "snr":  -18,
-                              "lat":  40.5,
-                              "call":  "W3GO"
-                          },
-                          {
-                              "timestamp":  "2026-08-21 13:39",
-                              "band":  "other",
-                              "grid":  "EM64",
-                              "lon":  -87,
-                              "snr":  -12,
-                              "lat":  34.5,
-                              "call":  "KC3VPB"
-                          },
-                          {
-                              "timestamp":  "2026-08-21 13:39",
-                              "band":  "other",
-                              "grid":  "EM15",
-                              "lon":  -97,
-                              "snr":  -17,
-                              "lat":  35.5,
-                              "call":  "VE7GKH"
-                          },
-                          {
-                              "timestamp":  "2026-08-21 13:39",
-                              "band":  "other",
-                              "grid":  "EN31",
-                              "lon":  -93,
-                              "snr":  -4,
-                              "lat":  41.5,
-                              "call":  "W0C"
-                          },
-                          {
-                              "timestamp":  "2026-08-21 13:39",
-                              "band":  "other",
                               "grid":  "FM08",
                               "lon":  -79,
                               "snr":  -2,
@@ -8999,15 +8945,69 @@
                               "snr":  -14,
                               "lat":  32.5,
                               "call":  "K4TMR"
+                          },
+                          {
+                              "timestamp":  "2026-08-21 14:35",
+                              "band":  "other",
+                              "grid":  "EN53",
+                              "lon":  -89,
+                              "snr":  -16,
+                              "lat":  43.5,
+                              "call":  "KB5YNF"
+                          },
+                          {
+                              "timestamp":  "2026-08-21 14:35",
+                              "band":  "other",
+                              "grid":  "EN53",
+                              "lon":  -89,
+                              "snr":  -12,
+                              "lat":  43.5,
+                              "call":  "KB5YNF"
+                          },
+                          {
+                              "timestamp":  "2026-08-21 14:36",
+                              "band":  "other",
+                              "grid":  "EM62",
+                              "lon":  -87,
+                              "snr":  -16,
+                              "lat":  32.5,
+                              "call":  "K4TMR"
+                          },
+                          {
+                              "timestamp":  "2026-08-21 14:36",
+                              "band":  "other",
+                              "grid":  "EM62",
+                              "lon":  -87,
+                              "snr":  -15,
+                              "lat":  32.5,
+                              "call":  "K4TMR"
+                          },
+                          {
+                              "timestamp":  "2026-08-21 14:36",
+                              "band":  "other",
+                              "grid":  "EM62",
+                              "lon":  -87,
+                              "snr":  -15,
+                              "lat":  32.5,
+                              "call":  "K4TMR"
+                          },
+                          {
+                              "timestamp":  "2026-08-21 14:36",
+                              "band":  "other",
+                              "grid":  "EM62",
+                              "lon":  -87,
+                              "snr":  -15,
+                              "lat":  32.5,
+                              "call":  "K4TMR"
                           }
                       ],
-    "generated":  "2026-08-22 13:28:45",
+    "generated":  "2026-08-22 13:38:51",
     "bands":  {
                   "other":  [
                                 {
                                     "hour":  "2026-08-21 13",
-                                    "count":  594,
-                                    "avgSnr":  -10
+                                    "count":  586,
+                                    "avgSnr":  -10.1
                                 },
                                 {
                                     "hour":  "2026-08-21 14",
@@ -9146,8 +9146,8 @@
                                 },
                                 {
                                     "hour":  "2026-08-22 17",
-                                    "count":  6,
-                                    "avgSnr":  -11.8
+                                    "count":  16,
+                                    "avgSnr":  -15.5
                                 }
                             ]
               }
