@@ -3,24 +3,6 @@
                           {
                               "timestamp":  "2026-08-26 08:45",
                               "band":  "other",
-                              "grid":  "DM26",
-                              "lon":  -115,
-                              "snr":  -14,
-                              "lat":  36.5,
-                              "call":  "W7RPT"
-                          },
-                          {
-                              "timestamp":  "2026-08-26 08:45",
-                              "band":  "other",
-                              "grid":  "FK49",
-                              "lon":  -71,
-                              "snr":  -23,
-                              "lat":  19.5,
-                              "call":  "HI3RRR"
-                          },
-                          {
-                              "timestamp":  "2026-08-26 08:45",
-                              "band":  "other",
                               "grid":  "EM40",
                               "lon":  -91,
                               "snr":  -8,
@@ -8999,9 +8981,27 @@
                               "snr":  -10,
                               "lat":  43.5,
                               "call":  "JG8FWH"
+                          },
+                          {
+                              "timestamp":  "2026-08-26 09:03",
+                              "band":  "other",
+                              "grid":  "FJ92",
+                              "lon":  -61,
+                              "snr":  -15,
+                              "lat":  2.5,
+                              "call":  "PV8AJ"
+                          },
+                          {
+                              "timestamp":  "2026-08-26 09:03",
+                              "band":  "other",
+                              "grid":  "DM45",
+                              "lon":  -111,
+                              "snr":  -7,
+                              "lat":  35.5,
+                              "call":  "K1HOW"
                           }
                       ],
-    "generated":  "2026-08-28 05:07:05",
+    "generated":  "2026-08-28 05:17:54",
     "bands":  {
                   "20m":  [
                               {
@@ -9093,7 +9093,7 @@
                   "other":  [
                                 {
                                     "hour":  "2026-08-26 08",
-                                    "count":  1089,
+                                    "count":  1087,
                                     "avgSnr":  -9.9
                                 },
                                 {
@@ -9145,6 +9145,11 @@
                                     "hour":  "2026-08-28 08",
                                     "count":  13,
                                     "avgSnr":  -13.8
+                                },
+                                {
+                                    "hour":  "2026-08-28 09",
+                                    "count":  2,
+                                    "avgSnr":  -7
                                 }
                             ],
                   "40m":  [
