@@ -3,24 +3,6 @@
                           {
                               "timestamp":  "2026-08-26 08:45",
                               "band":  "other",
-                              "grid":  "FN31",
-                              "lon":  -73,
-                              "snr":  -9,
-                              "lat":  41.5,
-                              "call":  "K1HOW"
-                          },
-                          {
-                              "timestamp":  "2026-08-26 08:45",
-                              "band":  "other",
-                              "grid":  "EM10",
-                              "lon":  -97,
-                              "snr":  -1,
-                              "lat":  30.5,
-                              "call":  "W5XO"
-                          },
-                          {
-                              "timestamp":  "2026-08-26 08:45",
-                              "band":  "other",
                               "grid":  "DM42",
                               "lon":  -111,
                               "snr":  -11,
@@ -8999,9 +8981,27 @@
                               "snr":  -4,
                               "lat":  30.5,
                               "call":  "W5XO"
+                          },
+                          {
+                              "timestamp":  "2026-08-26 09:03",
+                              "band":  "other",
+                              "grid":  "FN31",
+                              "lon":  -73,
+                              "snr":  -7,
+                              "lat":  41.5,
+                              "call":  "K1HOW"
+                          },
+                          {
+                              "timestamp":  "2026-08-26 09:03",
+                              "band":  "other",
+                              "grid":  "EM17",
+                              "lon":  -97,
+                              "snr":  1,
+                              "lat":  37.5,
+                              "call":  "N2QN"
                           }
                       ],
-    "generated":  "2026-08-28 04:12:11",
+    "generated":  "2026-08-28 04:23:02",
     "bands":  {
                   "20m":  [
                               {
@@ -9093,7 +9093,7 @@
                   "other":  [
                                 {
                                     "hour":  "2026-08-26 08",
-                                    "count":  1101,
+                                    "count":  1099,
                                     "avgSnr":  -9.9
                                 },
                                 {
@@ -9138,7 +9138,7 @@
                                 },
                                 {
                                     "hour":  "2026-08-28 07",
-                                    "count":  533,
+                                    "count":  535,
                                     "avgSnr":  -14.8
                                 }
                             ],
