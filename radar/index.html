@@ -1,0 +1,145 @@
+<!doctype html><html lang=en><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<title>W4EWB &middot; Flight Radar</title>
+<link rel="stylesheet" href="/lcars.css">
+<style>
+#scopewrap{display:flex;justify-content:center;padding:6px 0}
+#scope{width:min(94vw,640px);height:auto}
+#strip{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;padding:4px 8px 10px}
+.stat{background:var(--panel);border-radius:14px;padding:8px 16px;text-align:center;min-width:90px}
+.stat b{display:block;font-size:22px;color:var(--gold)}
+.stat span{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.1em}
+#stale{color:var(--red);text-align:center;font-size:13px;display:none;
+ text-transform:uppercase;letter-spacing:.1em;padding-bottom:8px}
+</style></head><body>
+<div class=lcars>
+  <div class=rail>
+    <div class=cap></div>
+    <a class="blk o" href="/">&#9666; W4EWB<small>Home</small></a>
+    <div class="blk p">RADAR<small>ADS&middot;B</small></div>
+    <div class="blk l">1090<small>MHz</small></div>
+    <div class="blk s">hamSDR<small>RTL-SDR</small></div>
+    <div class="blk i">EM78<small>Louisville</small></div>
+    <div class=railfill></div>
+    <div class="blk g">LIVE<small>10 s feed</small></div>
+  </div>
+  <div class=col>
+    <div class=hdr><span class=title>Flight Radar</span><span class=sub>ADS-B &middot; live</span></div>
+    <div class=strip>Aircraft heard on 1090 MHz at the station &mdash; live, ~10 second updates &mdash; low &amp; slow glows orange, cruise runs ice-blue</div>
+    <div class=content>
+      <div id=scopewrap><svg id=scope viewBox="0 0 200 200"></svg></div>
+      <div id=stale>Feed stale &mdash; station may be offline</div>
+      <div id=strip>
+        <div class=stat><b id=nAll>&ndash;</b><span>aircraft</span></div>
+        <div class=stat><b id=nClose>&ndash;</b><span>within 15 mi</span></div>
+        <div class=stat><b id=nHigh>&ndash;</b><span>at cruise</span></div>
+        <div class=stat><b id=age>&ndash;</b><span>data age</span></div>
+      </div>
+    </div>
+    <div class=foot>Received at W4EWB &middot; EM78 Louisville &middot; RTL-SDR + dump1090</div>
+  </div>
+</div>
+<script>
+var FEED='https://nest.w4ewb.com/skyfeed/planes.json';
+var NS='http://www.w3.org/2000/svg',scope=document.getElementById('scope');
+function el(n,a,p){var e=document.createElementNS(NS,n);
+ for(var k in a)e.setAttribute(k,a[k]);(p||scope).appendChild(e);return e;}
+el('circle',{cx:100,cy:100,r:96,fill:'#000',stroke:'#c67','stroke-width':1.2});
+[24,48,72,96].forEach(function(r,i){
+ el('circle',{cx:100,cy:100,r:r,fill:'none',stroke:'#321a1a','stroke-width':.6});
+ if(i<3)el('text',{x:100,y:100-r+5,fill:'#844','font-size':5,'text-anchor':'middle'})
+  .textContent=((i+1)*15)+' mi';});
+[['N',100,9],['E',194,102],['S',100,197],['W',6,102]].forEach(function(t){
+ el('text',{x:t[1],y:t[2],fill:'#c67','font-size':7,'text-anchor':'middle',
+  'font-weight':'700'}).textContent=t[0];});
+el('circle',{cx:100,cy:100,r:1.6,fill:'#f96'});
+var gSweep=el('g',{});
+(function(){
+ for(var i=0;i<10;i++){
+  var a0=(-i*4-90)*Math.PI/180,a1=(-(i+1)*4-90)*Math.PI/180;
+  el('path',{d:'M100 100 L'+(100+96*Math.cos(a0))+' '+(100+96*Math.sin(a0))+
+   ' A96 96 0 0 0 '+(100+96*Math.cos(a1))+' '+(100+96*Math.sin(a1))+' Z',
+   fill:'#fc6',opacity:(0.14*(1-i/10)).toFixed(3)},gSweep);
+ }
+ el('line',{x1:100,y1:100,x2:100,y2:4,stroke:'#fc6','stroke-width':.9,opacity:.9},gSweep);
+})();
+var gTrails=el('g',{}),gPlanes=el('g',{});
+function altColor(alt){
+ var f=Math.max(0,Math.min(1,(typeof alt==='number'?alt:20000)/40000));
+ // LCARS hues: low = orange #f96, cruise = ice #9cf
+ return f<0.5?'#f96':(f<0.8?'#fc6':'#9cf');
+}
+var craft={},lastUpdated=0;
+function planePos(p){var r=Math.min(p.dist,60)/60*96,a=(p.brg-90)*Math.PI/180;
+ return [100+r*Math.cos(a),100+r*Math.sin(a)];}
+function updateRadar(list){
+ var now=performance.now(),seen={};
+ (list||[]).forEach(function(p){
+  if(p.dist==null||p.brg==null)return;
+  var id=p.hex||p.flight;if(!id)return;
+  seen[id]=1;
+  var tgt=planePos(p),c=craft[id];
+  if(!c){
+   c=craft[id]={x:tgt[0],y:tgt[1],fx:tgt[0],fy:tgt[1],t0:now,flash:0,trail:[]};
+   c.g=el('g',{},gPlanes);
+   c.body=el('path',{d:'M0 -3.4 L2.3 3 L0 1.5 L-2.3 3 Z'},c.g);
+   c.lab=el('text',{'font-size':4.6},gPlanes);
+   c.tg=el('g',{},gTrails);
+  }
+  c.sx=c.x;c.sy=c.y;c.fx=tgt[0];c.fy=tgt[1];c.t0=now;
+  c.track=p.track||0;c.col=altColor(p.alt);c.flight=p.flight||'';
+  c.trail.push(tgt);if(c.trail.length>7)c.trail.shift();
+  c.tg.innerHTML='';
+  c.trail.forEach(function(t,i){
+   el('circle',{cx:t[0],cy:t[1],r:.7,fill:c.col,
+    opacity:(0.25*(i+1)/c.trail.length).toFixed(2)},c.tg);
+  });
+ });
+ Object.keys(craft).forEach(function(id){
+  if(!seen[id]){craft[id].g.remove();craft[id].lab.remove();
+   craft[id].tg.remove();delete craft[id];}
+ });
+ document.getElementById('nAll').textContent=(list||[]).length;
+ document.getElementById('nClose').textContent=
+  (list||[]).filter(function(p){return p.dist!=null&&p.dist<=15;}).length;
+ document.getElementById('nHigh').textContent=
+  (list||[]).filter(function(p){return (p.alt||0)>=28000;}).length;
+}
+var sweepA=0;
+function frame(){
+ requestAnimationFrame(frame);
+ sweepA=(sweepA+0.9)%360;
+ gSweep.setAttribute('transform','rotate('+sweepA+' 100 100)');
+ var now=performance.now();
+ Object.keys(craft).forEach(function(id){
+  var c=craft[id],t=Math.min(1,(now-c.t0)/9000);
+  c.x=c.sx+(c.fx-c.sx)*t;c.y=c.sy+(c.fy-c.sy)*t;
+  var pa=(Math.atan2(c.y-100,c.x-100)*180/Math.PI+90+360)%360;
+  var d=Math.abs(((sweepA-pa)%360+360)%360);
+  if(d<2||d>358)c.flash=1;
+  c.flash*=0.95;
+  var glow=Math.min(1,.55+c.flash*.45);
+  c.g.setAttribute('transform','translate('+c.x+' '+c.y+') rotate('+c.track+')');
+  c.body.setAttribute('fill',c.col);c.body.setAttribute('opacity',glow);
+  if(c.flash>0.5)c.body.setAttribute('stroke','#fff');
+  else c.body.removeAttribute('stroke');
+  c.lab.setAttribute('x',c.x+4);c.lab.setAttribute('y',c.y+2);
+  c.lab.setAttribute('fill',c.col);c.lab.setAttribute('opacity',glow);
+  c.lab.textContent=c.flight;
+ });
+ // data-age readout, ticking between polls
+ if(lastUpdated){
+  var age=Math.round(Date.now()/1000-lastUpdated);
+  document.getElementById('age').textContent=age<120?age+'s':'&gt;2m';
+  document.getElementById('stale').style.display=age>120?'block':'none';
+ }
+}
+requestAnimationFrame(frame);
+function poll(){
+ fetch(FEED).then(function(r){return r.json();}).then(function(j){
+  lastUpdated=j.updated||0;
+  updateRadar(j.planes||[]);
+ }).catch(function(){});
+}
+poll();setInterval(poll,10000);
+</script></body></html>
