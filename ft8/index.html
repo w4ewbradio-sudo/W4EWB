@@ -19,8 +19,8 @@
  background:#000;border:2px solid var(--gold);color:var(--gold);font-weight:700;
  font-size:16px;letter-spacing:.06em;padding:12px 22px;border-radius:10px;
  display:none;max-width:88vw;text-align:center;text-transform:uppercase}
-#lists{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:4px 2px}
-@media(max-width:760px){#lists{grid-template-columns:1fr}}
+#lists{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;padding:4px 2px}
+.mut{color:var(--dim);font-size:13px;padding:6px 0}
 .pane{background:var(--panel);border-radius:14px;padding:8px 12px}
 .pane h3{color:var(--orange);font-size:13px;text-transform:uppercase;
  letter-spacing:.1em;margin:2px 0 6px}
@@ -42,13 +42,14 @@
   </div>
   <div class=col>
     <div class=hdr><span class=title>FT8 Live</span><span class=sub>heard at the station</span></div>
-    <div class=strip>Every FT8 transmission the station decodes, mapped live &mdash; arcs are this cycle's reception, dashed paths are QSOs we're overhearing between other stations</div>
+    <div class=strip>Every FT8 transmission the station decodes, mapped live &mdash; arcs are this cycle's reception, dashed paths are QSOs we're overhearing, orange diamonds are stations that heard W4EWB transmit</div>
     <div class=content>
       <div id=hb><div id=hbfill></div></div>
       <div id=mapwrap><svg id=scope viewBox="0 0 360 180"></svg></div>
       <div id=stale>Feed stale &mdash; the HF receiver is busy elsewhere (web SDR, sniffer&hellip;)</div>
       <div id=chips></div>
       <div id=lists>
+        <div class=pane><h3>Heard me <span style="color:var(--dim);font-size:10px">&middot; PSK Reporter</span></h3><div id=heard></div></div>
         <div class=pane><h3>QSOs observed</h3><div id=qsos></div></div>
         <div class=pane><h3>Latest decodes</h3><div id=feed></div></div>
       </div>
@@ -68,7 +69,7 @@ el('rect',{x:0,y:0,width:360,height:180,fill:'#060b12'});
 var gGrat=el('g',{});
 for(var lo=-150;lo<=150;lo+=30)el('line',{x1:lo+180,y1:0,x2:lo+180,y2:180,stroke:'#0d141d','stroke-width':.3},gGrat);
 for(var la=-60;la<=60;la+=30)el('line',{x1:0,y1:90-la,x2:360,y2:90-la,stroke:'#0d141d','stroke-width':.3},gGrat);
-var gLand=el('g',{}),gNight=el('g',{}),gQso=el('g',{}),gPings=el('g',{}),gArcs=el('g',{});
+var gLand=el('g',{}),gNight=el('g',{}),gQso=el('g',{}),gPings=el('g',{}),gArcs=el('g',{}),gHeard=el('g',{});
 var sunDot=el('text',{fill:'#fc6','font-size':6,'text-anchor':'middle'});sunDot.textContent='☀';
 var HOME=proj(DELAT,DELON);
 el('circle',{cx:HOME[0],cy:HOME[1],r:1.2,fill:'#f96'});
@@ -195,7 +196,11 @@ function render(d){
   '<div class=stat><b>'+(rc.qsos_done||0)+'</b><span>QSOs seen</span></div>'+
   '<div class=stat><b>'+(rc.spots||0)+'</b><span>spots today</span></div>'+
   '<div class=stat>'+spark(d.hist)+'<span>spots / cycle</span></div>'+
-  (b?'<div class=stat><b>'+b.dist.toLocaleString()+'</b><span>best ever mi</span><small>'+esc(b.call)+' &middot; '+esc(b.date)+'</small></div>':'');
+  (b?'<div class=stat><b>'+b.dist.toLocaleString()+'</b><span>best ever mi</span><small>'+esc(b.call)+' &middot; '+esc(b.date)+'</small></div>':'')+
+  (function(){var s=(heardData&&heardData.spots)||[];if(!s.length)return '';
+   var far=s.reduce(function(a,x){return (x.dist||0)>(a.dist||0)?x:a;},{});
+   return '<div class=stat><b>'+s.length+'</b><span>hearing me</span>'+
+    (far.call?'<small>'+esc(far.call)+(far.dist?' &middot; '+far.dist.toLocaleString()+' mi':'')+'</small>':'')+'</div>';})();
  document.getElementById('qsos').innerHTML=(d.qsos||[]).slice(0,12).map(function(q){
   var ra=q.reports&&q.reports[q.a]?' <span class=rep>'+esc(q.reports[q.a])+'</span>':'';
   var rb=q.reports&&q.reports[q.b]?' <span class=rep>'+esc(q.reports[q.b])+'</span>':'';
@@ -222,6 +227,38 @@ function render(d){
   }
  }
 }
+var HEARD='https://nest.w4ewb.com/skyfeed/heardme.json';
+var heardData=null;
+function renderHeard(){
+ gHeard.innerHTML='';
+ var box=document.getElementById('heard');
+ var spots=(heardData&&heardData.spots)||[];
+ if(!spots.length){
+  box.innerHTML='<div class=mut>No one has spotted W4EWB transmitting in the last 3 hours &mdash; the op is off the air. This receive-only monitor keeps listening either way.</div>';
+  return;
+ }
+ spots.forEach(function(s){
+  if(!s.ll)return;
+  var p=proj(s.ll[0],s.ll[1]);
+  el('path',{d:'M'+p[0].toFixed(1)+' '+(p[1]-1.7).toFixed(1)+
+   'L'+(p[0]+1.7).toFixed(1)+' '+p[1].toFixed(1)+
+   'L'+p[0].toFixed(1)+' '+(p[1]+1.7).toFixed(1)+
+   'L'+(p[0]-1.7).toFixed(1)+' '+p[1].toFixed(1)+'Z',
+   fill:'none',stroke:'#f96','stroke-width':.5,opacity:.9},gHeard);
+ });
+ box.innerHTML=spots.slice(0,14).map(function(s){
+  return '<div class=row><span class=tt>'+hhmm(s.ts)+'</span> <span class=call>'+esc(s.call)+'</span> '+
+   '<span class=cc>'+esc(s.grid)+'</span>'+
+   (s.dist?' <span class=dist>'+s.dist.toLocaleString()+' mi</span>':'')+
+   (s.snr!=null?' <span class=rep>'+(s.snr>0?'+':'')+s.snr+' dB</span>':'')+'</div>';
+ }).join('');
+}
+function pollHeard(){
+ fetch(HEARD).then(function(r){return r.json();}).then(function(d){
+  heardData=d;renderHeard();
+ }).catch(function(){});
+}
+pollHeard();setInterval(pollHeard,300000);
 var lastUpdated=0;
 function poll(){
  fetch(FEED).then(function(r){return r.json();}).then(function(d){
