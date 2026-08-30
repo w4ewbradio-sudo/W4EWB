@@ -45,7 +45,7 @@
     <div class=strip>Every FT8 transmission the station decodes, mapped live &mdash; arcs are this cycle's reception, dashed paths are QSOs we're overhearing, orange diamonds are stations that heard W4EWB transmit</div>
     <div class=content>
       <div id=hb><div id=hbfill></div></div>
-      <div id=mapwrap><svg id=scope viewBox="0 0 360 180"></svg></div>
+      <div id=mapwrap><svg id=scope viewBox="0 0 360 183"></svg></div>
       <div id=stale>Feed stale &mdash; the HF receiver is busy elsewhere (web SDR, sniffer&hellip;)</div>
       <div id=chips></div>
       <div id=lists>
@@ -64,43 +64,79 @@ var DELAT=38.2679,DELON=-85.6279;
 var NS='http://www.w3.org/2000/svg',scope=document.getElementById('scope');
 function el(n,a,p){var e=document.createElementNS(NS,n);
  for(var k in a)e.setAttribute(k,a[k]);(p||scope).appendChild(e);return e;}
-function proj(lat,lon){return [lon+180,90-lat];}
-el('rect',{x:0,y:0,width:360,height:180,fill:'#060b12'});
-var gGrat=el('g',{});
-for(var lo=-150;lo<=150;lo+=30)el('line',{x1:lo+180,y1:0,x2:lo+180,y2:180,stroke:'#0d141d','stroke-width':.3},gGrat);
-for(var la=-60;la<=60;la+=30)el('line',{x1:0,y1:90-la,x2:360,y2:90-la,stroke:'#0d141d','stroke-width':.3},gGrat);
-var gLand=el('g',{}),gNight=el('g',{}),gQso=el('g',{}),gPings=el('g',{}),gArcs=el('g',{}),gHeard=el('g',{});
-var sunDot=el('text',{fill:'#fc6','font-size':6,'text-anchor':'middle'});sunDot.textContent='☀';
+// Robinson projection — table-interpolated, R sized so full width = 360
+var RBX=[1,.9986,.9954,.99,.9822,.973,.96,.9427,.9216,.8962,.8679,.835,
+ .7986,.7597,.7186,.6732,.6213,.5722,.5322];
+var RBY=[0,.062,.124,.186,.248,.31,.372,.434,.4958,.5571,.6176,.6769,
+ .7346,.7903,.8435,.8936,.9394,.9761,1];
+var R=67.52,CX=180,CY=91.5;
+function proj(lat,lon){
+ var a=Math.min(Math.abs(lat),90),i=Math.min(17,Math.floor(a/5)),t=a/5-i;
+ var X=RBX[i]+(RBX[i+1]-RBX[i])*t,Y=RBY[i]+(RBY[i+1]-RBY[i])*t;
+ return [CX+.8487*R*X*lon*Math.PI/180,CY-(lat<0?-1:1)*1.3523*R*Y];
+}
+function pathOf(pts,close){
+ var d='';
+ for(var i=0;i<pts.length;i++){
+  var p=proj(pts[i][0],pts[i][1]);
+  d+=(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1);
+ }
+ return d+(close?'Z':'');
+}
+var edge=[],la;
+for(la=-90;la<=90;la+=3)edge.push([la,180]);
+for(la=90;la>=-90;la-=3)edge.push([la,-180]);
+var OUTLINE=pathOf(edge,true);
+var defs=el('defs',{});
+var oc=el('radialGradient',{id:'oc',cx:'50%',cy:'42%',r:'75%'},defs);
+el('stop',{offset:'0%','stop-color':'#0d1c30'},oc);
+el('stop',{offset:'100%','stop-color':'#04080f'},oc);
+el('path',{d:OUTLINE,fill:'url(#oc)'});
+var clip=el('clipPath',{id:'mc'},defs);
+el('path',{d:OUTLINE},clip);
+var gMap=el('g',{'clip-path':'url(#mc)'});
+var gGrat=el('g',{},gMap),gLand=el('g',{},gMap),gNight=el('g',{},gMap),
+ gGrey=el('g',{},gMap),gSun=el('g',{},gMap);
+for(var lo=-150;lo<=180;lo+=30){
+ var m=[];for(la=-90;la<=90;la+=5)m.push([la,lo]);
+ el('path',{d:pathOf(m),fill:'none',stroke:'#152535','stroke-width':.25},gGrat);
+}
+for(la=-60;la<=60;la+=30)
+ el('path',{d:pathOf([[la,-180],[la,180]]),fill:'none',
+  stroke:la?'#152535':'#1c324a','stroke-width':la?.25:.35},gGrat);
+el('path',{d:OUTLINE,fill:'none',stroke:'#2c3f54','stroke-width':.7});
+var gQso=el('g',{}),gPings=el('g',{}),gArcs=el('g',{}),gHeard=el('g',{});
+el('circle',{cx:0,cy:0,r:4,fill:'#fc6',opacity:.07},gSun);
+el('circle',{cx:0,cy:0,r:2,fill:'#fc6',opacity:.16},gSun);
+el('circle',{cx:0,cy:0,r:.8,fill:'#ffd98a',opacity:.9},gSun);
 var HOME=proj(DELAT,DELON);
 el('circle',{cx:HOME[0],cy:HOME[1],r:1.2,fill:'#f96'});
 el('circle',{cx:HOME[0],cy:HOME[1],r:2.6,fill:'none',stroke:'#f96','stroke-width':.4,opacity:.6});
 fetch('land.json').then(function(r){return r.json();}).then(function(LAND){
- LAND.forEach(function(ring){
-  var d='',prev=null;
-  ring.forEach(function(pt){
-   var x=pt[1]+180,y=90-pt[0];
-   if(prev&&Math.abs(x-prev[0])>90){d+='M'+x.toFixed(1)+' '+y.toFixed(1);}
-   else d+=(prev?'L':'M')+x.toFixed(1)+' '+y.toFixed(1);
-   prev=[x,y];
-  });
-  el('path',{d:d,fill:'none',stroke:'#22394f','stroke-width':.5,opacity:.95},gLand);
- });
+ var d='';
+ LAND.forEach(function(ring){d+=pathOf(ring,true);});
+ el('path',{d:d,fill:'#182634',stroke:'#3c5c78','stroke-width':.35},gLand);
 }).catch(function(){});
 function sunLL(d){var D=(d-Date.UTC(d.getUTCFullYear(),0,0))/864e5;
  var decl=-23.44*Math.cos(2*Math.PI/365*(D+10));
  var h=d.getUTCHours()+d.getUTCMinutes()/60+d.getUTCSeconds()/3600;
  return [decl,(12-h)*15];}
-function sunUp(lat,lon,s){var rad=Math.PI/180;
- return Math.sin(lat*rad)*Math.sin(s[0]*rad)+
-        Math.cos(lat*rad)*Math.cos(s[0]*rad)*Math.cos((lon-s[1])*rad)>0;}
 function drawNight(){
- var s=sunLL(new Date());gNight.innerHTML='';var path='';
- for(var lo=-177;lo<180;lo+=6)for(var la=-87;la<90;la+=6){
-  if(!sunUp(la,lo,s)){var x=lo+180,y=90-la;
-   path+='M'+(x-3)+' '+(y-3)+'h6v6h-6z';}}
- el('path',{d:path,fill:'rgba(18,38,74,.42)'},gNight);
+ var s=sunLL(new Date()),rad=Math.PI/180;
+ var de=s[0];if(Math.abs(de)<.5)de=de<0?-.5:.5;
+ var term=[],lon;
+ for(lon=-180;lon<=180;lon+=3)
+  term.push([Math.atan(-Math.cos((lon-s[1])*rad)/Math.tan(de*rad))/rad,lon]);
+ var night=term.slice(),pole=de>0?-89.9:89.9;
+ for(lon=180;lon>=-180;lon-=10)night.push([pole,lon]);
+ gNight.innerHTML='';gGrey.innerHTML='';
+ el('path',{d:pathOf(night,true),fill:'rgba(3,8,20,.52)'},gNight);
+ var gl=pathOf(term);
+ el('path',{d:gl,fill:'none',stroke:'#f96','stroke-width':3.2,opacity:.07},gGrey);
+ el('path',{d:gl,fill:'none',stroke:'#fc6','stroke-width':1.5,opacity:.14},gGrey);
+ el('path',{d:gl,fill:'none',stroke:'#fc6','stroke-width':.55,opacity:.4},gGrey);
  var p=proj(s[0],((s[1]+540)%360)-180);
- sunDot.setAttribute('x',p[0]);sunDot.setAttribute('y',p[1]+2.2);
+ gSun.setAttribute('transform','translate('+p[0].toFixed(1)+' '+p[1].toFixed(1)+')');
 }
 drawNight();setInterval(drawNight,60000);
 function gcPathBetween(la1,lo1,lat,lon){
