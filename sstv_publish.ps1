@@ -168,7 +168,7 @@ $head = @"
     </div>
     <div class="col">
       <div class="hdr"><span class="title">SSTV RX Gallery</span><span class="sub">W4EWB &middot; FT-710</span></div>
-      <div class="strip">Slow-scan TV received on the Yaesu FT-710 &middot; Louisville KY &middot; auto-updated via MMSSTV</div>
+      <div class="strip">Slow-scan TV received at W4EWB &middot; Louisville KY &middot; Yaesu FT-710 (MMSSTV) + hamsdr SDR ear on 14.230</div>
       <nav class="month-nav">
       <button class="month-btn active" data-month="all">All Images</button>
 "@
@@ -215,7 +215,7 @@ $foot = @"
         <p style="color:var(--dim);font-size:12px;margin-top:8px;text-transform:uppercase;letter-spacing:.1em">Or just keep scrolling</p>
       </div>
       </div>
-      <div class="foot">73 de W4EWB &middot; SSTV RX &middot; auto-updated via MMSSTV</div>
+      <div class="foot">73 de W4EWB &middot; SSTV RX &middot; FT-710/MMSSTV + hamsdr SDR ear</div>
     </div>
   </div>
   
