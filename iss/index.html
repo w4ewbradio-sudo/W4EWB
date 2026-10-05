@@ -1,0 +1,62 @@
+<!doctype html><html lang=en><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<title>W4EWB &middot; Heard via the ISS</title>
+<link rel="stylesheet" href="/lcars.css">
+<style>
+#chips{display:flex;gap:8px;flex-wrap:wrap;padding:6px 2px;justify-content:center}
+.stat{background:var(--panel);border-radius:14px;padding:8px 14px;text-align:center;min-width:86px}
+.stat b{display:block;font-size:22px;color:var(--gold)}
+.stat span{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.1em}
+.note{background:var(--panel);border-radius:14px;padding:10px 14px;margin:8px 2px;color:var(--ice);font-size:14px;border-left:6px solid var(--peri)}
+.pass{background:var(--panel);border-radius:14px;padding:10px 14px;margin:10px 2px;border-left:6px solid var(--gold)}
+.pass.quiet{border-left-color:#333}
+.pass h3{margin:0 0 6px;font-size:15px;color:#fff;font-weight:700}
+.pass h3 span{color:var(--dim);font-weight:400;font-size:13px;margin-left:8px}
+.pk{display:grid;grid-template-columns:minmax(90px,auto) 1fr;gap:2px 12px;padding:5px 0;border-top:1px solid #221;font-size:14px}
+.pk .call{color:var(--gold);font-weight:700}
+.pk .km{color:var(--ice);font-size:12px}
+.pk .info{color:#ddd;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;word-break:break-word}
+.pk .path{color:var(--dim);font-size:11px}
+#empty{color:var(--dim);text-align:center;padding:26px 8px}
+.qm{color:var(--dim);font-size:13px}
+</style></head><body>
+<div class=lcars>
+  <div class=rail>
+    <div class=cap></div>
+    <a class="blk o" href="/">&#9666; W4EWB<small>Home</small></a>
+    <div class="blk p">ISS APRS<small>145.825</small></div>
+    <a class="blk l" href="/sstv/rx/">SSTV &#9656;<small>Gallery</small></a>
+    <div class="blk s">hamSDR<small>X30A</small></div>
+    <div class="blk i">EM78<small>Louisville</small></div>
+    <div class=railfill></div>
+  </div>
+  <div class=col>
+    <div class=hdr><span class=title>Heard via the ISS</span><span class=sub>APRS digipeater &middot; 145.825 MHz</span></div>
+    <div class=strip>Packets relayed by the International Space Station's APRS digipeater (RS0ISS / ARISS), received at W4EWB on every 2 m ISS pass and decoded automatically. Gold = the station that sent it; distance is from Louisville (EM78) when the packet carries a position.</div>
+    <div class=content>
+      <div id=chips></div>
+      <div id=note class=note style=display:none></div>
+      <div id=list></div>
+      <div id=empty>Loading&hellip;</div>
+    </div>
+    <div class=foot>Receive-only &middot; NESDR SMArt + Diamond X30A &middot; direwolf &middot; EM78 Louisville</div>
+  </div>
+</div>
+<script>
+function esc(s){return String(s==null?'':s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})}
+function when(t){return new Date(t*1000).toLocaleString([], {weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}
+function chip(v,l){return '<div class=stat><b>'+v+'</b><span>'+l+'</span></div>'}
+// ARISS SSTV Series 33: the ISS radio is on 437.550 SSTV, so no 2 m APRS until it ends
+var SERIES33_END=Date.UTC(2026,9,7,12,0)/1000;
+fetch('aprs.json',{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){
+ var st=j.stats||{};var ps=j.passes||[];
+ document.getElementById('chips').innerHTML=chip(st.passes||0,'passes')+chip(st.packets||0,'packets')+chip(st.stations||0,'stations')+chip(j.updated?when(j.updated):'—','updated');
+ var note=document.getElementById('note');
+ if(Date.now()/1000<SERIES33_END){note.style.display='block';note.textContent='ARISS SSTV Series 33 is running until Oct 6: the ISS radio is sending pictures on 437.550 MHz, so the station listens there instead (see the SSTV gallery). APRS logging resumes on the first 2 m pass after the event.'}
+ document.getElementById('list').innerHTML=ps.map(function(p){
+  var rows=(p.packets||[]).map(function(k){return '<div class=pk><div><span class=call>'+esc(k.src)+'</span>'+(k.km!=null?'<div class=km>'+k.km.toLocaleString()+' km</div>':'')+'</div><div><div class=info>'+esc(k.info)+'</div><div class=path>'+esc(k.path)+'</div></div></div>'}).join('');
+  return '<div class="pass'+(p.count?'':' quiet')+'"><h3>'+when(p.start)+'<span>max '+esc(p.max_el)+'&deg; &middot; '+p.count+' packet'+(p.count==1?'':'s')+'</span></h3>'+(rows||'<div class=qm>nothing heard on this pass</div>')+'</div>'}).join('');
+ document.getElementById('empty').style.display=ps.length?'none':'';
+ if(!ps.length)document.getElementById('empty').textContent='No ISS APRS passes logged yet.';
+}).catch(function(){document.getElementById('empty').textContent='Could not load the packet log.'});
+</script></body></html>

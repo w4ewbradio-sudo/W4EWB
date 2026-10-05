@@ -1,0 +1,198 @@
+<!doctype html><html lang=en><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<title>W4EWB &middot; Repeater Scanner</title>
+<link rel="stylesheet" href="/lcars.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+#now{background:var(--panel);border-radius:14px;padding:14px 16px;margin:8px 2px;border-left:8px solid #333;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+#now.live{border-left-color:var(--gold)}
+#now.scan{border-left-color:var(--peri)}
+#now.paused{border-left-color:var(--red)}
+#play{width:74px;height:74px;border-radius:50%;border:0;background:var(--orange);color:#000;font-size:30px;font-weight:700;cursor:pointer;flex:none}
+#play.on{background:var(--gold)}
+#play:disabled{background:#333;color:#777;cursor:default}
+#np{flex:1;min-width:180px}
+#np .lab{font-size:28px;font-weight:700;color:#fff;line-height:1.1}
+#np .frq{color:var(--ice);font-size:15px;margin-top:3px}
+#np .st{color:var(--dim);font-size:13px;margin-top:6px;text-transform:uppercase;letter-spacing:.08em}
+.note{background:var(--panel);border-radius:14px;padding:10px 14px;margin:8px 2px;color:var(--ice);font-size:14px;border-left:6px solid var(--peri)}
+h2{color:var(--orange);font-size:14px;text-transform:uppercase;letter-spacing:.12em;margin:16px 4px 6px}
+#chs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.ch{background:var(--panel);border-radius:10px;padding:7px 10px;border-left:5px solid #333}
+.ch b{display:block;color:#fff;font-size:14px}
+.ch span{color:var(--dim);font-size:12px}
+.ch em{display:block;font-style:normal;font-size:11px;margin-top:3px;color:var(--dim)}
+.ch.act{box-shadow:0 0 14px rgba(255,204,102,.55)}
+#legend{display:flex;align-items:center;gap:8px;color:var(--dim);font-size:11px;margin:0 4px 6px}
+#legend i{flex:0 0 120px;height:8px;border-radius:4px;background:linear-gradient(90deg,#ffcc66,#ff9966,#cc99cc,#7882e6,#464650)}
+.ch.cur{border-left-color:var(--peri)}
+.hit{display:grid;grid-template-columns:auto 1fr auto;gap:10px;padding:6px 10px;border-top:1px solid #221;font-size:14px;align-items:baseline}
+.hit b{color:var(--gold)}.hit span{color:var(--dim);font-size:12px}.hit i{color:var(--ice);font-style:normal;font-size:12px}
+#hits{background:var(--panel);border-radius:14px;padding:4px 4px;margin:0 2px}
+#nohits{color:var(--dim);padding:12px;text-align:center;font-size:13px}
+/* view toggle + map */
+#vt{display:flex;gap:6px;margin:0 4px 8px}
+#vt button{border:0;border-radius:14px;padding:5px 14px;font:inherit;font-size:12px;letter-spacing:.08em;text-transform:uppercase;background:#222;color:var(--dim);cursor:pointer}
+#vt button.on{background:var(--peri);color:#000}
+#mapwrap{display:none}
+#map{height:460px;border-radius:14px;background:#111;margin:0 2px}
+@media(max-width:600px){#map{height:62vh}}
+#simplex{color:var(--dim);font-size:12px;margin:6px 4px 0}
+#simplex b{color:#fff;font-weight:600}
+#simplex b.air{color:var(--gold)}
+#mapnote{color:var(--dim);font-size:11px;margin:4px 4px 0}
+.leaflet-container{font:inherit}
+.leaflet-control-attribution{background:rgba(0,0,0,.55)!important;color:#999!important}
+.leaflet-control-attribution a{color:#bbb!important}
+.rp{position:relative;width:0;height:0}
+.rp .dot{position:absolute;left:-7px;top:-7px;width:14px;height:14px;border-radius:50%;background:var(--c,#464650);border:2px solid #000;box-shadow:0 0 6px var(--c,transparent)}
+.rp .lbl{position:absolute;left:11px;top:-9px;white-space:nowrap;font-size:12px;font-weight:700;color:#fff;text-shadow:0 0 3px #000,0 0 3px #000,0 0 3px #000;line-height:1.25}
+.rp .lbl span{display:block}.rp .lbl span.air{font-size:14px}
+.rp .lbl.up{top:auto;bottom:-9px}
+.rp .lbl.left{left:auto;right:11px;text-align:right}
+.rp .ring{position:absolute;left:-7px;top:-7px;width:14px;height:14px;border-radius:50%;border:2px solid var(--gold);opacity:0;pointer-events:none}
+.rp.approx .dot{border:2px dashed #ccc}
+.rp.air .dot{background:var(--gold);box-shadow:0 0 14px var(--gold)}
+.rp.air .ring{animation:rpulse 2.4s ease-out infinite}
+.rp.air .ring.r2{animation-delay:.8s}
+.rp.air .ring.r3{animation-delay:1.6s}
+@keyframes rpulse{0%{transform:scale(1);opacity:.95}100%{transform:scale(9);opacity:0}}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#111;color:#eee}
+.leaflet-popup-content{margin:10px 12px;font-size:13px;line-height:1.4}
+.leaflet-popup-content b{color:var(--gold)}
+.leaflet-popup-content .pn{color:#999;font-size:11px;margin-top:4px}
+</style></head><body>
+<div class=lcars>
+  <div class=rail>
+    <div class=cap></div>
+    <a class="blk o" href="/">&#9666; W4EWB<small>Home</small></a>
+    <div class="blk p">Repeaters<small>2 m &middot; 70 cm</small></div>
+    <a class="blk l" href="/iss/">ISS &#9656;<small>APRS</small></a>
+    <div class="blk s">hamSDR<small>X30A</small></div>
+    <div class="blk i">EM78<small>Louisville</small></div>
+    <div class=railfill></div>
+  </div>
+  <div class=col>
+    <div class=hdr><span class=title>Repeater Scanner</span><span class=sub>Louisville area &middot; listen live</span></div>
+    <div class=strip>The station's software-defined radio scans the Louisville-area 2 m and 70 cm amateur repeaters, stops on whichever one is active, and streams it here. Listen-only. The audio runs a few seconds behind the air.</div>
+    <div class=content>
+      <div id=now>
+        <button id=play aria-label="Listen">&#9654;</button>
+        <div id=np><div class=lab id=lab>&hellip;</div><div class=frq id=frq></div><div class=st id=st>Loading</div></div>
+      </div>
+      <div id=note class=note style=display:none></div>
+      <h2>Channels scanned</h2>
+      <div id=vt><button id=vgrid class=on>Grid</button><button id=vmap>Map</button></div>
+      <div id=legend><span>Just heard</span><i></i><span>Quiet a day+</span></div>
+      <div id=chs></div>
+      <div id=mapwrap><div id=map></div><div id=simplex></div><div id=mapnote>Solid dot: listed transmitter site. Dashed dot: approximate, the directory lists only the town. Repeaters sharing a site are listed together.</div></div>
+      <h2>Recent activity</h2>
+      <div id=hits><div id=nohits>Nothing heard yet this session.</div></div>
+    </div>
+    <div class=foot>Receive-only &middot; RTL-SDR + Diamond X30A &middot; EM78 Louisville &middot; satellite passes take priority</div>
+  </div>
+</div>
+<audio id=au preload=none></audio>
+<script>
+var FEED='https://nest.w4ewb.com/skyfeed/';
+var au=document.getElementById('au'),btn=document.getElementById('play'),playing=false,avail=false;
+function esc(s){return String(s==null?'':s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})}
+function mhz(hz){return hz?(hz/1e6).toFixed(3)+' MHz':''}
+function hm(t){return new Date(t*1000).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}
+function dur(s){s=Math.max(1,Math.round(s));return s<60?s+' s':Math.floor(s/60)+' min '+(s%60)+' s'}
+function start(){au.src=FEED+'rpt.mp3?t='+Date.now();au.play().catch(function(){stop()});playing=true;btn.classList.add('on');btn.innerHTML='&#9632;';btn.setAttribute('aria-label','Stop')}
+function stop(){au.pause();au.removeAttribute('src');au.load();playing=false;btn.classList.remove('on');btn.innerHTML='&#9654;';btn.setAttribute('aria-label','Listen')}
+btn.onclick=function(){if(playing)stop();else if(avail)start()};
+au.onerror=function(){if(playing){stop()}};
+au.onended=function(){if(playing){stop()}};
+// Last-heard heat: gold the minute a repeater is heard, cooling through
+// orange, lilac and blue to slate over ~a day (log time scale).
+var STOPS=[[0,[255,204,102]],[.25,[255,153,102]],[.5,[204,153,204]],[.75,[120,130,230]],[1,[70,70,80]]];
+function heatT(age){return Math.max(0,Math.min(1,Math.log(Math.max(age,60)/60)/Math.log(1440)))}
+function heatRGB(t){for(var i=1;i<STOPS.length;i++){if(t<=STOPS[i][0]){var a=STOPS[i-1],b=STOPS[i],f=(t-a[0])/(b[0]-a[0]);return a[1].map(function(v,k){return Math.round(v+(b[1][k]-v)*f)})}}return STOPS[STOPS.length-1][1]}
+function ago(s){s=Math.max(0,s);return s<60?'heard just now':s<3600?'heard '+Math.round(s/60)+' min ago':s<86400?'heard '+Math.round(s/3600)+' h ago':'heard '+Math.round(s/86400)+' d ago'}
+// ---- map view -------------------------------------------------------------
+// Repeater transmitter sites (from RepeaterBook listings, 2026-10-04). Several
+// machines share a site or are listed only by town; they are drawn as ONE
+// marker with a stacked list of callsigns, each coloured by its own last-heard
+// heat, and the site pulses when any of them is on the air. Simplex calling
+// channels and the unlisted "Dixie" machine have no site and are listed below.
+var SITES = [
+ {pos:[38.2159,-85.7233], note:'Audubon Hospital', labels:['W4CN']},
+ {pos:[38.2339,-85.7615], note:'Downtown Louisville (A.R.T.S. repeater list)', labels:['KE4JVM','KE4JVM-70'], left:1},
+ {pos:[38.2527,-85.7585], approx:1, note:'no published site: listed only as Louisville', labels:['KQ9Z','N4ORL','N4KWT'], up:1},
+ {pos:[38.0800,-85.7883], note:'Fairdale knobs tower, Jefferson Memorial Forest', labels:['K4KTR','N4TNS','KK4CZ'], left:1,
+  sub:{KK4CZ:'site inferred from its linked 145.41 machine; listed as temporarily off the air'}},
+ {pos:[38.0736,-85.7492], note:'south Jefferson County knobs, 1068 ft', labels:['KN4ZYS-70','KN4ZYS'],
+  sub:{KN4ZYS:'146.88 site inferred: same owner as the 444.900'}},
+ {pos:[38.1339,-85.8230], approx:1, note:'Jefferson County RACES; point from a user-submitted directory listing', labels:['WB4EJK','WB4EJK-2']},
+ {pos:[38.2792,-85.4439], note:'KY4OC, Crestwood', labels:['Oldham']},
+ {pos:[38.2856,-85.8241], approx:1, note:'Indiana State Police tower on the knobs (exact spot unpublished)', labels:['W9JBQ']}
+];
+var NOSITE={Dixie:'probably W4KVK, Henderson County, ~100 mi away'};
+var SITE_OF={};SITES.forEach(function(s){s.labels.forEach(function(l){SITE_OF[l]=s})});
+var map=null,view='grid',last=null;
+function setView(v){view=v;try{localStorage.setItem('rptView',v)}catch(e){}
+ document.getElementById('vgrid').classList.toggle('on',v==='grid');document.getElementById('vmap').classList.toggle('on',v==='map');
+ document.getElementById('chs').style.display=v==='grid'?'':'none';document.getElementById('mapwrap').style.display=v==='map'?'block':'none';
+ if(v==='map'){initMap();setTimeout(function(){map&&map.invalidateSize()},50);if(last)show(last)}}
+function initMap(){if(map||!window.L)return;
+ map=L.map('map',{scrollWheelZoom:false});
+ var esri='https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/';
+ L.tileLayer(esri+'World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',{maxZoom:16,
+  attribution:'Tiles &copy; Esri &mdash; Esri, HERE, Garmin, &copy; OpenStreetMap contributors'}).addTo(map);
+ L.tileLayer(esri+'World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',{maxZoom:16,opacity:.7}).addTo(map);
+ map.fitBounds(SITES.map(function(s){return s.pos}),{padding:[50,50],maxZoom:12});
+ SITES.forEach(function(s){
+  var rows=s.labels.map(function(l){return '<span data-l="'+esc(l)+'">'+esc(l)+'</span>'}).join('');
+  s.marker=L.marker(s.pos,{icon:L.divIcon({className:'',iconSize:[0,0],
+   html:'<div class="rp'+(s.approx?' approx':'')+'"><i class=ring></i><i class="ring r2"></i><i class="ring r3"></i><b class=dot></b><span class="lbl'+(s.up?' up':'')+(s.left?' left':'')+'">'+rows+'</span></div>'})}).addTo(map)})}
+function updateMap(chs,j,off,heard,now){if(!map)return;
+ var info={},simp=[];
+ chs.forEach(function(c){var onair=!off&&j.label===c.label&&j.live;var t=heard[c.label];
+  var age=t?(onair?0:now-t):null;
+  info[c.label]={c:c,onair:onair,t:t,rgb:t?'rgb('+heatRGB(heatT(age)).join(',')+')':'#5a5a66',when:onair?'on air now':(t?ago(age):'not heard yet')};
+  if(!SITE_OF[c.label])simp.push('<b'+(onair?' class=air':'')+'>'+esc(c.label)+'</b> '+mhz(c.hz)+(NOSITE[c.label]?' ('+esc(NOSITE[c.label])+')':'')+' &middot; '+info[c.label].when)});
+ SITES.forEach(function(s){var el=s.marker.getElement();el=el&&el.querySelector('.rp');if(!el)return;
+  var air=false,best=null,pop='';
+  s.labels.forEach(function(l){var x=info[l];if(!x)return;
+   air=air||x.onair;if(x.t&&(!best||x.t>best.t||x.onair))best=x;
+   var sp=el.querySelector('[data-l="'+l+'"]');if(sp){sp.style.color=x.onair?'#ffcc66':(x.t?x.rgb:'#999');sp.classList.toggle('air',x.onair)}
+   pop+='<div><b>'+esc(l)+'</b> '+mhz(x.c.hz)+' MHz &middot; '+x.when+(s.sub&&s.sub[l]?'<div class=pn>'+esc(s.sub[l])+'</div>':'')+'</div>'});
+  el.classList.toggle('air',air);el.style.setProperty('--c',best?best.rgb:'#5a5a66');
+  s.marker.setZIndexOffset(air?1000:0);
+  var html=pop+'<div class=pn>'+esc(s.note)+(s.approx?' &middot; approximate location':'')+'</div>';
+  if(s.marker.getPopup())s.marker.setPopupContent(html);else s.marker.bindPopup(html)});
+ document.getElementById('simplex').innerHTML=simp.length?'No fixed site: '+simp.join(' &nbsp;|&nbsp; '):''}
+document.getElementById('vgrid').onclick=function(){setView('grid')};
+document.getElementById('vmap').onclick=function(){setView('map')};
+function show(j){
+ last=j;
+ var fresh=j.updated&&(j.now-j.updated)<20;
+ var off=!fresh||!j.audio;
+ var now=document.getElementById('now'),lab=document.getElementById('lab'),frq=document.getElementById('frq'),st=document.getElementById('st'),note=document.getElementById('note');
+ var chs=j.channels||[];
+ avail=!off&&j.state!=='paused';
+ btn.disabled=!avail&&!playing;
+ note.style.display='none';
+ if(off){now.className='';lab.textContent='Scanner off';frq.textContent='';st.textContent='The station owner switches it on from the shack';if(playing)stop()}
+ else if(j.state==='paused'){now.className='paused';lab.textContent='Paused';frq.textContent='';st.textContent='Satellite pass in progress';note.style.display='block';note.textContent='The same antenna and radio catch satellite passes, and those take priority. Scanning resumes automatically when the pass ends, usually within 15 minutes.'}
+ else if(j.label&&j.live){now.className='live';var c=chs.filter(function(x){return x.label===j.label})[0]||{};lab.textContent=j.label;frq.textContent=mhz(j.hz)+(c.place?' · '+c.place:'');st.textContent=j.mode==='hold'?'On air · holding':'On air'}
+ else if(j.label){now.className='live';lab.textContent=j.label;frq.textContent=mhz(j.hz);st.textContent='Waiting for a reply'}
+ else{now.className='scan';lab.textContent='Scanning';frq.textContent=j.scanning?'now checking '+j.scanning:'';st.textContent='Quiet: listening for activity'}
+ var heard=j.heard||{},now=j.now||Date.now()/1000;
+ // most recently heard first (on air at the very top); never-heard keep list order at the end
+ var order=chs.map(function(c,i){return {c:c,i:i,k:(!off&&j.label===c.label&&j.live)?Infinity:(heard[c.label]||-1)}});
+ order.sort(function(a,b){return b.k-a.k||a.i-b.i});
+ document.getElementById('chs').innerHTML=order.map(function(o){return o.c}).map(function(c){var onair=!off&&j.label===c.label&&j.live;var cls=onair?' act':(!off&&j.scanning===c.label&&!j.label?' cur':'');var t=heard[c.label],st='',when='not heard yet';
+  if(t){var age=onair?0:now-t,h=heatT(age),rgb=heatRGB(h).join(',');st=' style="border-left-color:rgb('+rgb+');background:rgba('+rgb+','+(0.03+0.25*(1-h)).toFixed(3)+')"';when=onair?'on air now':ago(age)}
+  return '<div class="ch'+cls+'"'+st+'><b>'+esc(c.label)+'</b><span>'+mhz(c.hz)+(c.place?' · '+esc(c.place):'')+'</span><em>'+when+'</em></div>'}).join('');
+ if(view==='map')updateMap(chs,j,off,heard,now);
+ var hs=j.hits||[];
+ document.getElementById('hits').innerHTML=hs.length?hs.map(function(h){return '<div class=hit><b>'+esc(h.label)+'</b><span>'+mhz(h.hz)+'</span><i>'+hm(h.start)+(h.end?' · '+dur(h.end-h.start):' · now')+'</i></div>'}).join(''):'<div id=nohits>Nothing heard yet this session.</div>';
+}
+function poll(){fetch(FEED+'rpt.json',{cache:'no-store'}).then(function(r){return r.json()}).then(show).catch(function(){document.getElementById('st').textContent='Status unavailable'}).then(function(){setTimeout(poll,2500)})}
+try{if(localStorage.getItem('rptView')==='map')setView('map')}catch(e){}
+poll();
+</script></body></html>

@@ -1,0 +1,313 @@
+<!doctype html><html lang=en><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<title>W4EWB &middot; FT8 Live</title>
+<link rel="stylesheet" href="/lcars.css">
+<style>
+#mapwrap{padding:2px}
+#scope{width:100%;height:auto;display:block;border-radius:14px}
+#hb{height:4px;background:#111;border-radius:2px;margin:4px 2px;overflow:hidden}
+#hbfill{height:100%;background:var(--peri);width:0}
+#chips{display:flex;gap:8px;flex-wrap:wrap;padding:6px 2px;justify-content:center}
+.stat{background:var(--panel);border-radius:14px;padding:8px 14px;text-align:center;min-width:86px}
+.stat b{display:block;font-size:22px;color:var(--gold)}
+.stat span{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.1em}
+.stat small{display:block;color:var(--dim);font-size:11px}
+#rose{width:78px;height:78px}
+#stale{display:none;color:var(--red);text-align:center;text-transform:uppercase;
+ letter-spacing:.1em;font-size:13px;padding:6px}
+#osd{position:fixed;top:16vh;left:50%;transform:translateX(-50%);z-index:40;
+ background:#000;border:2px solid var(--gold);color:var(--gold);font-weight:700;
+ font-size:16px;letter-spacing:.06em;padding:12px 22px;border-radius:10px;
+ display:none;max-width:88vw;text-align:center;text-transform:uppercase}
+#lists{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;padding:4px 2px}
+.mut{color:var(--dim);font-size:13px;padding:6px 0}
+.pane{background:var(--panel);border-radius:14px;padding:8px 12px}
+.pane h3{color:var(--orange);font-size:13px;text-transform:uppercase;
+ letter-spacing:.1em;margin:2px 0 6px}
+.row{padding:4px 0;border-bottom:1px solid #221;font-size:14px;line-height:1.4}
+.call{color:#fff;font-weight:700}.cc{color:var(--dim)}
+.dist{color:var(--ice)}.rep{color:var(--gold)}.kk{color:var(--red);font-size:11px}
+.tt{color:#875;font-size:11px}
+</style></head><body>
+<div class=lcars>
+  <div class=rail>
+    <div class=cap></div>
+    <a class="blk o" href="/">&#9666; W4EWB<small>Home</small></a>
+    <div class="blk p">FT8<small>Live</small></div>
+    <div class="blk l">14.074<small>MHz &middot; 20m</small></div>
+    <div class="blk s">hamSDR<small>RTL-SDR</small></div>
+    <div class="blk i">EM78<small>Louisville</small></div>
+    <div class=railfill></div>
+    <a class="blk g" href="/radar/">RADAR &#9656;<small>ADS-B</small></a>
+  </div>
+  <div class=col>
+    <div class=hdr><span class=title>FT8 Live</span><span class=sub>heard at the station</span></div>
+    <div class=strip>Every FT8 transmission the station decodes, mapped live &mdash; arcs are this cycle's reception, dashed paths are QSOs we're overhearing, orange diamonds are stations that heard W4EWB transmit</div>
+    <div class=content>
+      <div id=hb><div id=hbfill></div></div>
+      <div id=mapwrap><svg id=scope viewBox="0 0 360 183"></svg></div>
+      <div id=stale>Feed stale &mdash; the HF receiver is busy elsewhere (web SDR, sniffer&hellip;)</div>
+      <div id=chips></div>
+      <div id=lists>
+        <div class=pane><h3>Heard me <span style="color:var(--dim);font-size:10px">&middot; PSK Reporter</span></h3><div id=heard></div></div>
+        <div class=pane><h3>QSOs observed</h3><div id=qsos></div></div>
+        <div class=pane><h3>Latest decodes</h3><div id=feed></div></div>
+      </div>
+    </div>
+    <div class=foot>Receive-only monitor &middot; reports to PSK Reporter as W4EWB &middot; EM78 Louisville</div>
+  </div>
+</div>
+<div id=osd></div>
+<script>
+var FEED='https://nest.w4ewb.com/skyfeed/ft8.json';
+var DELAT=38.2679,DELON=-85.6279;
+var NS='http://www.w3.org/2000/svg',scope=document.getElementById('scope');
+function el(n,a,p){var e=document.createElementNS(NS,n);
+ for(var k in a)e.setAttribute(k,a[k]);(p||scope).appendChild(e);return e;}
+// Robinson projection — table-interpolated, R sized so full width = 360
+var RBX=[1,.9986,.9954,.99,.9822,.973,.96,.9427,.9216,.8962,.8679,.835,
+ .7986,.7597,.7186,.6732,.6213,.5722,.5322];
+var RBY=[0,.062,.124,.186,.248,.31,.372,.434,.4958,.5571,.6176,.6769,
+ .7346,.7903,.8435,.8936,.9394,.9761,1];
+var R=67.52,CX=180,CY=91.5;
+function proj(lat,lon){
+ var a=Math.min(Math.abs(lat),90),i=Math.min(17,Math.floor(a/5)),t=a/5-i;
+ var X=RBX[i]+(RBX[i+1]-RBX[i])*t,Y=RBY[i]+(RBY[i+1]-RBY[i])*t;
+ return [CX+.8487*R*X*lon*Math.PI/180,CY-(lat<0?-1:1)*1.3523*R*Y];
+}
+function pathOf(pts,close){
+ var d='';
+ for(var i=0;i<pts.length;i++){
+  var p=proj(pts[i][0],pts[i][1]);
+  d+=(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1);
+ }
+ return d+(close?'Z':'');
+}
+var edge=[],la;
+for(la=-90;la<=90;la+=3)edge.push([la,180]);
+for(la=90;la>=-90;la-=3)edge.push([la,-180]);
+var OUTLINE=pathOf(edge,true);
+var defs=el('defs',{});
+var oc=el('radialGradient',{id:'oc',cx:'50%',cy:'42%',r:'75%'},defs);
+el('stop',{offset:'0%','stop-color':'#0d1c30'},oc);
+el('stop',{offset:'100%','stop-color':'#04080f'},oc);
+el('path',{d:OUTLINE,fill:'url(#oc)'});
+var clip=el('clipPath',{id:'mc'},defs);
+el('path',{d:OUTLINE},clip);
+var gMap=el('g',{'clip-path':'url(#mc)'});
+var gGrat=el('g',{},gMap),gLand=el('g',{},gMap),gNight=el('g',{},gMap),
+ gGrey=el('g',{},gMap),gSun=el('g',{},gMap);
+for(var lo=-150;lo<=180;lo+=30){
+ var m=[];for(la=-90;la<=90;la+=5)m.push([la,lo]);
+ el('path',{d:pathOf(m),fill:'none',stroke:'#152535','stroke-width':.25},gGrat);
+}
+for(la=-60;la<=60;la+=30)
+ el('path',{d:pathOf([[la,-180],[la,180]]),fill:'none',
+  stroke:la?'#152535':'#1c324a','stroke-width':la?.25:.35},gGrat);
+el('path',{d:OUTLINE,fill:'none',stroke:'#2c3f54','stroke-width':.7});
+var gQso=el('g',{}),gPings=el('g',{}),gArcs=el('g',{}),gHeard=el('g',{});
+el('circle',{cx:0,cy:0,r:4,fill:'#fc6',opacity:.07},gSun);
+el('circle',{cx:0,cy:0,r:2,fill:'#fc6',opacity:.16},gSun);
+el('circle',{cx:0,cy:0,r:.8,fill:'#ffd98a',opacity:.9},gSun);
+var HOME=proj(DELAT,DELON);
+el('circle',{cx:HOME[0],cy:HOME[1],r:1.2,fill:'#f96'});
+el('circle',{cx:HOME[0],cy:HOME[1],r:2.6,fill:'none',stroke:'#f96','stroke-width':.4,opacity:.6});
+fetch('land.json').then(function(r){return r.json();}).then(function(LAND){
+ var d='';
+ LAND.forEach(function(ring){d+=pathOf(ring,true);});
+ el('path',{d:d,fill:'#182634',stroke:'#3c5c78','stroke-width':.35},gLand);
+}).catch(function(){});
+function sunLL(d){var D=(d-Date.UTC(d.getUTCFullYear(),0,0))/864e5;
+ var decl=-23.44*Math.cos(2*Math.PI/365*(D+10));
+ var h=d.getUTCHours()+d.getUTCMinutes()/60+d.getUTCSeconds()/3600;
+ return [decl,(12-h)*15];}
+function drawNight(){
+ var s=sunLL(new Date()),rad=Math.PI/180;
+ var de=s[0];if(Math.abs(de)<.5)de=de<0?-.5:.5;
+ var term=[],lon;
+ for(lon=-180;lon<=180;lon+=3)
+  term.push([Math.atan(-Math.cos((lon-s[1])*rad)/Math.tan(de*rad))/rad,lon]);
+ var night=term.slice(),pole=de>0?-89.9:89.9;
+ for(lon=180;lon>=-180;lon-=10)night.push([pole,lon]);
+ gNight.innerHTML='';gGrey.innerHTML='';
+ el('path',{d:pathOf(night,true),fill:'rgba(3,8,20,.52)'},gNight);
+ var gl=pathOf(term);
+ el('path',{d:gl,fill:'none',stroke:'#f96','stroke-width':3.2,opacity:.07},gGrey);
+ el('path',{d:gl,fill:'none',stroke:'#fc6','stroke-width':1.5,opacity:.14},gGrey);
+ el('path',{d:gl,fill:'none',stroke:'#fc6','stroke-width':.55,opacity:.4},gGrey);
+ var p=proj(s[0],((s[1]+540)%360)-180);
+ gSun.setAttribute('transform','translate('+p[0].toFixed(1)+' '+p[1].toFixed(1)+')');
+}
+drawNight();setInterval(drawNight,60000);
+function gcPathBetween(la1,lo1,lat,lon){
+ var rad=Math.PI/180;
+ var v1=[Math.cos(la1*rad)*Math.cos(lo1*rad),Math.cos(la1*rad)*Math.sin(lo1*rad),Math.sin(la1*rad)];
+ var v2=[Math.cos(lat*rad)*Math.cos(lon*rad),Math.cos(lat*rad)*Math.sin(lon*rad),Math.sin(lat*rad)];
+ var dot=Math.min(1,Math.max(-1,v1[0]*v2[0]+v1[1]*v2[1]+v1[2]*v2[2]));
+ var om=Math.acos(dot);if(om<1e-6)return '';
+ var d='',prev=null;
+ for(var i=0;i<=24;i++){
+  var t=i/24,A=Math.sin((1-t)*om)/Math.sin(om),B=Math.sin(t*om)/Math.sin(om);
+  var x=A*v1[0]+B*v2[0],y=A*v1[1]+B*v2[1],z=A*v1[2]+B*v2[2];
+  var lp=proj(Math.asin(Math.max(-1,Math.min(1,z)))/rad,Math.atan2(y,x)/rad);
+  if(prev&&Math.abs(lp[0]-prev[0])>90)d+='M'+lp[0].toFixed(1)+' '+lp[1].toFixed(1);
+  else d+=(prev?'L':'M')+lp[0].toFixed(1)+' '+lp[1].toFixed(1);
+  prev=lp;
+ }
+ return d;
+}
+function colorOf(r){return r.nc?'#fc6':(r.dist>5000?'#9cf':'#6c6');}
+function launchArc(lat,lon,col){
+ var dd=gcPathBetween(DELAT,DELON,lat,lon);if(!dd)return;
+ var p=el('path',{d:dd,fill:'none',stroke:col,'stroke-width':.6,opacity:.85},gArcs);
+ var len=p.getTotalLength();
+ p.setAttribute('stroke-dasharray',len);p.setAttribute('stroke-dashoffset',len);
+ p.style.transition='stroke-dashoffset .7s ease-out';
+ requestAnimationFrame(function(){requestAnimationFrame(function(){
+  p.style.strokeDashoffset='0';});});
+ setTimeout(function(){p.style.transition='opacity 1.6s';p.style.opacity='0';},13000);
+ setTimeout(function(){p.remove();},15000);
+}
+var maxSeenTs=Date.now()/1000;
+function drawMap(d){
+ var now=Date.now()/1000;
+ var newest=maxSeenTs,launched=0;
+ (d.feed||[]).forEach(function(r){
+  if(r.ts>maxSeenTs&&r.ll&&launched<14){launchArc(r.ll[0],r.ll[1],colorOf(r));launched++;}
+  if(r.ts>newest)newest=r.ts;
+ });
+ maxSeenTs=newest;
+ gPings.innerHTML='';
+ var seen={};
+ (d.feed||[]).forEach(function(r){if(r.ll&&!(r.de in seen))seen[r.de]=r;});
+ Object.keys(seen).forEach(function(k){
+  var r=seen[k],age=now-r.ts;if(age>600)return;
+  var p=proj(r.ll[0],r.ll[1]),op=Math.max(.12,1-age/600);
+  el('circle',{cx:p[0],cy:p[1],r:1.2,fill:colorOf(r),opacity:op},gPings);
+ });
+ gQso.innerHTML='';
+ (d.qsos||[]).forEach(function(q){
+  if(!q.a_ll||!q.b_ll)return;
+  var age=now-q.last;if(age>900)return;
+  var op=Math.max(.10,.55*(1-age/900));
+  var dd=gcPathBetween(q.a_ll[0],q.a_ll[1],q.b_ll[0],q.b_ll[1]);
+  if(!dd)return;
+  el('path',{d:dd,fill:'none',stroke:'#99f','stroke-width':.4,opacity:op,
+   'stroke-dasharray':'1.6 1.1'},gQso);
+ });
+}
+function spark(hist){
+ if(!hist||!hist.length)return '';
+ var mx=Math.max.apply(null,hist.concat([1]));
+ var pts=hist.map(function(v,i){return ((i/Math.max(hist.length-1,1))*70).toFixed(1)+','+(22-v/mx*20).toFixed(1);}).join(' ');
+ return '<svg width=70 height=24 viewBox="0 0 70 24"><polyline points="'+pts+'" fill=none stroke=#99f stroke-width=1.4 /></svg>';
+}
+function drawRose(sectors){
+ var h='<svg id=rose viewBox="0 0 100 100">';
+ var arr=(sectors&&sectors.length?sectors:[]);
+ var mx=Math.max.apply(null,arr.concat([1]));
+ for(var i=0;i<16;i++){
+  var a0=(i*22.5-11.25-90)*Math.PI/180,a1=((i+1)*22.5-11.25-90)*Math.PI/180;
+  h+='<path d="M'+(50+16*Math.cos(a0)).toFixed(1)+' '+(50+16*Math.sin(a0)).toFixed(1)+
+   'L'+(50+44*Math.cos(a0)).toFixed(1)+' '+(50+44*Math.sin(a0)).toFixed(1)+
+   'A44 44 0 0 1 '+(50+44*Math.cos(a1)).toFixed(1)+' '+(50+44*Math.sin(a1)).toFixed(1)+
+   'L'+(50+16*Math.cos(a1)).toFixed(1)+' '+(50+16*Math.sin(a1)).toFixed(1)+
+   'A16 16 0 0 0 '+(50+16*Math.cos(a0)).toFixed(1)+' '+(50+16*Math.sin(a0)).toFixed(1)+
+   'Z" fill="#6c6" opacity="'+Math.max(.07,(arr[i]||0)/mx).toFixed(2)+'"/>';
+ }
+ h+='<text x=50 y=9 fill=#caa font-size=9 text-anchor=middle>N</text></svg>';
+ return h;
+}
+function esc(t){return String(t==null?'':t).replace(/[&<>"]/g,function(c){
+ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function hhmm(ts){return new Date(ts*1000).toUTCString().slice(17,22);}
+var lastEvent=0;
+function render(d){
+ drawMap(d);
+ var rc=d.records||{},f=rc.furthest,b=rc.best;
+ document.getElementById('chips').innerHTML=
+  '<div class=stat>'+drawRose(rc.sectors||[])+'<span>heard from</span></div>'+
+  '<div class=stat><b>'+(rc.countries||0)+'</b><span>countries today</span></div>'+
+  '<div class=stat><b>'+(f?f.dist.toLocaleString():'&ndash;')+'</b><span>farthest mi</span>'+(f?'<small>'+esc(f.call)+(f.c&&f.c!='?'?' &middot; '+esc(f.c):'')+'</small>':'')+'</div>'+
+  '<div class=stat><b>'+(rc.qsos_done||0)+'</b><span>QSOs seen</span></div>'+
+  '<div class=stat><b>'+(rc.spots||0)+'</b><span>spots today</span></div>'+
+  '<div class=stat>'+spark(d.hist)+'<span>spots / cycle</span></div>'+
+  (b?'<div class=stat><b>'+b.dist.toLocaleString()+'</b><span>best ever mi</span><small>'+esc(b.call)+' &middot; '+esc(b.date)+'</small></div>':'')+
+  (function(){var s=(heardData&&heardData.spots)||[];if(!s.length)return '';
+   var far=s.reduce(function(a,x){return (x.dist||0)>(a.dist||0)?x:a;},{});
+   return '<div class=stat><b>'+s.length+'</b><span>hearing me</span>'+
+    (far.call?'<small>'+esc(far.call)+(far.dist?' &middot; '+far.dist.toLocaleString()+' mi':'')+'</small>':'')+'</div>';})();
+ document.getElementById('qsos').innerHTML=(d.qsos||[]).slice(0,12).map(function(q){
+  var ra=q.reports&&q.reports[q.a]?' <span class=rep>'+esc(q.reports[q.a])+'</span>':'';
+  var rb=q.reports&&q.reports[q.b]?' <span class=rep>'+esc(q.reports[q.b])+'</span>':'';
+  return '<div class=row><span class=call>'+esc(q.a)+'</span> <span class=cc>'+esc(q.a_c)+'</span>'+ra+
+   ' ↔ <span class=call>'+esc(q.b)+'</span> <span class=cc>'+esc(q.b_c)+'</span>'+rb+
+   (q.kind&&q.kind!='grid'&&q.kind!='msg'?' <span class=kk>'+esc(q.kind)+'</span>':'')+
+   ' <span class=tt>'+hhmm(q.last)+'</span></div>';
+ }).join('');
+ document.getElementById('feed').innerHTML=(d.feed||[]).slice(0,14).map(function(r){
+  return '<div class=row><span class=tt>'+hhmm(r.ts)+'</span> <span class=call>'+esc(r.de)+'</span> '+
+   '<span class=cc>'+esc(r.de_c&&r.de_c!='?'?r.de_c:'')+'</span>'+
+   (r.dist?' <span class=dist>'+r.dist.toLocaleString()+' mi</span>':'')+
+   (r.report?' <span class=rep>'+esc(r.report)+'</span>':'')+
+   (r.to=='CQ'?' <span class=kk>CQ</span>':'')+'</div>';
+ }).join('');
+ var evts=d.events||[];
+ if(evts.length){
+  var e=evts[evts.length-1],now=Date.now()/1000;
+  if(e.t>lastEvent&&now-e.t<60){
+   lastEvent=e.t;
+   var o=document.getElementById('osd');
+   o.textContent=e.txt;o.style.display='block';
+   clearTimeout(o._t);o._t=setTimeout(function(){o.style.display='none';},9000);
+  }
+ }
+}
+var HEARD='https://nest.w4ewb.com/skyfeed/heardme.json';
+var heardData=null;
+function renderHeard(){
+ gHeard.innerHTML='';
+ var box=document.getElementById('heard');
+ var spots=(heardData&&heardData.spots)||[];
+ if(!spots.length){
+  box.innerHTML='<div class=mut>No one has spotted W4EWB transmitting in the last 3 hours &mdash; the op is off the air. This receive-only monitor keeps listening either way.</div>';
+  return;
+ }
+ spots.forEach(function(s){
+  if(!s.ll)return;
+  var p=proj(s.ll[0],s.ll[1]);
+  el('path',{d:'M'+p[0].toFixed(1)+' '+(p[1]-1.7).toFixed(1)+
+   'L'+(p[0]+1.7).toFixed(1)+' '+p[1].toFixed(1)+
+   'L'+p[0].toFixed(1)+' '+(p[1]+1.7).toFixed(1)+
+   'L'+(p[0]-1.7).toFixed(1)+' '+p[1].toFixed(1)+'Z',
+   fill:'none',stroke:'#f96','stroke-width':.5,opacity:.9},gHeard);
+ });
+ box.innerHTML=spots.slice(0,14).map(function(s){
+  return '<div class=row><span class=tt>'+hhmm(s.ts)+'</span> <span class=call>'+esc(s.call)+'</span> '+
+   '<span class=cc>'+esc(s.grid)+'</span>'+
+   (s.dist?' <span class=dist>'+s.dist.toLocaleString()+' mi</span>':'')+
+   (s.snr!=null?' <span class=rep>'+(s.snr>0?'+':'')+s.snr+' dB</span>':'')+'</div>';
+ }).join('');
+}
+function pollHeard(){
+ fetch(HEARD).then(function(r){return r.json();}).then(function(d){
+  heardData=d;renderHeard();
+ }).catch(function(){});
+}
+pollHeard();setInterval(pollHeard,300000);
+var lastUpdated=0;
+function poll(){
+ fetch(FEED).then(function(r){return r.json();}).then(function(d){
+  lastUpdated=d.updated||0;
+  if(d.feed)render(d);
+ }).catch(function(){});
+}
+poll();setInterval(poll,15000);
+(function beat(){
+ requestAnimationFrame(beat);
+ var t=Date.now()/1000;
+ document.getElementById('hbfill').style.width=((t%15)/15*100)+'%';
+ if(lastUpdated)
+  document.getElementById('stale').style.display=(t-lastUpdated>150)?'block':'none';
+})();
+</script></body></html>

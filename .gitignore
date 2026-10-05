@@ -1,0 +1,11 @@
+*.bak-lcars
+*.bak
+# per-machine publisher caches: never commit (2026-10-05: 1,000 no-op commits/week)
+sstv/rx/.state.json
+sstv/rx/.thumbs-v2
+# GOES imagery lives on nest.w4ewb.com/goes/ (rsync from home-beast), not in git (2026-10-05)
+goes/h/
+goes/anim/
+goes/meso/
+goes/region/
+goes/seasonal/

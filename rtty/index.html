@@ -1,0 +1,131 @@
+<!doctype html><html lang=en><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<title>W4EWB &middot; RTTY &amp; PSK Skimmer</title>
+<link rel="stylesheet" href="/lcars.css">
+<style>
+#hb{height:4px;background:#111;border-radius:2px;margin:4px 2px;overflow:hidden}
+#hbfill{height:100%;background:var(--peri);width:0}
+#chips{display:flex;gap:8px;flex-wrap:wrap;padding:6px 2px;justify-content:center}
+.stat{background:var(--panel);border-radius:14px;padding:8px 14px;text-align:center;min-width:86px}
+.stat b{display:block;font-size:22px;color:var(--gold)}
+.stat span{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.1em}
+#stale{display:none;color:var(--red);text-align:center;text-transform:uppercase;
+ letter-spacing:.1em;font-size:13px;padding:10px 6px}
+#sigs{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px;padding:4px 2px}
+.sig{background:var(--panel);border-radius:14px;padding:10px 12px;border-left:6px solid var(--peri)}
+.sig.hot{border-left-color:var(--gold)}.sig.idle{border-left-color:#333}
+.sig .top{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.freq{font-size:19px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums}
+.mode{font-size:11px;font-weight:700;padding:1px 7px;border-radius:7px;background:var(--lilac,#c9a);color:#000;letter-spacing:.06em}
+.mode.psk31{background:#5fe0c8}
+.pill{font-size:11px;padding:2px 8px;border-radius:9px;background:#222;color:var(--ice);font-variant-numeric:tabular-nums}
+.who{margin-left:auto;font-size:13px;color:var(--dim)}
+.who b{color:#fff}
+pre{margin:8px 0 0;padding:8px 10px;background:#000;border-radius:10px;height:6.6em;overflow:hidden;
+ font:14px/1.35 ui-monospace,Menlo,Consolas,monospace;color:#ddd;white-space:pre-wrap;word-break:break-all}
+pre b.call{color:var(--gold)}pre b.cq{color:#8d8}
+.idle pre{opacity:.5}
+#empty{color:var(--dim);text-align:center;padding:26px 8px;font-size:14px}
+.pane{background:var(--panel);border-radius:14px;padding:8px 12px;margin-top:10px}
+.pane h3{color:var(--orange);font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin:2px 0 6px}
+.row{padding:4px 0;border-bottom:1px solid #221;font-size:14px;line-height:1.4}
+.row .freq{font-size:14px;margin-right:8px}
+.row .call{color:var(--gold);font-weight:700}.tt{color:#875;font-size:11px}
+.q{padding:6px 0;border-bottom:1px solid #221;font-size:14px;line-height:1.4;cursor:pointer}
+.q .when{color:var(--dim);font-size:12px;font-variant-numeric:tabular-nums;margin-right:8px}
+.q .band{color:var(--ice);font-size:12px;margin-right:6px}
+.q .call{color:var(--gold);font-weight:700}.q .xc{color:var(--dim);margin-left:8px}
+.q .cqo{color:#8d8;font-size:12px;margin-left:8px}
+.q pre{display:none;height:auto;max-height:12em;overflow:auto;margin-top:6px}
+.q.open pre{display:block}
+.day{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.1em;padding:8px 0 2px}
+</style></head><body>
+<div class=lcars>
+  <div class=rail>
+    <div class=cap></div>
+    <a class="blk o" href="/">&#9666; W4EWB<small>Home</small></a>
+    <div class="blk p">RTTY &amp; PSK<small>Skimmer</small></div>
+    <div class="blk l" id=railband>&mdash;<small>MHz</small></div>
+    <div class="blk s">hamSDR<small>RTL-SDR</small></div>
+    <div class="blk i">EM78<small>Louisville</small></div>
+    <div class=railfill></div>
+    <a class="blk o" href="/bulletins/">Bulletins &#9656;<small>Archive</small></a>
+    <a class="blk g" href="/ft8/">FT8 &#9656;<small>Live</small></a>
+  </div>
+  <div class=col>
+    <div class=hdr><span class=title>RTTY &amp; PSK Skimmer</span><span class=sub>skimmed at the station</span></div>
+    <div class=strip>Every RTTY and PSK31 signal in the sub-band, decoded at once by the station's software skimmer &mdash; RTTY 45.45 baud / 170 Hz shift, PSK31 BPSK 31.25 baud. Gold = callsigns, green = CQ; the pair line shows who is working whom.</div>
+    <div class=content>
+      <div id=hb><div id=hbfill></div></div>
+      <div id=chips></div>
+      <div id=stale>Off air &mdash; the HF receiver is busy elsewhere (web SDR, FT8, sniffer&hellip;)</div>
+      <div id=sigs></div>
+      <div id=empty>Listening &mdash; signals appear as the skimmer finds them</div>
+      <div class=pane><h3>Recent</h3><div id=recent></div></div>
+      <div class=pane><h3>QSO log <span id=qn style="color:var(--dim);font-size:10px;text-transform:none;letter-spacing:0"></span></h3><div id=qsos></div></div>
+    </div>
+    <div class=foot>Receive-only monitor &middot; RTL-SDR Blog V4 &middot; EM78 Louisville</div>
+  </div>
+</div>
+<script>
+var FEED='https://nest.w4ewb.com/skyfeed/rtty.json';
+var STALE_S=60;
+function esc(s){return String(s||'').replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})}
+function mark(t,calls){var h=esc(t).replace(/\bCQ\b/g,'<b class=cq>CQ</b>');
+ (calls||[]).forEach(function(c){h=h.split(c).join('<b class=call>'+c+'</b>')});return h}
+function khz(hz){return (hz/1000).toFixed(1).replace(/\B(?=(\d{3})+(?!\d))/g,' ')}
+function mtag(m){return '<span class="mode '+(m||'rtty')+'">'+(m==='psk31'?'PSK31':'RTTY')+'</span>'}
+function chip(v,l){return '<div class=stat><b>'+v+'</b><span>'+l+'</span></div>'}
+function card(s){var el=document.getElementById('s'+s.id);
+ if(!el){el=document.createElement('div');el.id='s'+s.id;el.className='sig';
+  el.innerHTML='<div class=top><span class=mt></span><span class=freq></span><span class=pill></span><span class=who></span></div><pre></pre>';
+  document.getElementById('sigs').appendChild(el)}
+ el.className='sig'+(s.last>8?' idle':s.snr>25?' hot':'');
+ el.querySelector('.mt').innerHTML=mtag(s.mode);
+ el.querySelector('.freq').textContent=khz(s.hz);
+ el.querySelector('.pill').textContent=Math.round(s.snr)+' dB';
+ var who=s.qso?'<b>'+s.qso[1]+'</b> &harr; <b>'+s.qso[0]+'</b>':s.cq?'CQ de <b>'+s.cq+'</b>':(s.calls&&s.calls.length?'<b>'+s.calls.join('</b> <b>')+'</b>':'');
+ el.querySelector('.who').innerHTML=who;
+ var pre=el.querySelector('pre');pre.innerHTML=mark(s.text,s.calls);pre.scrollTop=pre.scrollHeight;
+ return el}
+function hhmm(t){var d=new Date(t*1000);return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)}
+function dayOf(t){return new Date(t*1000).toDateString().slice(0,10)}
+var openQ={};
+function renderQsos(list){var box=document.getElementById('qsos');var h='',day='';
+ (list||[]).forEach(function(q){var dy=dayOf(q.first);if(dy!==day){day=dy;h+='<div class=day>'+dy+'</div>'}
+  var key=q.calls.join('+')+'@'+Math.round(q.first);
+  h+='<div class="q'+(openQ[key]?' open':'')+'" data-k="'+key+'"><span class=when>'+hhmm(q.first)+(q.last-q.first>60?'–'+hhmm(q.last):'')+'</span>'+mtag(q.mode)+' <span class=band>'+q.band+' '+khz(q.hz)+'</span>'+
+   (q.calls.length>1?'<span class=call>'+q.calls[0]+'</span> &harr; <span class=call>'+q.calls[1]+'</span>':'CQ de <span class=call>'+q.calls[0]+'</span><span class=cqo>no answer heard</span>')+
+   (q.exchange?'<span class=xc>'+esc(q.exchange)+'</span>':'')+'<pre>'+mark(q.text,q.calls)+'</pre></div>'});
+ box.innerHTML=h||'<div class=q><span class=when>nothing logged yet</span></div>';
+ Array.prototype.slice.call(box.querySelectorAll('.q[data-k]')).forEach(function(el){el.onclick=function(){openQ[el.dataset.k]=!openQ[el.dataset.k];el.classList.toggle('open')}})}
+// Recent rows open like the QSO log: tap to read what was decoded. Open rows
+// stay open across the 5 s refresh (keyed by signal id + frequency).
+var openR={};
+function renderRecent(rec){var box=document.getElementById('recent');
+ box.innerHTML=rec.map(function(r){var key=r.id+'@'+r.hz;
+  return '<div class="q'+(openR[key]?' open':'')+'" data-k="'+key+'">'+mtag(r.mode)+' <span class=freq>'+khz(r.hz)+'</span> '+
+   (r.qso?'<span class=call>'+r.qso[1]+'</span> &harr; <span class=call>'+r.qso[0]+'</span>':(r.calls||[]).map(function(c){return '<span class=call>'+c+'</span>'}).join(' '))+
+   ' <span class=tt>'+r.chars+' chars &middot; tap to read</span><pre>'+(r.text?mark(r.text,r.calls):'(no text kept)')+'</pre></div>'}).join('')||'<div class=row><span class=tt>nothing yet</span></div>';
+ Array.prototype.slice.call(box.querySelectorAll('.q[data-k]')).forEach(function(el){el.onclick=function(){openR[el.dataset.k]=!openR[el.dataset.k];el.classList.toggle('open')}})}
+var beat=0;
+function poll(){fetch(FEED,{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){
+ var age=Math.floor(Date.now()/1000)-(j.updated||0);var stale=!j.updated||age>STALE_S;
+ document.getElementById('stale').style.display=stale?'block':'none';
+ document.getElementById('hbfill').style.width=(beat=(beat+25)%125)+'%';
+ var band=j.band||'';var mhz=j.freq?(j.freq/1e6).toFixed(3):'—';
+ document.getElementById('railband').innerHTML=mhz+'<small>MHz &middot; '+band+'</small>';
+ var sigs=stale?[]:(j.sigs||[]).filter(function(s){return s.chars>0||s.snr>=15});
+ document.getElementById('chips').innerHTML=chip(band||'—','band')+chip(sigs.length,'signals')+chip((j.stats&&j.stats.chars)||0,'chars decoded')+chip(stale?'—':age+' s','feed age');
+ var keep={};var box=document.getElementById('sigs');
+ sigs.forEach(function(s){keep['s'+s.id]=1;card(s)});
+ Array.prototype.slice.call(box.children).forEach(function(el){if(!keep[el.id])el.remove()});
+ Array.prototype.slice.call(box.children).sort(function(a,b){return parseFloat(a.querySelector('.freq').textContent.replace(/ /g,''))-parseFloat(b.querySelector('.freq').textContent.replace(/ /g,''))}).forEach(function(el){box.appendChild(el)});
+ document.getElementById('empty').style.display=(sigs.length||stale)?'none':'';
+ var rec=stale?[]:(j.recent||[]);
+ renderRecent(rec);
+ // the log is history, not live: keep showing it while the skimmer is off air
+ var qs=j.qsos||[];document.getElementById('qn').textContent=qs.length?'· '+(j.stats&&j.stats.qsos||qs.length)+' logged':'';renderQsos(qs);
+}).catch(function(){document.getElementById('stale').style.display='block'})}
+poll();setInterval(poll,5000);
+</script></body></html>

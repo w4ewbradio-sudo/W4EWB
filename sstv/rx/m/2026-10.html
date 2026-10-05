@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>W4EWB &middot; SSTV RX &middot; October 2026</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/lcars.css">
+  <style>
+    .month-nav{display:flex;flex-wrap:wrap;gap:6px;padding:6px 2px 12px}
+    .month-btn{padding:6px 15px;background:var(--peri);color:#000;border:none;border-radius:16px;font-family:inherit;font-weight:600;text-transform:uppercase;font-size:12px;letter-spacing:.08em;text-decoration:none;display:inline-block}
+    .month-btn:hover{background:var(--ice)} .month-btn.active{background:var(--gold)}
+    .stats{color:var(--dim);text-transform:uppercase;font-size:12px;letter-spacing:.12em;padding:0 4px 10px}
+    .stats span{color:var(--gold)}
+    .grid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
+    .card a{display:block;color:inherit} .card img{width:100%;height:auto;aspect-ratio:1;object-fit:cover;background:#111}
+    .card .meta{padding:9px 12px}
+    .card .filename{font-size:12px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase}
+    .card .timestamp{font-size:12px;color:var(--dim)}
+    #load-more-btn{background:var(--orange);color:#000;border:none;padding:12px 34px;border-radius:22px;font-family:inherit;font-weight:700;text-transform:uppercase;letter-spacing:.1em;cursor:pointer}
+  </style>
+</head>
+<body>
+  <div class="lcars">
+    <div class="rail">
+      <div class="cap"></div>
+      <a class="blk o" href="/">&#9666; W4EWB<small>Home</small></a>
+      <a class="blk p" href=".././">SSTV<small>RX</small></a>
+      <div class="blk l">FT-710<small>HF</small></div>
+      <a class="blk i" href="../latest.jpg">Latest<small>View RX</small></a>
+      <div class="railfill"></div>
+      <a class="blk g" href="https://www.qrz.com/db/W4EWB">QRZ<small>W4EWB</small></a>
+    </div>
+    <div class="col">
+      <div class="hdr"><span class="title">SSTV RX &middot; October 2026</span><span class="sub">W4EWB &middot; 1 images</span></div>
+      <div class="strip">Slow-scan TV received at W4EWB &middot; Louisville KY &middot; Yaesu FT-710 (MMSSTV) + hamsdr SDR ear on the band's SSTV calling frequency + ISS &amp; satellite SSTV (hamsdr, Diamond X30A). Tap an image for full size.</div>
+      <div class="content">
+      <nav class="month-nav">
+      <a class="month-btn" href=".././">Latest</a>
+      <a class="month-btn active" href="../m/2026-10.html">OCT 2026 <small>1</small></a>
+      <a class="month-btn" href="../m/2026-09.html">SEP 2026 <small>64</small></a>
+      <a class="month-btn" href="../m/2026-08.html">AUG 2026 <small>180</small></a>
+      <a class="month-btn" href="../m/2026-07.html">JUL 2026 <small>54</small></a>
+      <a class="month-btn" href="../m/2026-06.html">JUN 2026 <small>363</small></a>
+      <a class="month-btn" href="../m/2026-05.html">MAY 2026 <small>257</small></a>
+      <a class="month-btn" href="../m/2026-04.html">APR 2026 <small>617</small></a>
+      <a class="month-btn" href="../m/2026-03.html">MAR 2026 <small>192</small></a>
+      <a class="month-btn" href="../m/2026-02.html">FEB 2026 <small>1171</small></a>
+      </nav>
+      <div class="stats">Showing <span id="visible-count">0</span> of <span id="total-count">1</span> images</div>
+      <div class="grid" id="gallery">
+      <div class="card"><a href="../full/ISS-SSTV_20261002_223058_el61.jpg" target="_blank"><img src="../thumbs/ISS-SSTV_20261002_223058_el61.jpg" loading="lazy" width="240" height="240" alt="SSTV image received 2026-10-02 22:30"><div class="meta"><div class="filename">ISS-SSTV_20261002_223058_el61.jpg</div><div class="timestamp">2026-10-02 22:30</div></div></a></div>
+      </div>
+      <div id="load-more-container" style="text-align:center;padding:30px 20px;display:none;">
+        <button id="load-more-btn">Load More Images</button>
+        <p style="color:var(--dim);font-size:12px;margin-top:8px;text-transform:uppercase;letter-spacing:.1em">Or just keep scrolling</p>
+      </div>
+      </div>
+      <div class="foot">73 de W4EWB &middot; SSTV RX &middot; FT-710/MMSSTV + hamsdr SDR ear + satellites</div>
+    </div>
+  </div>
+  <script>
+    (function(){var B=60,cards=Array.prototype.slice.call(document.querySelectorAll('.card')),n=0,
+      c=document.getElementById('visible-count'),btn=document.getElementById('load-more-btn'),box=document.getElementById('load-more-container');
+      cards.forEach(function(x){x.style.display='none'});
+      function more(){var e=Math.min(n+B,cards.length);for(var i=n;i<e;i++)cards[i].style.display='';n=e;c.textContent=n;box.style.display=n>=cards.length?'none':'block'}
+      more();btn.addEventListener('click',more);
+      window.addEventListener('scroll',function(){if(window.innerHeight+window.scrollY>=document.body.offsetHeight-500&&n<cards.length)more()});
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,130 @@
+﻿<!doctype html><html lang=en><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<title>W4EWB</title>
+<link rel="stylesheet" href="/lcars.css">
+<style>
+/* ---- Station Activity: what the hamSDR Pi is doing right now ---- */
+#now{display:grid;grid-template-columns:200px 1fr 230px;gap:var(--gap);margin:0 0 14px;
+ background:var(--panel);border-radius:14px;overflow:hidden;border-left:8px solid var(--peri)}
+#now.rtty{border-left-color:var(--gold)}#now.ft8{border-left-color:#8d8}#now.listen{border-left-color:var(--peri)}
+#now.measure{border-left-color:var(--orange)}#now.tune{border-left-color:var(--lilac)}#now.off{border-left-color:#444}
+#nowMode{padding:16px 14px;display:flex;flex-direction:column;gap:6px;justify-content:center;border-right:1px solid #222}
+#nowMode .lbl{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+#nowMode .mode{font-size:22px;font-weight:800;text-transform:uppercase;line-height:1.05;color:var(--gold)}
+#now.ft8 #nowMode .mode{color:#8d8}#now.listen #nowMode .mode{color:var(--peri)}#now.measure #nowMode .mode{color:var(--orange)}
+#now.tune #nowMode .mode{color:var(--lilac)}#now.off #nowMode .mode{color:#777}
+#nowMode .band{font-size:14px;color:#fff;text-transform:uppercase;letter-spacing:.08em}
+#nowMode .dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#8d8;margin-right:6px;
+ box-shadow:0 0 6px #8d8;animation:pulse 1.6s infinite}
+#now.off #nowMode .dot{background:#555;box-shadow:none;animation:none}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+#nowLive{padding:12px 14px;min-width:0;display:flex;flex-direction:column;gap:6px;justify-content:center}
+#nowLive .h{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--orange)}
+#nowLive pre{margin:0;padding:8px 10px;background:#000;border-radius:10px;height:5.2em;overflow:hidden;
+ font:14px/1.3 ui-monospace,Menlo,Consolas,monospace;color:#ddd;white-space:pre-wrap;word-break:break-all}
+#nowLive pre b.call{color:var(--gold)}#nowLive pre b.cq{color:#8d8}
+#nowLive .tick{font-size:14px;line-height:1.45;color:#ddd}
+#nowLive .tick div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#nowLive .tick .call{color:var(--gold);font-weight:700}#nowLive .tick .cc{color:var(--dim)}#nowLive .tick .dist{color:var(--ice)}
+#nowLive .sub{font-size:12px;color:var(--dim)}
+#nowLive a{color:var(--orange);text-decoration:none;font-size:12px;text-transform:uppercase;letter-spacing:.1em;font-weight:700}
+#nowSide{border-left:1px solid #222;display:flex;flex-direction:column}
+#nowSide a{flex:1;display:block;padding:10px 14px;text-decoration:none;color:#ddd;border-bottom:1px solid #222}
+#nowSide a:last-child{border-bottom:0}
+#nowSide .k{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+#nowSide .v{font-size:15px;font-weight:700;color:#fff;margin-top:2px}
+#nowSide .v.rec{color:var(--red)}#nowSide .v.rec::before{content:"● ";animation:pulse 1s infinite}
+#nowSide .s{font-size:12px;color:var(--dim)}
+@media(max-width:900px){#now{grid-template-columns:1fr 1fr}#nowLive{grid-column:1/-1;border-top:1px solid #222}#nowSide{border-left:0}#nowSide a{padding:8px 14px}}
+@media(max-width:680px){#now{grid-template-columns:1fr}#nowMode{border-right:0;flex-direction:row;align-items:center;gap:12px;padding:12px 14px}#nowSide{flex-direction:row}#nowSide a{border-bottom:0;border-right:1px solid #222}}
+</style>
+</head><body>
+<div class=lcars>
+  <div class=rail>
+    <div class=cap></div>
+    <div class="blk o">W4EWB<small>NCC&middot;EM78</small></div>
+    <div class="blk l">Galleries<small>&#215;04</small></div>
+    <div class="blk p">hamSDR<small>RX Array</small></div>
+    <div class="blk s">home-beast<small>Ground Stn</small></div>
+    <div class="blk i">1701<small>Louisville</small></div>
+    <div class=railfill></div>
+    <div class="blk g">73<small>de W4EWB</small></div>
+  </div>
+  <div class=col>
+    <div class=hdr><span class=title>W4EWB</span><span class=sub>Ham Radio &middot; Grid EM78</span></div>
+    <div class=strip>Eric &middot; Louisville KY &middot; Live galleries from the hamSDR &amp; home-beast ground stations</div>
+    <div class="content hub">
+      <div id=now class=off>
+        <div id=nowMode><span class=lbl>Station activity &middot; hamSDR</span><span class=mode><span class=dot></span>Contacting&hellip;</span><span class=band></span></div>
+        <div id=nowLive><span class=sub>Checking what the Pi is doing&hellip;</span></div>
+        <div id=nowSide>
+          <a href="wx/"><div class=k>Satellites</div><div class=v id=satV>&mdash;</div><div class=s id=satS></div></a>
+          <a href="radar/"><div class=k>ADS-B</div><div class=v id=adsbV>&mdash;</div><div class=s id=adsbS>1090 MHz</div></a>
+        </div>
+      </div>
+      <div class=grid>
+        <a class=card href="goes/"><div class=cap2><div class=ic>&#128225;</div><div class=t>GOES-19 Full Disk</div><div class=d>Geostationary weather-satellite imagery decoded from 1694.1 MHz HRIT on home-beast.</div><div class=go>Open &#9656;</div></div></a>
+        <a class=card href="goes/forecast.html"><div class=cap2><div class=ic>&#127782;</div><div class=t>Louisville Weather</div><div class=d>Daily outlook built from our own satellite captures + surface obs from nearby APRS weather stations.</div><div class=go>Open &#9656;</div></div></a>
+        <a class=card href="wx/"><div class=cap2><div class=ic>&#127758;</div><div class=t>Meteor-M2 Archive</div><div class=d>Meteor-M2 LRPT weather-satellite images received on the hamSDR 137 MHz dipole, Jul&ndash;Sep 2026. That receiver is retired; the dish now does GOES.</div><div class=go>Open &#9656;</div></div></a>
+        <a class=card href="sstv/rx/"><div class=cap2><div class=ic>&#128250;</div><div class=t>SSTV Gallery</div><div class=d>Slow-scan TV images pulled off the HF bands &mdash; shack + hamSDR.</div><div class=go>Open &#9656;</div></div></a>
+        <a class=card href="radar/"><div class=cap2><div class=ic>&#9992;&#65039;</div><div class=t>Flight Radar</div><div class=d>Live ADS-B scope &mdash; every aircraft the station hears on 1090 MHz, sweeping in real time.</div><div class=go>Open &#9656;</div></div></a>
+        <a class=card href="ft8/"><div class=cap2><div class=ic>&#128246;</div><div class=t>FT8 Dashboard</div><div class=d>Live FT8 spots, QSOs, and worldwide reception from the station.</div><div class=go>Open &#9656;</div></div></a>
+        <a class=card href="rtty/"><div class=cap2><div class=ic>&#9000;</div><div class=t>RTTY &amp; PSK Skimmer</div><div class=d>Software skimmer decoding every RTTY and PSK31 signal in the sub-band at once &mdash; live text, calls, and QSO pairs.</div><div class=go>Open &#9656;</div></div></a>
+        <a class=card href="bulletins/"><div class=cap2><div class=ic>&#9993;</div><div class=t>Bulletins</div><div class=d>Official W1AW / ARRL bulletins copied off the air by the station&rsquo;s skimmer &mdash; full decoded text, errors and all.</div><div class=go>Open &#9656;</div></div></a>
+        <a class=card href="repeaters/"><div class=cap2><div class=ic>&#128251;</div><div class=t>Repeater Scanner</div><div class=d>Listen live to the Louisville-area 2 m and 70 cm repeaters &mdash; the station scans them and streams whichever one is active.</div><div class=go>Listen &#9656;</div></div></a>
+        <a class=card href="iss/"><div class=cap2><div class=ic>&#128752;</div><div class=t>Heard via the ISS</div><div class=d>APRS packets relayed by the International Space Station&rsquo;s digipeater, logged on every 2 m pass.</div><div class=go>Open &#9656;</div></div></a>
+        <a class=card href="https://hamclock.w4ewb.com"><div class=cap2><div class=ic>&#128336;</div><div class=t>HamClock</div><div class=d>Wall-display kiosk &mdash; grey line, band conditions, beacons, and satellite tracks.</div><div class=go>Open &#9656;</div></div></a>
+      </div>
+    </div>
+    <div class=foot>W4EWB &middot; Standing by on all frequencies &middot; 73</div>
+  </div>
+</div>
+<script>
+(function(){
+var R='https://nest.w4ewb.com/skyfeed/';
+var MODES={RTTY:['rtty','RTTY & PSK skimmer','Decoding every RTTY and PSK31 signal in the sub-band'],FT8:['ft8','FT8 monitor','Decoding FT8 traffic and reporting to PSK Reporter'],
+ LISTEN:['listen','Web SDR','Waterfall + audio on the private web SDR'],MEASURE:['measure','QRN sniffer','Hunting RFI with the relative noise meter'],
+ TUNE:['tune','Loop tuner','Peaking the magnetic loop'],IDLE:['off','Switching…','Between modes']};
+function esc(s){return String(s||'').replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})}
+function mark(t,calls){var h=esc(t).replace(/\bCQ\b/g,'<b class=cq>CQ</b>');(calls||[]).forEach(function(c){h=h.split(c).join('<b class=call>'+c+'</b>')});return h}
+function khz(hz){return (hz/1000).toFixed(1).replace(/\B(?=(\d{3})+(?!\d))/g,' ')}
+function get(u){return fetch(R+u,{cache:'no-store'}).then(function(r){return r.json()})}
+var now=document.getElementById('now'),modeEl=now.querySelector('.mode'),bandEl=now.querySelector('.band'),live=document.getElementById('nowLive');
+var cur=null;
+function setMode(cls,label,band){now.className=cls;modeEl.innerHTML='<span class=dot></span>'+esc(label);bandEl.textContent=band||''}
+function showRtty(j){if(!j||!j.updated){live.innerHTML='<span class=sub>Waiting for the skimmer feed…</span>';return}
+ if(j.band)bandEl.textContent=j.band;   // the skimmer's own band wins over the panel's remembered one
+ var sigs=(j.sigs||[]).filter(function(s){return s.chars>0}).sort(function(a,b){return a.last-b.last||b.snr-a.snr});
+ var s=sigs[0];var h='<span class=h>Live decode'+(sigs.length?' · '+khz(s.hz)+' kHz · '+Math.round(s.snr)+' dB':'')+'</span>';
+ h+=s?'<pre>'+mark(s.text,s.calls)+'</pre>':'<pre>listening on '+esc(j.band||'')+' — no RTTY on the band right now</pre>';
+ var q=(j.qsos||[])[0];h+='<span class=sub>'+(j.stats?j.stats.live:0)+' signal'+(j.stats&&j.stats.live==1?'':'s')+' on '+esc(j.band||'')+
+  (q?' · latest QSO <b>'+esc(q.calls.join(' ↔ '))+'</b>'+(q.exchange?' · '+esc(q.exchange):''):'')+' · <a href="rtty/">open RTTY live ▸</a></span>';
+ live.innerHTML=h;var p=live.querySelector('pre');if(p)p.scrollTop=p.scrollHeight}
+function showFt8(j){if(!j||!j.updated){live.innerHTML='<span class=sub>Waiting for the FT8 feed…</span>';return}
+ var f=(j.feed||[]).slice(0,5);var h='<span class=h>Latest decodes · '+(j.freq?(j.freq/1e6).toFixed(3)+' MHz':'')+'</span><div class=tick>';
+ h+=f.length?f.map(function(r){return '<div><span class=call>'+esc(r.de)+'</span>'+(r.to?' → <span class=call>'+esc(r.to)+'</span>':'')+
+  (r.de_c?' <span class=cc>'+esc(r.de_c)+'</span>':'')+(r.dist?' <span class=dist>'+Math.round(r.dist).toLocaleString()+' mi</span>':'')+(r.snr!=null?' <span class=cc>'+r.snr+' dB</span>':'')+'</div>'}).join(''):
+  '<div class=sub>nothing decoded this cycle</div>';
+ h+='</div><span class=sub>cycle '+(j.cycle||0)+' · '+(j.n||0)+' decodes · '+((j.records||{}).countries||0)+' countries · <a href="ft8/">open FT8 live ▸</a></span>';live.innerHTML=h}
+function showPlain(m){live.innerHTML='<span class=h>'+esc(m[1])+'</span><span class=sub>'+esc(m[2])+'</span>'}
+function sat(st){var v=document.getElementById('satV'),s=document.getElementById('satS');var x=st.sat||{};
+ if(x.capturing){v.className='v rec';v.textContent='Capturing '+(x.sat||'pass');s.textContent='recording now'}
+ else{var n=(x.next||[])[0];v.className='v';v.textContent=n?n.sat+' in '+(n.in_min<60?n.in_min+' min':Math.round(n.in_min/60)+' h'):'no passes soon';
+  s.textContent=n?'next pass · '+n.el+'° max':(x.last?'last: '+x.last.sat:'')}}
+function adsb(st){var a=st.adsb||{},n=a.planes||0,p=(a.pos!=null?a.pos:n);
+ // "in view" = has a decoded position (what the radar can plot); the rest are heard but not yet located
+ document.getElementById('adsbV').textContent=p+' aircraft';
+ document.getElementById('adsbS').textContent=p?'in view now'+(n>p?' · '+(n-p)+' more heard':''):(n?n+' heard, no position yet':'none in view')}
+function tick(){get('station.json').then(function(st){
+ var age=Math.floor(Date.now()/1000)-(st.updated||0);
+ if(!st.updated||age>90){cur='OFF';setMode('off','Off air','');live.innerHTML='<span class=sub>The hamSDR station is not reporting right now.</span>';return}
+ var m=MODES[st.mode]||MODES.IDLE;cur=st.mode;setMode(m[0],m[1],st.band?st.band+(st.vhflisten?' · VHF':''):'');sat(st);adsb(st);
+ if(st.mode==='RTTY')get('rtty.json').then(showRtty,function(){showRtty(null)});
+ else if(st.mode==='FT8')get('ft8.json').then(showFt8,function(){showFt8(null)});
+ else showPlain(m);
+}).catch(function(){setMode('off','Off air','');live.innerHTML='<span class=sub>Station feed unreachable.</span>'})}
+tick();setInterval(tick,5000);
+window.__now={showRtty:showRtty,showFt8:showFt8,setMode:setMode,MODES:MODES};   // dev hook for testing branches
+})();
+</script>
+</body></html>

@@ -1,0 +1,62 @@
+<!doctype html><html lang=en><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<title>W4EWB &middot; Bulletins</title>
+<link rel="stylesheet" href="/lcars.css">
+<style>
+.bul{background:var(--panel);border-radius:14px;padding:10px 14px 12px;margin:0 2px 12px;border-left:6px solid var(--gold)}
+.bul h2{margin:2px 0 4px;font-size:18px;color:#fff;letter-spacing:.02em}
+.meta{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px}
+.tag{font-size:11px;padding:2px 9px;border-radius:9px;background:#222;color:var(--ice);text-transform:uppercase;letter-spacing:.08em}
+.tag.m{background:var(--gold);color:#000;font-weight:700}
+.rx{font-size:12px;color:var(--dim);margin-bottom:6px}
+pre{margin:0;padding:10px 12px;background:#000;border-radius:10px;max-height:34em;overflow:auto;
+ font:14px/1.4 ui-monospace,Menlo,Consolas,monospace;color:#ddd;white-space:pre-wrap;word-break:break-word}
+pre b{color:var(--gold);font-weight:700}
+.tools{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.tools button{font:inherit;font-size:12px;text-transform:uppercase;letter-spacing:.08em;padding:5px 12px;border-radius:12px;border:0;background:var(--peri);color:#000;cursor:pointer}
+#empty{color:var(--dim);text-align:center;padding:26px 8px}
+</style></head><body>
+<div class=lcars>
+  <div class=rail>
+    <div class=cap></div>
+    <a class="blk o" href="/">&#9666; W4EWB<small>Home</small></a>
+    <div class="blk p">Bulletins<small>Off air</small></div>
+    <a class="blk l" href="/rtty/">RTTY &amp; PSK &#9656;<small>Skimmer</small></a>
+    <div class="blk s">hamSDR<small>RTL-SDR</small></div>
+    <div class="blk i">EM78<small>Louisville</small></div>
+    <div class=railfill></div>
+  </div>
+  <div class=col>
+    <div class=hdr><span class=title>Bulletins</span><span class=sub>copied off the air</span></div>
+    <div class=strip>Official bulletins received and decoded here by the station's own software skimmer, with no human in the loop. The text is exactly what came out of the decoder: the occasional dropped or wrong letter is real reception, fading and noise included.</div>
+    <div class=content>
+      <div id=list></div>
+      <div id=empty>Loading&hellip;</div>
+    </div>
+    <div class=foot>Receive-only &middot; RTL-SDR Blog V4 &middot; EM78 Louisville &middot; bulletins courtesy of ARRL / W1AW</div>
+  </div>
+</div>
+<script>
+function esc(s){return String(s||'').replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})}
+function utc(t){var d=new Date(t*1000);return d.toISOString().slice(0,16).replace('T',' ')+'Z'}
+function local(t){return new Date(t*1000).toLocaleString([], {weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}
+function mhz(hz){return (hz/1e6).toFixed(4)}
+function render(b){
+ var mins=Math.max(1,Math.round((b.end-b.start)/60));
+ var text=esc(b.text).replace(/\b(W1AW|QST|ZCZC|NNNN)\b/g,'<b>$1</b>');
+ return '<div class=bul id="'+esc(b.id)+'"><h2>'+esc(b.title)+'</h2>'+
+  '<div class=meta><span class="tag m">'+esc(b.mode)+'</span><span class=tag>'+esc(b.band)+' &middot; '+mhz(b.hz)+' MHz</span>'+
+  '<span class=tag>'+utc(b.start)+'</span><span class=tag>'+mins+' min &middot; '+b.chars+' chars</span></div>'+
+  '<div class=rx>From '+esc(b.via)+' &middot; received '+esc(local(b.start))+' your time &middot; '+esc(b.receiver)+'</div>'+
+  '<pre>'+text+'</pre>'+
+  '<div class=tools><button data-id="'+esc(b.id)+'">Copy text</button></div></div>'}
+fetch('bulletins.json',{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){
+ var list=(j.bulletins||[]).slice().sort(function(a,b){return b.start-a.start});
+ document.getElementById('list').innerHTML=list.map(render).join('');
+ document.getElementById('empty').style.display=list.length?'none':'';
+ if(!list.length)document.getElementById('empty').textContent='No bulletins copied yet.';
+ Array.prototype.forEach.call(document.querySelectorAll('.tools button'),function(btn){btn.onclick=function(){
+  var b=list.filter(function(x){return x.id===btn.dataset.id})[0];
+  navigator.clipboard.writeText(b.text).then(function(){btn.textContent='Copied';setTimeout(function(){btn.textContent='Copy text'},1500)})}});
+}).catch(function(){document.getElementById('empty').textContent='Could not load bulletins.'});
+</script></body></html>
