@@ -102,7 +102,7 @@ var FEED='https://nest.w4ewb.com/skyfeed/';
 var au=document.getElementById('au'),btn=document.getElementById('play'),playing=false,avail=false;
 var nrBtn=document.getElementById('nr'),nr=false,nrAvail=false;try{nr=localStorage.getItem('rptNr')==='1'}catch(e){}
 function streamUrl(){return FEED+(nr&&nrAvail?'rpt-nr.mp3':'rpt.mp3')+'?t='+Date.now()}
-function drawNr(){nrBtn.classList.toggle('on',nr&&nrAvail);nrBtn.innerHTML='Denoise<small>'+(nr&&nrAvail?'on':'off')+'</small>';nrBtn.style.display=nrAvail?'':'none'}
+function drawNr(){nrBtn.classList.toggle('on',nr&&nrAvail);nrBtn.innerHTML='Denoise<small>'+(nr&&nrAvail?'on':'off')+'</small>';nrBtn.style.display=nrAvail?'inline-block':'none'}
 nrBtn.onclick=function(){nr=!nr;try{localStorage.setItem('rptNr',nr?'1':'0')}catch(e){}drawNr();if(playing){au.src=streamUrl();au.play().catch(function(){stop()})}};
 function esc(s){return String(s==null?'':s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})}
 function mhz(hz){return hz?(hz/1e6).toFixed(3)+' MHz':''}
