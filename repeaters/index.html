@@ -12,6 +12,9 @@
 #play{width:74px;height:74px;border-radius:50%;border:0;background:var(--orange);color:#000;font-size:30px;font-weight:700;cursor:pointer;flex:none}
 #play.on{background:var(--gold)}
 #play:disabled{background:#333;color:#777;cursor:default}
+#nr{border:0;border-radius:14px;padding:6px 14px;font:inherit;font-size:12px;letter-spacing:.08em;text-transform:uppercase;background:#222;color:var(--dim);cursor:pointer;margin-top:8px;display:none}
+#nr.on{background:var(--gold);color:#000}
+#nr small{display:block;font-size:10px;letter-spacing:0;text-transform:none;opacity:.8}
 #np{flex:1;min-width:180px}
 #np .lab{font-size:28px;font-weight:700;color:#fff;line-height:1.1}
 #np .frq{color:var(--ice);font-size:15px;margin-top:3px}
@@ -78,7 +81,7 @@ h2{color:var(--orange);font-size:14px;text-transform:uppercase;letter-spacing:.1
     <div class=strip>The station's software-defined radio scans the Louisville-area 2 m and 70 cm amateur repeaters, stops on whichever one is active, and streams it here. Listen-only. The audio runs a few seconds behind the air.</div>
     <div class=content>
       <div id=now>
-        <button id=play aria-label="Listen">&#9654;</button>
+        <div><button id=play aria-label="Listen">&#9654;</button><button id=nr title="RNNoise AI denoiser on the Pi">Denoise<small>off</small></button></div>
         <div id=np><div class=lab id=lab>&hellip;</div><div class=frq id=frq></div><div class=st id=st>Loading</div></div>
       </div>
       <div id=note class=note style=display:none></div>
@@ -97,11 +100,15 @@ h2{color:var(--orange);font-size:14px;text-transform:uppercase;letter-spacing:.1
 <script>
 var FEED='https://nest.w4ewb.com/skyfeed/';
 var au=document.getElementById('au'),btn=document.getElementById('play'),playing=false,avail=false;
+var nrBtn=document.getElementById('nr'),nr=false,nrAvail=false;try{nr=localStorage.getItem('rptNr')==='1'}catch(e){}
+function streamUrl(){return FEED+(nr&&nrAvail?'rpt-nr.mp3':'rpt.mp3')+'?t='+Date.now()}
+function drawNr(){nrBtn.classList.toggle('on',nr&&nrAvail);nrBtn.innerHTML='Denoise<small>'+(nr&&nrAvail?'on':'off')+'</small>';nrBtn.style.display=nrAvail?'':'none'}
+nrBtn.onclick=function(){nr=!nr;try{localStorage.setItem('rptNr',nr?'1':'0')}catch(e){}drawNr();if(playing){au.src=streamUrl();au.play().catch(function(){stop()})}};
 function esc(s){return String(s==null?'':s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})}
 function mhz(hz){return hz?(hz/1e6).toFixed(3)+' MHz':''}
 function hm(t){return new Date(t*1000).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}
 function dur(s){s=Math.max(1,Math.round(s));return s<60?s+' s':Math.floor(s/60)+' min '+(s%60)+' s'}
-function start(){au.src=FEED+'rpt.mp3?t='+Date.now();au.play().catch(function(){stop()});playing=true;btn.classList.add('on');btn.innerHTML='&#9632;';btn.setAttribute('aria-label','Stop')}
+function start(){au.src=streamUrl();au.play().catch(function(){stop()});playing=true;btn.classList.add('on');btn.innerHTML='&#9632;';btn.setAttribute('aria-label','Stop')}
 function stop(){au.pause();au.removeAttribute('src');au.load();playing=false;btn.classList.remove('on');btn.innerHTML='&#9654;';btn.setAttribute('aria-label','Listen')}
 btn.onclick=function(){if(playing)stop();else if(avail)start()};
 au.onerror=function(){if(playing){stop()}};
@@ -174,6 +181,7 @@ function show(j){
  var now=document.getElementById('now'),lab=document.getElementById('lab'),frq=document.getElementById('frq'),st=document.getElementById('st'),note=document.getElementById('note');
  var chs=j.channels||[];
  avail=!off&&j.state!=='paused';
+ nrAvail=!!(j.denoise&&j.audio_nr);drawNr();
  btn.disabled=!avail&&!playing;
  note.style.display='none';
  if(off){now.className='';lab.textContent='Scanner off';frq.textContent='';st.textContent='The station owner switches it on from the shack';if(playing)stop()}
