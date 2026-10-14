@@ -1,6 +1,29 @@
 {
- "updated": 1791977432.129466,
+ "updated": 1792000862.8265574,
  "passes": [
+  {
+   "base": "ISS_20261014_175427_el67",
+   "start": 1792000443.624547,
+   "max_el": 67,
+   "count": 3,
+   "packets": [
+    {
+     "src": "K9JKM",
+     "path": "CQ,RS0ISS*",
+     "info": "CQ Live op in EN52 IL"
+    },
+    {
+     "src": "RS0ISS",
+     "path": "0P0PS5,APRSAT",
+     "info": "'v&<0x1c>l <0x1c>SI]ARISS-International Space Station=<0x0d>"
+    },
+    {
+     "src": "K9JKM",
+     "path": "CQ,RS0ISS*",
+     "info": "CQ Live op in EN52 IL"
+    }
+   ]
+  },
   {
    "base": "ISS_20261014_112345_el84",
    "start": 1791977002.075891,
@@ -135,8 +158,8 @@
   }
  ],
  "stats": {
-  "passes": 18,
-  "packets": 1,
-  "stations": 1
+  "passes": 19,
+  "packets": 4,
+  "stations": 2
  }
 }
