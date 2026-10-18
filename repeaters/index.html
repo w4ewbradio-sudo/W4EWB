@@ -20,7 +20,14 @@
 #play.on{background:var(--gold)}
 #play:disabled{background:#333;color:#777;cursor:default}
 #nr{border:0;border-radius:14px;padding:6px 14px;font:inherit;font-size:12px;letter-spacing:.08em;text-transform:uppercase;background:#222;color:var(--dim);cursor:pointer;margin-top:8px;display:none}
-#nr.on,#chime.on{background:var(--gold);color:#000}
+#nr.on,#chime.on,#ll.on{background:var(--gold);color:#000}
+#ll{border:0;border-radius:14px;padding:6px 14px;font:inherit;font-size:12px;letter-spacing:.08em;text-transform:uppercase;background:#222;color:var(--dim);cursor:pointer;margin:8px 0 0 6px;display:none}
+#ll small{display:block;font-size:10px;letter-spacing:0;text-transform:none;opacity:.8}
+#help{background:var(--panel);border-radius:14px;padding:8px 14px;margin:8px 2px;color:var(--ice);font-size:14px;line-height:1.45}
+#help summary{cursor:pointer;color:var(--orange);font-size:13px;text-transform:uppercase;letter-spacing:.1em;padding:2px 0}
+#help dl{margin:8px 0 4px}
+#help dt{color:#fff;font-weight:700;margin-top:8px}
+#help dd{margin:2px 0 0 0;color:var(--ice)}
 #chime{border:0;border-radius:14px;padding:6px 14px;font:inherit;font-size:12px;letter-spacing:.08em;text-transform:uppercase;background:#222;color:var(--dim);cursor:pointer;margin:8px 0 0 6px}
 #chime small{display:block;font-size:10px;letter-spacing:0;text-transform:none;opacity:.8}
 #nr small{display:block;font-size:10px;letter-spacing:0;text-transform:none;opacity:.8}
@@ -87,12 +94,22 @@ h2{color:var(--orange);font-size:14px;text-transform:uppercase;letter-spacing:.1
   </div>
   <div class=col>
     <div class=hdr><span class=title>Repeater Scanner</span><span class=sub>Louisville area &middot; listen live</span></div>
-    <div class=strip>The station's software-defined radio scans the Louisville-area 2 m and 70 cm amateur repeaters, stops on whichever one is active, and streams it here. Listen-only. The audio runs a few seconds behind the air.</div>
+    <div class=strip>The station's software-defined radio scans the Louisville-area 2 m and 70 cm amateur repeaters, stops on whichever one is active, and streams it here. Listen-only. The audio runs a few seconds behind the air, or about half a second with Low latency on.</div>
     <div class=content>
       <div id=now>
-        <div><button id=play aria-label="Listen">&#9654;</button><button id=nr title="RNNoise AI denoiser on the Pi">Denoise<small>off</small></button><button id=chime title="Ping when a repeater keys up">Chime<small>off</small></button></div>
+        <div><button id=play aria-label="Listen">&#9654;</button><button id=nr title="RNNoise AI denoiser on the Pi">Denoise<small>off</small></button><button id=chime title="Ping when a repeater keys up">Chime<small>off</small></button><button id=ll title="Raw audio, about half a second behind the air">Low latency<small>off</small></button></div>
         <div id=np><div class=lab id=lab>&hellip;</div><div class=frq id=frq></div><div class=st id=st>Loading</div></div>
       </div>
+      <details id=help><summary>What do these buttons do?</summary><dl>
+        <dt>&#9654; Listen</dt>
+        <dd>Plays whichever repeater the scanner has stopped on. Between transmissions you'll hear silence while it keeps scanning.</dd>
+        <dt>Low latency</dt>
+        <dd>Normally the audio comes as a compressed stream that your browser buffers, so you hear things a few seconds after they happen. Low latency sends raw audio and plays it right away, about half a second behind the air. It uses about four times the data (roughly 60 MB an hour instead of 15) and stops if your phone locks or you switch apps, so leave it off for pocket listening. It may take a few seconds to start.</dd>
+        <dt>Denoise</dt>
+        <dd>Runs the audio through RNNoise, an AI noise filter on the station's Raspberry Pi. It takes out hiss and static, which helps most on weak, noisy signals. Voices can sound a little processed, and a very weak signal can drop out. Works with or without Low latency.</dd>
+        <dt>Chime</dt>
+        <dd>Plays a short ping when a repeater comes on the air, so you can leave the page open without listening. Your browser needs one tap on the page before it will make a sound.</dd>
+      </dl></details>
       <div id=note class=note style=display:none></div>
       <h2>Channels scanned</h2>
       <div id=vt><button id=vgrid class=on>Grid</button><button id=vmap>Map</button></div>
@@ -112,7 +129,36 @@ var au=document.getElementById('au'),btn=document.getElementById('play'),playing
 var nrBtn=document.getElementById('nr'),nr=false,nrAvail=false;try{nr=localStorage.getItem('rptNr')==='1'}catch(e){}
 function streamUrl(){return FEED+(nr&&nrAvail?'rpt-nr.mp3':'rpt.mp3')+'?t='+Date.now()}
 function drawNr(){nrBtn.classList.toggle('on',nr&&nrAvail);nrBtn.innerHTML='Denoise<small>'+(nr&&nrAvail?'on':'off')+'</small>';nrBtn.style.display=nrAvail?'inline-block':'none'}
-nrBtn.onclick=function(){nr=!nr;try{localStorage.setItem('rptNr',nr?'1':'0')}catch(e){}drawNr();if(playing){au.src=streamUrl();au.play().catch(function(){stop()})}};
+nrBtn.onclick=function(){nr=!nr;try{localStorage.setItem('rptNr',nr?'1':'0')}catch(e){}drawNr();if(playing){stop();start()}};
+// Low latency (2026-10-18): raw 8 kHz int16 from the relay played through WebAudio
+// ~0.15 s ahead; an <audio> MP3 buffers seconds. The Pi uploads it only while
+// someone is listening, so the first audio can take a few seconds.
+var llBtn=document.getElementById('ll'),ll=false,llAvail=false,llCtx=null,llAbort=null,llRetry=null;
+try{ll=localStorage.getItem('rptLL')==='1'}catch(e){}
+function drawLl(){llBtn.classList.toggle('on',ll&&llAvail);llBtn.innerHTML='Low latency<small>'+(ll&&llAvail?'on':'off')+'</small>';llBtn.style.display=llAvail?'inline-block':'none'}
+llBtn.onclick=function(){ll=!ll;try{localStorage.setItem('rptLL',ll?'1':'0')}catch(e){}drawLl();if(playing){stop();start()}};
+function llStart(){
+ try{if(navigator.audioSession)navigator.audioSession.type='playback'}catch(e){}   // iPhone: play through the silent switch
+ var AC=window.AudioContext||window.webkitAudioContext;llCtx=new AC();llCtx.resume();
+ var ctx=llCtx,ab=new AbortController(),nextT=0,odd=null,up=ctx.sampleRate/8000;llAbort=ab;
+ fetch(FEED+(nr&&nrAvail?'rpt-nr.pcm':'rpt.pcm')+'?t='+Date.now(),{signal:ab.signal,cache:'no-store'}).then(function(r){
+  if(!r.ok||!r.body)throw new Error('http '+r.status);
+  var rd=r.body.getReader();
+  function pump(){return rd.read().then(function(x){
+   if(ab.signal.aborted)return;
+   if(x.done)return llLost();
+   var b=x.value;if(odd){var m=new Uint8Array(b.length+1);m[0]=odd[0];m.set(b,1);b=m;odd=null}
+   if(b.length%2){odd=b.slice(b.length-1);b=b.slice(0,b.length-1)}
+   var n=b.length/2;
+   if(n){var i16=new Int16Array(b.buffer.slice(b.byteOffset,b.byteOffset+b.length)),k=Math.floor(n*up),
+     buf=ctx.createBuffer(1,k,ctx.sampleRate),ch=buf.getChannelData(0);          // resample: WebKit may refuse 8 kHz buffers
+    for(var j=0;j<k;j++){var t=j/up,i=t|0,a=i16[i],c=i+1<n?i16[i+1]:a;ch[j]=(a+(c-a)*(t-i))/32768}
+    var now=ctx.currentTime;if(nextT<now+0.03)nextT=now+0.15;                  // start / underrun: small lead
+    if(nextT<=now+0.6){var s=ctx.createBufferSource();s.buffer=buf;s.connect(ctx.destination);s.start(nextT);nextT+=buf.duration}}  // else drop: stay near live
+   return pump()})}
+  return pump()}).catch(function(){if(!ab.signal.aborted)llLost()})}
+function llLost(){llStop();if(playing&&ll)llRetry=setTimeout(function(){llRetry=null;if(playing&&ll&&avail)llStart();else if(playing&&!avail)stop()},2000)}
+function llStop(){clearTimeout(llRetry);llRetry=null;if(llAbort)llAbort.abort();if(llCtx)try{llCtx.close()}catch(e){}llAbort=llCtx=null}
 function esc(s){return String(s==null?'':s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})}
 function mhz(hz){return hz?(hz/1e6).toFixed(3)+' MHz':''}
 function hm(t){return new Date(t*1000).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}
@@ -130,8 +176,8 @@ drawChime();
 function mediaInfo(title,sub){if(!('mediaSession' in navigator))return;try{navigator.mediaSession.metadata=new MediaMetadata({title:title,artist:sub,album:'W4EWB Repeater Scanner',
  artwork:[{src:'/icon-192.png',sizes:'192x192',type:'image/png'},{src:'/icon-512.png',sizes:'512x512',type:'image/png'}]})}catch(e){}}
 if('mediaSession' in navigator){try{navigator.mediaSession.setActionHandler('play',function(){if(avail)start()});navigator.mediaSession.setActionHandler('pause',stop);navigator.mediaSession.setActionHandler('stop',stop)}catch(e){}}
-function start(){au.src=streamUrl();au.play().catch(function(){stop()});playing=true;btn.classList.add('on');btn.innerHTML='&#9632;';btn.setAttribute('aria-label','Stop')}
-function stop(){au.pause();au.removeAttribute('src');au.load();playing=false;btn.classList.remove('on');btn.innerHTML='&#9654;';btn.setAttribute('aria-label','Listen')}
+function start(){if(ll&&llAvail)llStart();else{au.src=streamUrl();au.play().catch(function(){stop()})}playing=true;btn.classList.add('on');btn.innerHTML='&#9632;';btn.setAttribute('aria-label','Stop')}
+function stop(){llStop();au.pause();au.removeAttribute('src');au.load();playing=false;btn.classList.remove('on');btn.innerHTML='&#9654;';btn.setAttribute('aria-label','Listen')}
 btn.onclick=function(){if(playing)stop();else if(avail)start()};
 au.onerror=function(){if(playing){stop()}};
 au.onended=function(){if(playing){stop()}};
@@ -204,6 +250,7 @@ function show(j){
  var chs=j.channels||[];
  avail=!off&&j.state!=='paused';
  nrAvail=!!(j.denoise&&j.audio_nr);drawNr();
+ llAvail=!!j.ll;drawLl();
  btn.disabled=!avail&&!playing;
  note.style.display='none';
  if(off){now.className='';lab.textContent='Scanner off';frq.textContent='';st.textContent='The station owner switches it on from the shack';if(playing)stop()}
@@ -221,7 +268,7 @@ function show(j){
  var onAir=(!off&&j.label&&j.live)?j.label:null;
  if(onAir&&onAir!==lastOnAir&&!firstPoll)ping();
  lastOnAir=onAir;firstPoll=false;
- if(!off){var nl=(j.listeners||0)+(j.listeners_nr||0);st.textContent+=' \u00b7 '+nl+' listening'+(nl===1?'':'')}
+ if(!off){var nl=(j.listeners||0)+(j.listeners_nr||0)+(j.listeners_ll||0)+(j.listeners_llnr||0);st.textContent+=' \u00b7 '+nl+' listening'+(nl===1?'':'')}
  mediaInfo(onAir?onAir+' \u00b7 '+mhz(j.hz):(off?'Scanner off':(j.state==='paused'?'Paused for a satellite pass':'Scanning')),onAir?'on air':'Louisville repeaters');
  if(view==='map')updateMap(chs,j,off,heard,now);
  var hs=j.hits||[];
