@@ -230,7 +230,7 @@ function faction(fl,hx){var f=(fl||'').trim().toUpperCase();if((hx||'').toLowerC
  return CARGO.some(function(x){return f.indexOf(x)===0})?'klingon':'fed'}
 function shade(fac,alt){var t=Math.max(0,Math.min(1,(typeof alt==='number'?alt:20000)/40000)),lo=SHADES[fac][0],hi=SHADES[fac][1];
  return 'rgb('+[0,1,2].map(function(i){return Math.round(lo[i]+(hi[i]-lo[i])*t)}).join(',')+')'}
-var SU=.42;function SP(f,r){return (r*SU).toFixed(2)+' '+(-f*SU).toFixed(2)}
+var SU=.58;function SP(f,r){return (r*SU).toFixed(2)+' '+(-f*SU).toFixed(2)}
 function shipSvg(fac){if(fac==='military'){var q=(5*SU).toFixed(2),i=(5*SU*.46).toFixed(2);
   return '<rect x="-'+q+'" y="-'+q+'" width="'+2*q+'" height="'+2*q+'" fill="currentColor"/><rect x="-'+i+'" y="-'+i+'" width="'+2*i+'" height="'+2*i+'" fill="none" stroke="#1e0606" stroke-width=".3"/>'}
  if(fac==='klingon')return '<path d="M'+KLINGON.map(function(p){return SP(p[0],p[1])}).join('L')+'Z" fill="currentColor"/>';
