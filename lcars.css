@@ -23,7 +23,7 @@ button{font:inherit;cursor:pointer}
 .up{text-transform:uppercase}
 :focus-visible{outline:2px solid #fff;outline-offset:2px}
 @keyframes pulse{0%,100%{opacity:.2}50%{opacity:1}}
-@media(prefers-reduced-motion:reduce){.dot::after,.live,.stat i{animation:none!important}}
+@media(prefers-reduced-motion:reduce){.dot::after,.livedot,.stat i{animation:none!important}}
 
 /* ---- 2 shell: elbow rail + main column -------------------------------- */
 .shell,.lcars{display:flex;flex-wrap:wrap;gap:var(--gap);padding:10px;min-height:100vh;max-width:1400px;margin:0 auto;align-items:stretch}
@@ -68,8 +68,8 @@ button{font:inherit;cursor:pointer}
 .val span,.val small{font-size:13px;color:var(--dim);letter-spacing:.12em;font-weight:400;text-transform:uppercase}
 .sub{color:var(--dim);font-size:12px;letter-spacing:.08em;text-transform:uppercase}
 .prose{color:var(--text-mid);font-size:13.5px;line-height:1.5;letter-spacing:.03em}
-.live{display:inline-block;width:14px;height:14px;border-radius:50%;background:var(--gold);box-shadow:0 0 12px var(--glow);animation:pulse 1.6s ease-in-out infinite;flex:none}
-.live.off{background:#4d4d70;box-shadow:none;animation:none}
+.livedot{display:inline-block;width:14px;height:14px;border-radius:50%;background:var(--gold);box-shadow:0 0 12px var(--glow);animation:pulse 1.6s ease-in-out infinite;flex:none}
+.livedot.off{background:#4d4d70;box-shadow:none;animation:none}
 .modeline{display:flex;align-items:center;gap:10px}.modeline .val{font-size:34px}
 
 .ladder{display:flex;flex-direction:column;gap:5px}
