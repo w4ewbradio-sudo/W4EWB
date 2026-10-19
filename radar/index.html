@@ -25,9 +25,10 @@
   </div>
   <div class=col>
     <div class=hdr><span class=title>Flight Radar</span><span class=sub>ADS-B &middot; live</span></div>
-    <div class=strip>Aircraft heard on 1090 MHz at the station &mdash; live, ~10 second updates &mdash; low &amp; slow glows orange, cruise runs ice-blue</div>
+    <div class=strip>Aircraft heard on 1090 MHz at the station &mdash; live, ~10 second updates &mdash; Federation ships, Klingon freighters, Borg cubes; brighter means higher</div>
     <div class=content>
       <div id=scopewrap><svg id=scope viewBox="0 0 200 200"></svg></div>
+      <div id=shiplegend style="text-align:center;font-size:12px;letter-spacing:.08em;color:var(--dim);margin:2px 0 6px"><span style="color:rgb(150,190,240)">&#9650; Federation</span> &nbsp; <span style="color:rgb(130,225,120)">&#9650; Klingon (cargo)</span> &nbsp; <span style="color:rgb(255,90,74)">&#9632; Borg (military)</span><br><span style="opacity:.75">dim = low altitude &middot; bright = high</span></div>
       <div id=stale>Feed stale &mdash; station may be offline</div>
       <div id=strip>
         <div class=stat><b id=nAll>&ndash;</b><span>aircraft</span></div>
@@ -64,11 +65,30 @@ var gSweep=el('g',{});
  el('line',{x1:100,y1:100,x2:100,y2:4,stroke:'#fc6','stroke-width':.9,opacity:.9},gSweep);
 })();
 var gTrails=el('g',{}),gPlanes=el('g',{});
-function altColor(alt){
- var f=Math.max(0,Math.min(1,(typeof alt==='number'?alt:20000)/40000));
- // LCARS hues: low = orange #f96, cruise = ice #9cf
- return f<0.5?'#f96':(f<0.8?'#fc6':'#9cf');
-}
+// Star Trek contacts, matching the hamSDR Pi console (2026-10-19): cargo = Klingon
+// Bird-of-Prey (green), US military = Borg cube (red), everyone else = Federation
+// saucer (blue). Dim = low altitude, bright = cruise.
+var KLINGON=[[8,0],[3,1.5],[-3,9],[-6,4],[-4,1.4],[-7,0],[-4,-1.4],[-6,-4],[-3,-9],[3,-1.5]];
+var FED_LO=[80,120,175],FED_HI=[195,224,255],KLI_LO=[78,150,66],KLI_HI=[185,255,150],MIL_LO=[150,36,36],MIL_HI=[255,100,80];
+var CARGO=['UPS','FDX','GTI','ABX','CKS','KFS','GEC','BOX','CLX','ATN','BCS','DHK','DAE','NCR','PAC','SOO','ICL','CJT'];
+var MILC=['RCH','CNV','SPAR','PAT','EVAC','BOLT','GRIM','DOOM','SLAM'];
+function faction(fl,hx){var f=(fl||'').trim().toUpperCase(),h=(hx||'').toLowerCase();
+ if(h.indexOf('ae')===0||MILC.some(function(x){return f.indexOf(x)===0}))return 'military';   // AE##### = US military ICAO block
+ if(CARGO.some(function(x){return f.indexOf(x)===0}))return 'klingon';return 'fed';}
+function altColor(alt,fac){var f=Math.max(0,Math.min(1,(typeof alt==='number'?alt:20000)/40000)),
+ lo=fac==='klingon'?KLI_LO:fac==='military'?MIL_LO:FED_LO,hi=fac==='klingon'?KLI_HI:fac==='military'?MIL_HI:FED_HI;
+ return 'rgb('+[0,1,2].map(function(i){return Math.round(lo[i]+(hi[i]-lo[i])*f)}).join(',')+')';}
+// ship outlines in "forward/right" units (forward = up before the track rotation); 1 unit = .62 scope units
+var SU=.62;function P(f,r){return (r*SU).toFixed(2)+' '+(-f*SU).toFixed(2)}
+function buildShip(g,fac){g.innerHTML='';
+ if(fac==='military'){var q=5*SU,i=q*.46;
+  el('rect',{x:-q,y:-q,width:2*q,height:2*q,fill:'currentColor',stroke:'#1e0606','stroke-width':.35},g);
+  el('rect',{x:-i,y:-i,width:2*i,height:2*i,fill:'none',stroke:'#1e0606','stroke-width':.35},g);
+  el('path',{d:'M'+(-q)+' 0H'+q+'M0 '+(-q)+'V'+q,stroke:'#1e0606','stroke-width':.35},g);}
+ else if(fac==='klingon'){el('path',{d:'M'+KLINGON.map(function(p){return P(p[0],p[1])}).join('L')+'Z',fill:'currentColor',stroke:'#061408','stroke-width':.35},g);}
+ else{el('path',{d:'M'+P(1,0)+'L'+P(-6,0),stroke:'currentColor','stroke-width':2.4*SU,'stroke-linecap':'round'},g);
+  [1,-1].forEach(function(sg){el('path',{d:'M'+P(-1,3.2*sg)+'L'+P(-7,3.6*sg),stroke:'currentColor','stroke-width':3.4*SU,'stroke-linecap':'round'},g)});
+  el('circle',{cx:0,cy:(-3.5*SU).toFixed(2),r:(4.6*SU).toFixed(2),fill:'currentColor',stroke:'#0a1622','stroke-width':.35},g);}}
 var craft={},lastUpdated=0;
 function planePos(p){var r=Math.min(p.dist,60)/60*96,a=(p.brg-90)*Math.PI/180;
  return [100+r*Math.cos(a),100+r*Math.sin(a)];}
@@ -82,12 +102,13 @@ function updateRadar(list){
   if(!c){
    c=craft[id]={x:tgt[0],y:tgt[1],fx:tgt[0],fy:tgt[1],t0:now,flash:0,trail:[]};
    c.g=el('g',{},gPlanes);
-   c.body=el('path',{d:'M0 -3.4 L2.3 3 L0 1.5 L-2.3 3 Z'},c.g);
+   c.body=el('g',{},c.g);c.fac=null;
    c.lab=el('text',{'font-size':4.6},gPlanes);
    c.tg=el('g',{},gTrails);
   }
   c.sx=c.x;c.sy=c.y;c.fx=tgt[0];c.fy=tgt[1];c.t0=now;
-  c.track=p.track||0;c.col=altColor(p.alt);c.flight=p.flight||'';
+  var fac=faction(p.flight,p.hex);if(fac!==c.fac){c.fac=fac;buildShip(c.body,fac);}
+  c.track=p.track||0;c.col=altColor(p.alt,fac);c.flight=p.flight||'';
   c.trail.push(tgt);if(c.trail.length>7)c.trail.shift();
   c.tg.innerHTML='';
   c.trail.forEach(function(t,i){
@@ -119,11 +140,10 @@ function frame(){
   if(d<2||d>358)c.flash=1;
   c.flash*=0.95;
   var glow=Math.min(1,.55+c.flash*.45);
-  c.g.setAttribute('transform','translate('+c.x+' '+c.y+') rotate('+c.track+')');
-  c.body.setAttribute('fill',c.col);c.body.setAttribute('opacity',glow);
-  if(c.flash>0.5)c.body.setAttribute('stroke','#fff');
-  else c.body.removeAttribute('stroke');
-  c.lab.setAttribute('x',c.x+4);c.lab.setAttribute('y',c.y+2);
+  c.g.setAttribute('transform','translate('+c.x+' '+c.y+')'+(c.fac==='military'?'':' rotate('+c.track+')'));   // the cube has no heading
+  c.body.style.color=c.col;c.body.setAttribute('opacity',glow);
+  c.body.style.filter='drop-shadow(0 0 '+(c.flash>0.5?1.6:.8)+'px '+c.col+')';
+  c.lab.setAttribute('x',c.x+6);c.lab.setAttribute('y',c.y+2);
   c.lab.setAttribute('fill',c.col);c.lab.setAttribute('opacity',glow);
   c.lab.textContent=c.flight;
  });
