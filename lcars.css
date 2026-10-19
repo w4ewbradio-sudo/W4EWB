@@ -154,19 +154,19 @@ button{font:inherit;cursor:pointer}
 .t small{font-size:10px;color:var(--dim);letter-spacing:.06em;text-transform:none;font-weight:400}
 .btns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
 .modes{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
-.m{border:0;border-radius:12px;background:var(--field);color:var(--ink);font-weight:700;font-size:15px;letter-spacing:.1em;text-transform:uppercase;min-height:56px;
+.msw{border:0;border-radius:12px;background:var(--field);color:var(--ink);font-weight:700;font-size:15px;letter-spacing:.1em;text-transform:uppercase;min-height:56px;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
-.m small{font-size:10px;letter-spacing:.08em;text-transform:none;font-weight:400;color:var(--dim)}
-.m:hover{filter:brightness(1.2)}
-.m.on{color:#000;background:var(--gold);box-shadow:inset 0 0 0 2px #fff}.m.on small{color:#000}
-.m.listen.on{background:var(--peri)}.m.measure.on{background:var(--orange)}.m.ft8.on{background:var(--gold)}.m.rtty.on{background:var(--peach)}.m.tune.on{background:var(--ice)}
+.msw small{font-size:10px;letter-spacing:.08em;text-transform:none;font-weight:400;color:var(--dim)}
+.msw:hover{filter:brightness(1.2)}
+.msw.on{color:#000;background:var(--gold);box-shadow:inset 0 0 0 2px #fff}.msw.on small{color:#000}
+.msw.listen.on{background:var(--peri)}.msw.measure.on{background:var(--orange)}.msw.ft8.on{background:var(--gold)}.msw.rtty.on{background:var(--peach)}.msw.tune.on{background:var(--ice)}
 .bands{display:flex;gap:6px}
 .b{flex:1;border:1px solid var(--line);border-radius:10px;background:#000;color:var(--lilac);font-weight:700;font-size:16px;letter-spacing:.08em;min-height:44px;
   display:flex;flex-direction:column;align-items:center;justify-content:center}
 .b small{font-size:10px;letter-spacing:.1em;font-weight:400}
 .b.on{background:var(--gold);border-color:var(--gold);color:#000;box-shadow:0 0 12px var(--glow)}.b.on small{color:#000}
-.chip{display:inline-flex;align-items:center;height:28px;padding:0 12px;border-radius:4px;color:#000;font-weight:700;font-size:11px;letter-spacing:.12em;text-transform:uppercase;background:var(--lilac)}
-.chip.last{border-radius:4px 14px 14px 4px}
+.hchip{display:inline-flex;align-items:center;height:28px;padding:0 12px;border-radius:4px;color:#000;font-weight:700;font-size:11px;letter-spacing:.12em;text-transform:uppercase;background:var(--lilac)}
+.hchip.last{border-radius:4px 14px 14px 4px}
 .health{margin-left:auto;display:flex;gap:6px;align-items:center}
 
 /* receiver board + scopes (Pi console; harmless on the public side) */
