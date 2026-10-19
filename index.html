@@ -6,13 +6,17 @@
 <style>
 /* Front page, tile layout (2026-10-19): Eric's mockup arrangement in the LCARS Ops
    look. Shared components come from /lcars.css; only the page layout lives here. */
-.page{max-width:1400px;margin:0 auto;padding:10px;display:flex;flex-direction:column;gap:10px}
+.page{display:flex;flex-direction:column;gap:10px;min-width:0}
+.shell>.main{gap:0}
+.rail .rb svg.ic{width:15px;height:15px;margin-bottom:2px}
+.rail .rb{flex-direction:row;align-items:flex-end;gap:6px}
+.shell .nav{display:none}
 svg.ic{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
 
 /* masthead */
-.mast{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:18px;padding:10px 18px 10px 0}
+.mast{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:18px;padding:0 18px 0 4px;min-height:66px}
 .mast .elbow{display:flex;align-items:stretch;gap:12px}
-.mast .elbow i{width:26px;border-radius:24px 0 0 24px;background:var(--orange)}
+.mast .elbow i{display:none;width:26px;border-radius:24px 0 0 24px;background:var(--orange)}
 .mast .big{font-size:clamp(46px,8vw,96px);font-weight:700;line-height:.9;letter-spacing:.04em;color:var(--gold);text-shadow:0 0 18px rgba(255,204,102,.25)}
 .mast .who{display:flex;flex-direction:column;gap:6px;min-width:0}
 .mast .who b{color:var(--orange);font-size:clamp(18px,2.4vw,28px);letter-spacing:.06em;text-transform:uppercase;line-height:1.05}
@@ -67,7 +71,7 @@ svg.ic{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;str
 .goes figure{margin:0;display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#02040a;min-width:0}
 .goes figure a{display:block;aspect-ratio:16/7.5;max-height:440px;background:#02040a}
 .goes figure img{width:100%;height:100%;object-fit:cover;display:block}
-.goes figure img.disk{object-fit:contain}
+.goes figure img.disk{object-fit:cover;object-position:50% 22%}
 .goes figcaption{display:flex;gap:18px;flex-wrap:wrap;padding:7px 12px;border-top:1px solid var(--line);color:var(--ink);font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-variant-numeric:tabular-nums}
 .goes figcaption b{color:var(--gold);font-weight:700}
 .prods{display:flex;flex-direction:column;gap:5px}
@@ -122,6 +126,7 @@ table.rpt tr.air td:first-child{color:var(--gold)}
 .foot2 .seventy3 small{font-size:.6em}
 
 @media(max-width:900px){
+ .shell>.rail{display:none}.shell .nav{display:flex}.mast .elbow i{display:block}.shell{padding:8px}
  .mast{grid-template-columns:auto minmax(0,1fr);padding-right:6px}.mast svg.ky{display:none}.mast .gsq{grid-column:2;align-items:flex-start;flex-direction:row;gap:10px;align-items:baseline}
  .tiles{grid-template-columns:1fr}
  .goes{grid-template-columns:1fr}.prods{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -129,6 +134,23 @@ table.rpt tr.air td:first-child{color:var(--gold)}
 @media(max-width:560px){.livetab .wide{display:none}.tile .tab{max-width:calc(100% - 110px)}.split{grid-template-columns:1fr}.nav>a,.nav>details{flex:1 1 30%}.foot2 .seventy3{margin-left:0}}
 </style>
 </head><body>
+<div class=shell>
+<nav class=rail aria-label="Site sections">
+  <div class=cap></div>
+  <a class="rb on" href="/" aria-current=page>Home</a>
+  <a class=rb href="goes/forecast.html">Weather</a>
+  <a class=rb href="goes/">Satellites</a>
+  <a class=rb href="repeaters/">Scanner</a>
+  <a class=rb href="radar/">Flight</a>
+  <a class=rb href="ft8/">FT8</a>
+  <a class=rb href="rtty/">Skimmer</a>
+  <a class=rb href="bulletins/">Bulletins</a>
+  <a class=rb href="sstv/rx/">SSTV</a>
+  <a class=rb href="iss/">ISS</a>
+  <a class=rb href="https://hamclock.w4ewb.com">HamClock</a>
+  <div class=fill></div>
+</nav>
+<div class=main>
 <div class=page>
 
 <header class=mast>
@@ -277,6 +299,8 @@ table.rpt tr.air td:first-child{color:var(--gold)}
   <span class=seventy3>73 <small>de</small> W4EWB</span>
 </footer>
 </div>
+</div>
+</div>
 <script>
 (function(){
 var R='https://nest.w4ewb.com/skyfeed/';
@@ -333,7 +357,7 @@ function goes(){local('goes/').then(function(r){return r.text()}).then(function(
  PRODS.forEach(function(p){if(!goesMap[p[0]])return;var b=document.createElement('button');b.type='button';b.dataset.h=p[0];b.innerHTML=esc(p[1])+'<span>&#9656;</span>';
   b.onclick=function(){showProd(p[0])};box.appendChild(b)});
  var a=document.createElement('a');a.className='cta open';a.href='goes/';a.textContent='All products ▸';box.appendChild(a);
- showProd(first?first.dataset.h:'region.html')}).catch(function(){})}
+ showProd(first?first.dataset.h:(goesMap['region.html']&&sunUp(HOME_LL[0],HOME_LL[1],frameDate(goesMap['region.html'].full))?'region.html':'city-lights.html'))}).catch(function(){})}
 
 // ---- weather (APRS stations the Pi hears)
 function wx(){get('wx.json').then(function(j){var n=j.now;var fresh=n&&(Date.now()/1000-(j.updated||0))<300;dot('wxDot',fresh);
@@ -401,6 +425,14 @@ function ft8Card(){get('ft8.json').then(function(j){var rec=j.records||{};
  sv('circle',{cx:P[0],cy:P[1],r:7,fill:'none',stroke:'#fc6','stroke-width':.6,opacity:.6},fm.over);sv('circle',{cx:P[0],cy:P[1],r:2.6,fill:'#fc6'},fm.over);
  $('ft8last').innerHTML='<b style="color:var(--gold)">'+esc(r.de)+'</b> '+(r.to==='CQ'?'calling CQ':(r.to?'→ <b style="color:var(--gold)">'+esc(r.to)+'</b>':''))+' · <span style="color:var(--dim)">'+esc(r.de_c||'')+'</span>'+
   (r.dist?' · <span style="color:var(--ice)">'+Math.round(r.dist).toLocaleString()+' mi</span>':'')+(r.snr!=null?' · '+(r.snr>0?'+':'')+r.snr+' dB':'')+' · <span style="color:var(--dim)">'+ago(r.ts)+'</span>'}).catch(function(){})}
+// is the sun up at lat/lon right now? (same solar terms as the greyline)
+function frameDate(u){var m=String(u).match(/(\d{4})-(\d{2})-(\d{2})_(\d{2})-(\d{2})/);return m?new Date(Date.UTC(+m[1],m[2]-1,+m[3],+m[4],+m[5])):new Date()}
+function sunPos(d){var day=(d-Date.UTC(d.getUTCFullYear(),0,0))/864e5,g=2*Math.PI/365*(day-1+(d.getUTCHours()-12)/24);
+ var dec=0.006918-0.399912*Math.cos(g)+0.070257*Math.sin(g)-0.006758*Math.cos(2*g)+0.000907*Math.sin(2*g)-0.002697*Math.cos(3*g)+0.00148*Math.sin(3*g);
+ var eqt=229.18*(0.000075+0.001868*Math.cos(g)-0.032077*Math.sin(g)-0.014615*Math.cos(2*g)-0.040849*Math.sin(2*g));
+ return {dec:dec,lon:-((d.getUTCHours()*60+d.getUTCMinutes()+eqt)/4-180)}}
+function sunUp(lat,lon,d){var s=sunPos(d||new Date()),r=Math.PI/180,h=(lon-s.lon)*r;
+ return Math.sin(lat*r)*Math.sin(s.dec)+Math.cos(lat*r)*Math.cos(s.dec)*Math.cos(h)>Math.sin(-2*r)}   // a little after sunrise / before sunset
 // greyline: the night side as a polygon from the subsolar point
 function greyline(){gm.over.innerHTML='';var d=new Date(),day=(d-Date.UTC(d.getUTCFullYear(),0,0))/864e5,g=2*Math.PI/365*(day-1+(d.getUTCHours()-12)/24);
  var dec=0.006918-0.399912*Math.cos(g)+0.070257*Math.sin(g)-0.006758*Math.cos(2*g)+0.000907*Math.sin(2*g)-0.002697*Math.cos(3*g)+0.00148*Math.sin(3*g);
