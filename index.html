@@ -2,227 +2,361 @@
 <meta name=viewport content="width=device-width,initial-scale=1">
 <title>W4EWB · Station console</title>
 <link rel="stylesheet" href="/lcars.css">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <style>
-/* page-local bits: the live-decode block the RTTY/FT8 branches write into */
-#nowLive .feed{display:flex;flex-direction:column;gap:2px}
-#nowLive .feed div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px;color:var(--text-mid)}
-#nowLive .cs{color:var(--gold);font-weight:700}#nowLive .cc{color:var(--dim)}#nowLive .dist{color:var(--ice)}
-#nowLive .tick{max-height:7.8em;overflow:hidden}
-#nowLive a{color:var(--orange);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:11px}
-#now.off .livedot{background:#4d4d70;box-shadow:none;animation:none}
-#now.off #modeV{color:#8e8ea8}
-.rows a{color:var(--peach)}
-#radarShips g{transition:transform 1s}
-#ft8map{width:100%;height:auto;display:block;border-radius:10px;background:#02040a;border:1px solid var(--line)}
-#ft8last{font-size:15px}#ft8last b{color:var(--gold)}#ft8last .cc{color:var(--dim)}#ft8last .dist{color:var(--ice)}
+/* Front page, tile layout (2026-10-19): Eric's mockup arrangement in the LCARS Ops
+   look. Shared components come from /lcars.css; only the page layout lives here. */
+.page{max-width:1400px;margin:0 auto;padding:10px;display:flex;flex-direction:column;gap:10px}
+svg.ic{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* masthead */
+.mast{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:18px;padding:10px 18px 10px 0}
+.mast .elbow{display:flex;align-items:stretch;gap:12px}
+.mast .elbow i{width:26px;border-radius:24px 0 0 24px;background:var(--orange)}
+.mast .big{font-size:clamp(46px,8vw,96px);font-weight:700;line-height:.9;letter-spacing:.04em;color:var(--gold);text-shadow:0 0 18px rgba(255,204,102,.25)}
+.mast .who{display:flex;flex-direction:column;gap:6px;min-width:0}
+.mast .who b{color:var(--orange);font-size:clamp(18px,2.4vw,28px);letter-spacing:.06em;text-transform:uppercase;line-height:1.05}
+.mast .who span{color:var(--lilac);font-size:12px;letter-spacing:.18em;text-transform:uppercase;line-height:1.5}
+.mast .who span i{display:inline-block;width:6px;height:6px;background:var(--orange);margin:0 8px 2px;border-radius:1px}
+.mast svg.ky{width:clamp(130px,16vw,210px);height:auto}
+.mast .gsq{display:flex;flex-direction:column;align-items:flex-end;line-height:1}
+.mast .gsq small{color:var(--lilac);font-size:14px;letter-spacing:.2em}
+.mast .gsq b{color:var(--gold);font-size:clamp(28px,3.4vw,42px);letter-spacing:.06em}
+
+/* nav */
+.nav{display:flex;gap:8px;flex-wrap:wrap}
+.nav>a,.nav>details>summary{display:flex;align-items:center;justify-content:center;gap:8px;flex:1 1 120px;min-height:48px;padding:0 14px;border-radius:24px;
+ border:2px solid var(--line);background:#0a0a12;color:var(--peach);font-weight:700;font-size:15px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;list-style:none}
+.nav>a:hover,.nav>details>summary:hover{border-color:var(--orange);color:var(--gold)}
+.nav>a.on{background:var(--orange);border-color:var(--orange);color:#000}
+.nav>details{flex:1 1 120px;position:relative;display:flex}
+.nav>details>summary{flex:1}
+.nav>details>summary::-webkit-details-marker{display:none}
+.nav>details[open]>summary{border-color:var(--gold);color:var(--gold)}
+.nav .menu{position:absolute;right:0;top:calc(100% + 6px);z-index:20;min-width:240px;background:var(--panel);border:2px solid var(--gold);border-radius:14px;padding:8px;display:flex;flex-direction:column;gap:4px}
+.nav .menu a{display:block;padding:9px 12px;border-radius:9px;color:var(--ink);letter-spacing:.08em;text-transform:uppercase;font-size:14px}
+.nav .menu a:hover{background:#1a1810;color:var(--gold)}
+
+/* slim live-status bar */
+.status{display:flex;align-items:center;gap:14px;flex-wrap:wrap;border:2px solid var(--peri);border-radius:24px;padding:6px 18px;min-height:44px;font-size:14px;letter-spacing:.06em}
+.status .mode{color:var(--gold);font-weight:700;text-transform:uppercase;letter-spacing:.12em;display:flex;align-items:center;gap:8px}
+.status .k{color:var(--orange);font-size:11px;letter-spacing:.16em;text-transform:uppercase;margin-right:4px}
+.status .v{color:var(--ink)}
+.status .dec{flex:1 1 260px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text-mid)}
+.status .dec b{color:var(--gold)}
+.status.off{border-color:#4d4d70}.status.off .mode{color:#8e8ea8}
+
+/* tiles: our framed panel, with a hanging LIVE tab mirrored on the right */
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.tile{position:relative}
+.tile .tab{display:flex;align-items:center;gap:7px}
+.tile .tab svg.ic{width:14px;height:14px}
+.livetab{position:absolute;top:0;right:12px;padding:4px 11px 5px;border:2px solid var(--fc);border-top:none;border-radius:0 0 9px 9px;background:var(--panel);
+ color:var(--fc);font-weight:700;font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;display:flex;align-items:center;gap:7px;white-space:nowrap}
+.livetab a{color:inherit}
+.ldot{width:9px;height:9px;border-radius:50%;background:#7fd7a0;box-shadow:0 0 8px #7fd7a0;animation:pulse 1.6s ease-in-out infinite;display:inline-block}
+.ldot.off{background:#4d4d70;box-shadow:none;animation:none}
+@media(prefers-reduced-motion:reduce){.ldot{animation:none}}
+.split{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:12px;align-items:stretch}
+.statcol{display:flex;flex-direction:column;gap:10px;justify-content:center}
+.statcol .lbl{margin-bottom:-6px}
+.bot{margin-top:auto}
+
+/* GOES */
+.goes{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:12px}
+.goes figure{margin:0;display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#02040a;min-width:0}
+.goes figure a{display:block;aspect-ratio:16/7.5;max-height:440px;background:#02040a}
+.goes figure img{width:100%;height:100%;object-fit:cover;display:block}
+.goes figure img.disk{object-fit:contain}
+.goes figcaption{display:flex;gap:18px;flex-wrap:wrap;padding:7px 12px;border-top:1px solid var(--line);color:var(--ink);font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-variant-numeric:tabular-nums}
+.goes figcaption b{color:var(--gold);font-weight:700}
+.prods{display:flex;flex-direction:column;gap:5px}
+.prods button{display:flex;align-items:center;justify-content:space-between;gap:6px;min-height:38px;padding:0 12px;border-radius:8px;border:1px solid var(--line);background:#0a0a12;color:var(--peach);
+ font-weight:700;font-size:13px;letter-spacing:.12em;text-transform:uppercase;text-align:left}
+.prods button:hover{border-color:var(--orange);color:var(--gold)}
+.prods button.on{background:var(--orange);border-color:var(--orange);color:#000}
+.prods a.open{margin-top:auto;text-align:center}
+
+/* weather */
+.wxnow{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.wxnow .temp{font-size:clamp(56px,7vw,84px);font-weight:700;color:var(--gold);line-height:.9;font-variant-numeric:tabular-nums}
+.wxnow .temp small{font-size:.38em;color:var(--peach);vertical-align:top;margin-left:2px}
+.wxnow dl{display:grid;grid-template-columns:auto auto;gap:3px 14px;margin:0;font-size:14px}
+.wxnow dt{color:var(--orange);letter-spacing:.12em;text-transform:uppercase;font-size:12px;align-self:center}
+.wxnow dd{margin:0;color:var(--ink);font-variant-numeric:tabular-nums}
+#wxChart{width:100%;height:auto;display:block}
+
+/* radar + FT8 + hamclock maps */
+.scope.sq{aspect-ratio:1;border-radius:50%}
+.mapsvg{width:100%;height:auto;display:block;border-radius:10px;background:#02040a;border:1px solid var(--line)}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--line);margin-top:2px}
+.kpis>div{padding:8px 4px 0;text-align:center;border-right:1px solid var(--line);min-width:0}
+.kpis>div:last-child{border-right:0}
+.kpis b{display:block;color:var(--gold);font-size:22px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpis span{color:var(--lilac);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+
+/* SSTV */
+.thumbs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.thumbs a{display:flex;flex-direction:column;gap:5px;min-width:0}
+.thumbs img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;border:1px solid var(--line);background:#000;display:block}
+.thumbs span{color:var(--lilac);font-size:11px;letter-spacing:.12em;text-transform:uppercase;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* repeater table */
+table.rpt{width:100%;border-collapse:collapse;font-size:15px;font-variant-numeric:tabular-nums}
+table.rpt td{padding:7px 8px;border-bottom:1px solid var(--line-soft);white-space:nowrap}
+table.rpt td:first-child{color:var(--ink);font-weight:700;letter-spacing:.04em}
+table.rpt td.lab{color:var(--peach);overflow:hidden;text-overflow:ellipsis;max-width:1px;width:40%}
+table.rpt td.st{text-align:right;color:var(--dim);letter-spacing:.12em;text-transform:uppercase;font-size:12px;border-left:1px solid var(--line)}
+table.rpt tr.air td.st{color:#7fd7a0;font-weight:700}
+table.rpt tr.air td:first-child{color:var(--gold)}
+
+/* hamclock legend */
+.legendlist{display:flex;flex-direction:column;gap:8px;justify-content:center;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink)}
+.legendlist i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:9px;vertical-align:-1px}
+
+/* footer status */
+.foot2{display:flex;align-items:center;gap:18px;flex-wrap:wrap;border:2px solid var(--orange);border-radius:24px;padding:6px 6px 6px 20px;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--peach)}
+.foot2 .ok{color:#7fd7a0;display:flex;align-items:center;gap:8px}
+.foot2 .sep{width:2px;height:20px;background:var(--line)}
+.foot2 .seventy3{margin-left:auto;background:var(--gold);color:#000;font-weight:700;font-size:24px;letter-spacing:.06em;border-radius:20px;padding:4px 22px;line-height:1.2}
+.foot2 .seventy3 small{font-size:.6em}
+
+@media(max-width:900px){
+ .mast{grid-template-columns:auto minmax(0,1fr);padding-right:6px}.mast svg.ky{display:none}.mast .gsq{grid-column:2;align-items:flex-start;flex-direction:row;gap:10px;align-items:baseline}
+ .tiles{grid-template-columns:1fr}
+ .goes{grid-template-columns:1fr}.prods{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:560px){.livetab .wide{display:none}.tile .tab{max-width:calc(100% - 110px)}.split{grid-template-columns:1fr}.nav>a,.nav>details{flex:1 1 30%}.foot2 .seventy3{margin-left:0}}
 </style>
 </head><body>
-<div class=shell>
-  <nav class=rail aria-label="Site sections">
-    <div class=cap></div>
-    <a class="rb on" href="/" aria-current=page>Console</a>
-    <a class=rb href="repeaters/">Scanner</a>
-    <a class=rb href="ft8/">FT8</a>
-    <a class=rb href="rtty/">Skimmer</a>
-    <a class=rb href="goes/">GOES</a>
-    <a class=rb href="radar/">Radar</a>
-    <a class=rb href="sstv/rx/">SSTV</a>
-    <a class=rb href="https://hamclock.w4ewb.com">HamClock</a>
-    <div class=fill></div>
-  </nav>
-  <div class=main>
-    <header class=hdr>
-      <div class=call>W4EWB</div>
-      <div class=mission>Station console<br>EM78 · Louisville KY · receive-only SDR array</div>
-      <div class=segs aria-hidden=true><i style="width:70px;background:var(--lilac)"></i><i style="width:22px;background:var(--peri)"></i><i style="width:120px;background:var(--peach)"></i><i style="width:40px;background:var(--pink)"></i><i style="width:14px;background:var(--ice)"></i></div>
-      <div class="stat off" id=stat><span class=dot aria-hidden=true></span><span id=statT>Contacting</span> <b id=utc>--:--z</b></div>
-    </header>
+<div class=page>
 
-    <section class=panel id=now aria-label="Station activity">
-      <div class=tab>Station activity · hamSDR</div>
-      <div class=now>
-        <div class=c1>
-          <div class=lbl>Radio mode</div>
-          <div class=modeline><span class=livedot aria-hidden=true></span><span class=val id=modeV>Contacting…</span></div>
-          <div class="val mid" id=freqV></div>
-          <div class=sub id=bandS>checking what the Pi is doing</div>
-        </div>
-        <div class=c2 id=nowLive><span class=sub>Waiting for the station feed…</span></div>
-        <div class=c3>
-          <div class=lbl>HF band</div>
-          <div class=ladder id=ladder>
-            <div data-band=80m><span>80 m</span><i></i></div>
-            <div data-band=40m><span>40 m</span><i></i></div>
-            <div data-band=20m><span>20 m</span><i></i></div>
-          </div>
-          <div class=sub>W1AW bulletins 17:55 &amp; 20:55 local → RTTY</div>
+<header class=mast>
+  <div class=elbow><i></i><div class=big>W4EWB</div></div>
+  <div class=who><b>Eric in Louisville, Kentucky</b><span>Ham radio<i></i>Satellites<i></i>SDR<i></i>Weather<i></i>Exploration</span></div>
+  <svg class=ky viewBox="0 0 200 96" aria-label="Kentucky, crosshair on Louisville" role=img><path id=kyPath fill="none" stroke="var(--orange)" stroke-width="1.6" stroke-linejoin="round"/><g id=kyX stroke="var(--gold)" stroke-width="1.2" fill="none"></g></svg>
+  <div class=gsq><small>GRID</small><b>EM78</b></div>
+</header>
+
+<nav class=nav aria-label="Site">
+  <a class=on href="/" aria-current=page><svg class=ic viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>Home</a>
+  <a href="goes/forecast.html"><svg class=ic viewBox="0 0 24 24"><path d="M7 18h10a4 4 0 0 0 .5-8 6 6 0 0 0-11.5 1.5A3.3 3.3 0 0 0 7 18z"/></svg>Weather</a>
+  <a href="goes/"><svg class=ic viewBox="0 0 24 24"><rect x="9" y="9" width="6" height="6" rx="1"/><path d="M9 12H3m18 0h-6M12 9V5m0 14v-4"/><path d="M3 9v6m18-6v6"/></svg>Satellites</a>
+  <a href="repeaters/"><svg class=ic viewBox="0 0 24 24"><path d="M4 12h1m3-5v10m4-13v16m4-12v8m4-5v2"/></svg>Radio</a>
+  <a href="radar/"><svg class=ic viewBox="0 0 24 24"><path d="M10.5 21l1.5-5 6.5 2.5 1-1.5-6-4.5.5-6c0-1.5-2-1.5-2 0l-.5 6-6 4.5 1 1.5 6.5-2.5z" transform="rotate(45 12 12)"/></svg>Flight</a>
+  <details><summary><svg class=ic viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>More</summary>
+    <div class=menu>
+      <a href="ft8/">FT8 live map</a><a href="rtty/">RTTY &amp; PSK skimmer</a><a href="bulletins/">W1AW bulletins</a><a href="repeaters/">Repeater scanner</a>
+      <a href="sstv/rx/">SSTV gallery</a><a href="iss/">Heard via the ISS</a><a href="wx/">Meteor-M2 archive</a><a href="goes/forecast.html">Louisville forecast</a><a href="https://hamclock.w4ewb.com">HamClock</a>
+    </div></details>
+</nav>
+
+<div class="status off" id=status aria-live=polite>
+  <span class=mode><span class="ldot off" id=stDot></span><span id=stMode>Contacting</span></span>
+  <span><span class=k>Freq</span><span class=v id=stFreq>&mdash;</span></span>
+  <span><span class=k>Band</span><span class=v id=stBand>&mdash;</span></span>
+  <span class=dec id=stDec>checking what the station is doing&hellip;</span>
+  <span><span class=k>UTC</span><span class=v id=stUtc>--:--</span></span>
+</div>
+
+<section class="panel g tile" aria-label="GOES-19 weather satellite">
+  <div class=tab><svg class=ic viewBox="0 0 24 24"><rect x="9" y="9" width="6" height="6" rx="1"/><path d="M9 12H3m18 0h-6M12 9V5m0 14v-4"/></svg>GOES-19 weather satellite</div>
+  <div class=livetab><a href="goes/" class=wide>Live imagery &#9656;</a><span class="ldot"></span>Live</div>
+  <div class=body>
+    <div class=goes>
+      <figure><a id=goesLink href="goes/"><img id=goesImg alt="Latest GOES-19 image"></a>
+        <figcaption><b>GOES-19</b><span id=goesProd>&mdash;</span><span id=goesDate></span><span id=goesTime></span></figcaption></figure>
+      <div class=prods id=prods></div>
+    </div>
+  </div>
+</section>
+
+<div class=tiles>
+  <section class="panel s tile" aria-label="Louisville weather">
+    <div class=tab><svg class=ic viewBox="0 0 24 24"><path d="M7 18h10a4 4 0 0 0 .5-8 6 6 0 0 0-11.5 1.5A3.3 3.3 0 0 0 7 18z"/></svg>Louisville weather</div>
+    <div class=livetab><span class="ldot off" id=wxDot></span>Live</div>
+    <div class=body>
+      <div class=wxnow>
+        <div class=temp id=wxTemp>--<small>&deg;F</small></div>
+        <dl><dt>Feels like</dt><dd id=wxFeels>&mdash;</dd><dt>Humidity</dt><dd id=wxRh>&mdash;</dd><dt>Pressure</dt><dd id=wxBaro>&mdash;</dd><dt>Wind</dt><dd id=wxWind>&mdash;</dd><dt>24 h</dt><dd id=wxLoHi>&mdash;</dd></dl>
+      </div>
+      <svg id=wxChart viewBox="0 0 400 110" role=img aria-label="Temperature over the last 24 hours"></svg>
+      <div class="sub bot" id=wxSrc>APRS weather stations heard by the station</div>
+      <a class=cta href="goes/forecast.html">Forecast &#9656;</a>
+    </div>
+  </section>
+
+  <section class="panel p tile" aria-label="Flight radar">
+    <div class=tab><svg class=ic viewBox="0 0 24 24"><path d="M10.5 21l1.5-5 6.5 2.5 1-1.5-6-4.5.5-6c0-1.5-2-1.5-2 0l-.5 6-6 4.5 1 1.5 6.5-2.5z" transform="rotate(45 12 12)"/></svg>Flight radar &middot; ADS-B</div>
+    <div class=livetab><span class="ldot off" id=adsbDot></span>Live</div>
+    <div class=body>
+      <div class=split>
+        <div class="scope sq" aria-label="Radar scope"><svg viewBox="0 0 100 100" style="position:absolute;inset:0;width:100%;height:100%"><circle cx=50 cy=50 r=15.3 fill=none stroke="#2b2b45" stroke-width=.5 /><circle cx=50 cy=50 r=30.6 fill=none stroke="#2b2b45" stroke-width=.5 /><circle cx=50 cy=50 r=46 fill=none stroke="#3a3a5c" stroke-width=.6 /><path d="M50 4v92M4 50h92" stroke="#1a1a2a" stroke-width=.4 /><text x=50 y=55.5 text-anchor=middle font-size=4 fill="#f96" letter-spacing=".3">SDF</text><circle cx=50 cy=50 r=1 fill="#f96"/><g id=radarShips></g></svg></div>
+        <div class=statcol>
+          <div class=lbl>Aircraft</div><div class=val id=fAll>&mdash;</div>
+          <div class=lbl>Altitude (avg)</div><div class="val mid" id=fAlt>&mdash;</div>
+          <div class=lbl>Nearest</div><div class="val mid" id=fNear>&mdash;</div><div class=sub id=fNearS></div>
+          <a class=cta href="radar/">View live radar &#9656;</a>
         </div>
       </div>
-    </section>
-
-    <div class=strip-row>
-      <section class="panel g"><div class=tab>Clock</div><div class=body><div class=val id=clockV>--:--<span> UTC</span></div><div class=sub id=clockS></div></div></section>
-      <a class="panel l" href="iss/"><div class=tab>Satellites</div><div class=body><div class="val mid" id=satV>&mdash;</div><div class=sub id=satS>X30A · ISS · SO-50</div></div></a>
-      <a class="panel p" href="radar/"><div class=tab>ADS-B</div><div class=body><div class="val mid" id=adsbV>&mdash;</div><div class=sub id=adsbS>1090 MHz</div></div></a>
-      <a class="panel s" href="repeaters/"><div class=tab>Repeaters</div><div class=body><div class="val mid" id=rptV>&mdash;</div><div class=sub id=rptS>2 m · 70 cm</div></div></a>
-      <a class="panel k" href="goes/"><div class=tab>GOES-19</div><div class=body><div class="val mid" id=goesV>Full disk</div><div class=sub id=goesS>1694.1 MHz · home-beast</div></div></a>
     </div>
+  </section>
 
-    <div class=deck>
-      <section class=panel id=mScan><div class=tab>Repeater scanner</div><div class=body>
-        <div class="val mid" id=mScanV>&mdash;</div>
-        <div class=rows id=mScanR><div class=prose>The station scans the Louisville-area 2 m and 70 cm repeaters and streams whichever one is active.</div></div>
-        <div class=sub id=mScanS>listen-only</div>
-        <a class="cta hot" href="repeaters/"><svg class=ico viewBox="0 0 24 24" aria-hidden=true style="width:.8em;height:.8em"><path d="M7 5.2v13.6a1.2 1.2 0 0 0 1.8 1l11-6.8a1.2 1.2 0 0 0 0-2L8.8 4.2A1.2 1.2 0 0 0 7 5.2z"/></svg> Listen live</a></div></section>
-      <section class="panel g" id=mFt8><div class=tab>FT8 live</div><div class=body>
-        <svg id=ft8map viewBox="0 0 360 183" role=img aria-label="Map of the latest FT8 station heard"></svg>
-        <div id=ft8last class=prose>Every FT8 transmission the station decodes, mapped live.</div>
-        <div class=sub id=mFt8S></div>
-        <a class=cta href="ft8/">Open map &#9656;</a></div></section>
-      <section class="panel l" id=mRtty><div class=tab>RTTY &amp; PSK skimmer</div><div class=body>
-        <div class="val mid" id=mRttyV>&mdash;</div>
-        <div class=rows id=mRttyR><div class=prose>A software skimmer decoding every RTTY and PSK31 signal in the sub-band at once.</div></div>
-        <a class=cta href="rtty/">Open skimmer &#9656;</a></div></section>
-      <section class="panel k" id=mGoes><div class=tab>GOES-19 full disk</div><div class=body>
-        <div class=pic><img id=goesImg alt="" hidden><span id=goesCap>Geostationary weather satellite</span></div>
-        <div class=rows><div><b><a href="goes/forecast.html">Louisville forecast &#9656;</a></b><span>built from our own captures</span></div><div><b><a href="wx/">Meteor-M2 archive &#9656;</a></b><span>Jul–Sep 2026 · retired</span></div></div>
-        <a class=cta href="goes/">Open gallery &#9656;</a></div></section>
-      <section class="panel p" id=mRadar><div class=tab>Flight radar</div><div class=body>
-        <div class=scope aria-label="Radar scope"><svg id=miniRadar viewBox="0 0 160 100" style="position:absolute;inset:0;width:100%;height:100%"><circle cx=80 cy=50 r=15 fill=none stroke="#2b2b45" stroke-width=.5 /><circle cx=80 cy=50 r=30 fill=none stroke="#2b2b45" stroke-width=.5 /><circle cx=80 cy=50 r=45 fill=none stroke="#2b2b45" stroke-width=.5 /><circle cx=80 cy=50 r=1.3 fill="#f96" /><g id=radarShips></g></svg><span id=radarCap>1090 MHz · 60 mi rings</span></div>
-        <a class=cta href="radar/">Open scope &#9656;</a></div></section>
-      <section class="panel s" id=mSstv><div class=tab>SSTV gallery</div><div class=body>
-        <div class=pic><img id=sstvImg alt="" hidden><span id=sstvCap>Slow-scan TV off the HF bands</span></div>
-        <a class=cta href="sstv/rx/">Open gallery &#9656;</a></div></section>
-      <section class=panel id=mIss><div class=tab>Heard via the ISS</div><div class=body>
-        <div class="val mid" id=mIssV>&mdash;</div>
-        <div class=rows id=mIssR><div class=prose>APRS packets relayed by the space station's digipeater, logged on every pass.</div></div>
-        <a class=cta href="iss/">Open log &#9656;</a></div></section>
-      <section class="panel g" id=mBull><div class=tab>Bulletins</div><div class=body>
-        <div class="val mid" id=mBullV>&mdash;</div>
-        <div class=rows id=mBullR><div class=prose>W1AW / ARRL bulletins copied off the air by the skimmer, errors and all.</div></div>
-        <a class=cta href="bulletins/">Read &#9656;</a></div></section>
-      <section class="panel l" id=mClock><div class=tab>HamClock</div><div class=body>
-        <div class="val mid">Wall display</div>
-        <div class=prose>Grey line, band conditions, beacons and satellite tracks on the shack's wall monitor.</div>
-        <a class=cta href="https://hamclock.w4ewb.com">Open &#9656;</a></div></section>
+  <section class="panel g tile" aria-label="FT8">
+    <div class=tab><svg class=ic viewBox="0 0 24 24"><path d="M4 12h1m3-5v10m4-13v16m4-12v8m4-5v2"/></svg>FT8 dashboard</div>
+    <div class=livetab><a href="ft8/" id=ft8Freq>14.074 MHz &#9656;</a></div>
+    <div class=body>
+      <svg id=ft8map class=mapsvg viewBox="0 0 360 183" role=img aria-label="Map of the latest FT8 station heard"></svg>
+      <div class=prose id=ft8last>Every FT8 transmission the station decodes, mapped live.</div>
+      <div class=kpis><div><b id=kQso>&mdash;</b><span>QSOs seen</span></div><div><b id=kCty>&mdash;</b><span>Countries</span></div><div><b id=kBest>&mdash;</b><span>Farthest mi</span></div></div>
     </div>
+  </section>
 
-    <footer class=foot aria-hidden=true><i style="width:120px;background:var(--orange)"></i><i style="width:30px;background:var(--peri)"></i><i style="width:60px;background:var(--peach)"></i><div class=end>Receive-only · RTL-SDR array · Diamond X30A · 73 de W4EWB</div></footer>
-  </div>
+  <section class="panel l tile" aria-label="SSTV gallery">
+    <div class=tab><svg class=ic viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="16" cy="9" r="1.5"/></svg>SSTV gallery</div>
+    <div class=livetab><span class=ldot></span>Live</div>
+    <div class=body>
+      <div class=thumbs id=sstvThumbs></div>
+      <div class=sub>Slow-scan TV pictures pulled off the HF bands, the ISS and amateur satellites</div>
+      <a class=cta href="sstv/rx/">Open gallery &#9656;</a>
+    </div>
+  </section>
+
+  <section class="panel tile" aria-label="Repeater scanner">
+    <div class=tab><svg class=ic viewBox="0 0 24 24"><path d="M12 10v11M8 21h8"/><path d="M8.5 6.5a5 5 0 0 1 7 0M6 4a8.5 8.5 0 0 1 12 0"/><circle cx="12" cy="9" r="1.2"/></svg>Repeater scanner</div>
+    <div class=livetab><span class="ldot off" id=rptDot></span><span id=rptLive>Live</span></div>
+    <div class=body>
+      <table class=rpt><tbody id=rptRows><tr><td colspan=3 class=sub>Loading&hellip;</td></tr></tbody></table>
+      <div class=sub id=rptSub></div>
+      <a class="cta hot" href="repeaters/"><svg class=ico viewBox="0 0 24 24" aria-hidden=true style="width:.8em;height:.8em"><path d="M7 5.2v13.6a1.2 1.2 0 0 0 1.8 1l11-6.8a1.2 1.2 0 0 0 0-2L8.8 4.2A1.2 1.2 0 0 0 7 5.2z"/></svg> Listen live</a>
+    </div>
+  </section>
+
+  <section class="panel k tile" aria-label="HamClock">
+    <div class=tab><svg class=ic viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>HamClock</div>
+    <div class=livetab><span class=ldot></span>Live</div>
+    <div class=body>
+      <div class=split>
+        <svg id=greyline class=mapsvg viewBox="0 0 360 183" role=img aria-label="World map with the day and night line"></svg>
+        <div class=legendlist>
+          <div><i style="background:var(--peri)"></i>Propagation</div><div><i style="background:var(--pink)"></i>Satellites</div>
+          <div><i style="background:var(--gold)"></i>Solar data</div><div><i style="background:var(--orange)"></i>Gray line</div><div><i style="background:var(--ice)"></i>DX map</div>
+          <a class=cta href="https://hamclock.w4ewb.com">Open HamClock &#9656;</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel l tile" aria-label="RTTY and PSK skimmer">
+    <div class=tab><svg class=ic viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h1m3 0h1m3 0h2M7 14h10"/></svg>RTTY &amp; PSK skimmer</div>
+    <div class=livetab><span class="ldot off" id=rttyDot></span>Live</div>
+    <div class=body>
+      <div class="val mid" id=mRttyV>&mdash;</div>
+      <div class=rows id=mRttyR><div class=prose>A software skimmer decoding every RTTY and PSK31 signal in the sub-band at once.</div></div>
+      <div class=rows id=mBullR></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:auto"><a class=cta href="rtty/">Open skimmer &#9656;</a><a class=cta href="bulletins/">Bulletins &#9656;</a></div>
+    </div>
+  </section>
+
+  <section class="panel tile" aria-label="Heard via the ISS">
+    <div class=tab><svg class=ic viewBox="0 0 24 24"><rect x="10" y="10" width="4" height="4"/><path d="M2 8h6v8H2zM16 8h6v8h-6zM8 12h2m4 0h2"/></svg>Heard via the ISS</div>
+    <div class=livetab><a href="iss/">APRS log &#9656;</a></div>
+    <div class=body>
+      <div class="val mid" id=mIssV>&mdash;</div>
+      <div class=rows id=mIssR><div class=prose>APRS packets relayed by the space station's digipeater, logged on every pass.</div></div>
+      <div class=sub id=satNext></div>
+      <a class=cta href="iss/">Open log &#9656;</a>
+    </div>
+  </section>
+</div>
+
+<footer class=foot2>
+  <span class=ok id=fOk><span class="ldot off" id=fDot></span><span id=fOkT>Station status</span></span><span class=sep></span>
+  <span>Louisville, KY (EM78)</span><span class=sep></span>
+  <span id=fTime>&mdash;</span>
+  <span class=seventy3>73 <small>de</small> W4EWB</span>
+</footer>
 </div>
 <script>
 (function(){
 var R='https://nest.w4ewb.com/skyfeed/';
-var MODES={RTTY:['rtty','RTTY & PSK skimmer','Decoding every RTTY and PSK31 signal in the sub-band'],FT8:['ft8','FT8 monitor','Decoding FT8 traffic and reporting to PSK Reporter'],
- LISTEN:['listen','Web SDR','Waterfall + audio on the private web SDR'],MEASURE:['measure','QRN sniffer','Hunting RFI with the relative noise meter'],
- TUNE:['tune','Loop tuner','Peaking the magnetic loop'],IDLE:['off','Switching…','Between modes']};
+var MODES={RTTY:'RTTY & PSK skimmer',FT8:'FT8 monitor',LISTEN:'Web SDR',MEASURE:'QRN sniffer',TUNE:'Loop tuner',IDLE:'Switching…'};
 function $(id){return document.getElementById(id)}
-function esc(s){return String(s||'').replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})}
-function mark(t,calls){var h=esc(t).replace(/\bCQ\b/g,'<b>CQ</b>');(calls||[]).forEach(function(c){h=h.split(c).join('<u>'+c+'</u>')});return h}
-function khz(hz){return (hz/1000).toFixed(1).replace(/\B(?=(\d{3})+(?!\d))/g,' ')}
+function esc(s){return String(s==null?'':s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})}
 function mhz(hz){return (hz/1e6).toFixed(3)}
-function hhmm(ts){return new Date(ts*1000).toUTCString().slice(17,22)+'z'}
 function ago(ts){var s=Math.max(0,Math.floor(Date.now()/1000-ts));return s<60?'just now':s<3600?Math.floor(s/60)+' min ago':s<86400?Math.floor(s/3600)+' h ago':Math.floor(s/86400)+' d ago'}
 function get(u){return fetch(R+u,{cache:'no-store'}).then(function(r){return r.json()})}
 function local(u){return fetch(u,{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r})}
-var now=$('now'),modeV=$('modeV'),freqV=$('freqV'),bandS=$('bandS'),live=$('nowLive'),stat=$('stat');
-var cur=null;
-function setMode(cls,label,band){now.className='panel '+cls;modeV.textContent=label;bandS.textContent=band||'';
- stat.className='stat'+(cls==='off'?' off':'');$('statT').textContent=cls==='off'?'Off air':'On air'}
-function ladder(band){var on=false;[].forEach.call($('ladder').children,function(el){var m=el.getAttribute('data-band')===band;el.classList.toggle('on',m);on=on||m});
- return on}
-function showRtty(j){if(!j||!j.updated){live.innerHTML='<span class=sub>Waiting for the skimmer feed…</span>';return}
- if(j.band){bandS.textContent=j.band;ladder(j.band)}
- freqV.innerHTML=j.freq?mhz(j.freq)+'<span> MHz</span>':'';
- var sigs=(j.sigs||[]).filter(function(s){return s.chars>0}).sort(function(a,b){return a.last-b.last||b.snr-a.snr});
- var s=sigs[0];var h='<span class=lbl>Live decode'+(sigs.length?' · '+khz(s.hz)+' kHz · '+Math.round(s.snr)+' dB':'')+'</span>';
- h+=s?'<pre class=tick>'+mark(s.text,s.calls)+'</pre>':'<pre class=tick>listening on '+esc(j.band||'')+' — no RTTY on the band right now</pre>';
- var q=(j.qsos||[])[0];h+='<span class=sub>'+(j.stats?j.stats.live:0)+' signal'+(j.stats&&j.stats.live==1?'':'s')+' on '+esc(j.band||'')+
-  (q?' · latest QSO <b>'+esc(q.calls.join(' ↔ '))+'</b>'+(q.exchange?' · '+esc(q.exchange):''):'')+' · <a href="rtty/">open skimmer ▸</a></span>';
- live.innerHTML=h;var p=live.querySelector('pre');if(p)p.scrollTop=p.scrollHeight}
-function showFt8(j){if(!j||!j.updated){live.innerHTML='<span class=sub>Waiting for the FT8 feed…</span>';return}
- freqV.innerHTML=j.freq?mhz(j.freq)+'<span> MHz</span>':'';
- var f=(j.feed||[]).slice(0,5);var h='<span class=lbl>Latest decodes · cycle '+(j.cycle||0)+'</span><div class=feed>';
- h+=f.length?f.map(function(r){return '<div><span class=cs>'+esc(r.de)+'</span>'+(r.to?' → <span class=cs>'+esc(r.to)+'</span>':'')+
-  (r.de_c?' <span class=cc>'+esc(r.de_c)+'</span>':'')+(r.dist?' <span class=dist>'+Math.round(r.dist).toLocaleString()+' mi</span>':'')+(r.snr!=null?' <span class=cc>'+r.snr+' dB</span>':'')+'</div>'}).join(''):
-  '<div class=sub>nothing decoded this cycle</div>';
- var rec=j.records||{};
- h+='</div><span class=sub>'+(j.n||0)+' decodes this cycle · '+(rec.countries||0)+' countries · <a href="ft8/">open FT8 live ▸</a></span>';live.innerHTML=h;
-}
-// ---- FT8 card: mini Robinson map (same projection as ft8/) + the latest station heard
-var NS='http://www.w3.org/2000/svg',RBX=[1,.9986,.9954,.99,.9822,.973,.96,.9427,.9216,.8962,.8679,.835,.7986,.7597,.7186,.6732,.6213,.5722,.5322],
- RBY=[0,.062,.124,.186,.248,.31,.372,.434,.4958,.5571,.6176,.6769,.7346,.7903,.8435,.8936,.9394,.9761,1],HOME_LL=[38.2679,-85.6279];
-function proj(lat,lon){var a=Math.min(Math.abs(lat),90),i=Math.min(17,Math.floor(a/5)),t=a/5-i,X=RBX[i]+(RBX[i+1]-RBX[i])*t,Y=RBY[i]+(RBY[i+1]-RBY[i])*t;
- return [180+.8487*67.52*X*lon*Math.PI/180,91.5-(lat<0?-1:1)*1.3523*67.52*Y]}
-function pth(pts,close){return pts.map(function(p,i){var q=proj(p[0],p[1]);return (i?'L':'M')+q[0].toFixed(1)+' '+q[1].toFixed(1)}).join('')+(close?'Z':'')}
+function dot(id,on){var d=$(id);if(d)d.className='ldot'+(on?'':' off')}
+var NS='http://www.w3.org/2000/svg';
 function sv(n,a,par){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);par.appendChild(e);return e}
-var fm=$('ft8map'),edge=[],la;for(la=-90;la<=90;la+=3)edge.push([la,180]);for(la=90;la>=-90;la-=3)edge.push([la,-180]);
-sv('path',{d:pth(edge,true),fill:'#0a1424',stroke:'#2b2b45','stroke-width':.6},fm);
-var gLand=sv('g',{},fm),gLink=sv('g',{},fm),H=proj(HOME_LL[0],HOME_LL[1]);
-sv('circle',{cx:H[0],cy:H[1],r:2.2,fill:'#f96'},fm);
-local('ft8/land.json').then(function(r){return r.json()}).then(function(L){sv('path',{d:L.map(function(r){return pth(r,true)}).join(''),fill:'#1c2a3a',stroke:'#3c5c78','stroke-width':.35},gLand)}).catch(function(){});
-function ft8Card(){get('ft8.json').then(function(j){
- var r=(j.feed||[]).filter(function(x){return x.ll})[0],rec=j.records||{};
- $('mFt8S').textContent=(rec.countries||0)+' countr'+(rec.countries==1?'y':'ies')+' today'+(rec.best?' · best ever '+rec.best.call+' '+Math.round(rec.best.dist).toLocaleString()+' mi':'');
- gLink.innerHTML='';
- if(!r){$('ft8last').textContent='Nothing decoded yet.';return}
- var P=proj(r.ll[0],r.ll[1]),mx=(H[0]+P[0])/2,my=Math.min(H[1],P[1])-Math.abs(P[0]-H[0])*.18-6;
- sv('path',{d:'M'+H[0]+' '+H[1]+'Q'+mx+' '+my+' '+P[0]+' '+P[1],fill:'none',stroke:'#fc6','stroke-width':.9,'stroke-dasharray':'2 1.5',opacity:.85},gLink);
- sv('circle',{cx:P[0],cy:P[1],r:7,fill:'none',stroke:'#fc6','stroke-width':.6,opacity:.6},gLink);
- sv('circle',{cx:P[0],cy:P[1],r:2.6,fill:'#fc6'},gLink);
- var what=r.to==='CQ'?'calling CQ':(r.to?'→ <b>'+esc(r.to)+'</b>':'');
- $('ft8last').innerHTML='<b>'+esc(r.de)+'</b> '+what+' · <span class=cc>'+esc(r.de_c||'')+'</span>'+(r.dist?' · <span class=dist>'+Math.round(r.dist).toLocaleString()+' mi</span>':'')+
-  (r.snr!=null?' · '+(r.snr>0?'+':'')+r.snr+' dB':'')+' · <span class=cc>'+ago(r.ts)+'</span>'}).catch(function(){})}
-function showPlain(m){live.innerHTML='<span class=lbl>'+esc(m[1])+'</span><span class=prose>'+esc(m[2])+'</span>';freqV.textContent=''}
-function sat(st){var v=$('satV'),s=$('satS');var x=st.sat||{};
- if(x.capturing){v.innerHTML='Capturing '+esc(x.sat||'pass');s.textContent='recording now'}
- else{var n=(x.next||[])[0];v.textContent=n?n.sat+' in '+(n.in_min<60?n.in_min+' min':Math.round(n.in_min/60)+' h'):'no passes soon';
-  s.textContent=n?'next pass · '+n.el+'° max':(x.last?'last: '+x.last.sat:'X30A · ISS · SO-50')}}
-function adsb(st){var a=st.adsb||{},n=a.planes||0,p=(a.pos!=null?a.pos:n);
- $('adsbV').textContent=p+' aircraft';
- $('adsbS').textContent=p?'in view now'+(n>p?' · '+(n-p)+' more heard':''):(n?n+' heard, no position yet':'none in view')}
-function tick(){get('station.json').then(function(st){
- var age=Math.floor(Date.now()/1000)-(st.updated||0);
- if(!st.updated||age>90){cur='OFF';setMode('off','Off air','');live.innerHTML='<span class=sub>The hamSDR station is not reporting right now.</span>';freqV.textContent='';ladder('');return}
- var m=MODES[st.mode]||MODES.IDLE;cur=st.mode;setMode(m[0],m[1],st.band?st.band+(st.vhflisten?' · VHF':''):'');ladder(st.band||'');sat(st);adsb(st);
- if(st.mode==='RTTY')get('rtty.json').then(showRtty,function(){showRtty(null)});
- else if(st.mode==='FT8')get('ft8.json').then(showFt8,function(){showFt8(null)});
- else showPlain(m);
-}).catch(function(){setMode('off','Off air','');live.innerHTML='<span class=sub>Station feed unreachable.</span>';freqV.textContent=''})}
-function clock(){var d=new Date();$('utc').textContent=d.toUTCString().slice(17,22)+'z';
- $('clockV').innerHTML=d.toUTCString().slice(17,22)+'<span> UTC</span>';
- $('clockS').textContent=d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+' local · '+d.toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'})}
-function rpt(){get('rpt.json').then(function(j){var on=j.state==='running';var v=$('rptV'),s=$('rptS');
- var hits=(j.hits||[]).slice(),last=hits[hits.length-1];
- if(!on){v.textContent='Off';s.textContent=j.state==='paused'?'paused for a satellite pass':'scanner not running';$('mScanV').textContent='Off';$('mScanS').textContent='satellite passes take priority';return}
- if(j.on&&j.label){v.textContent=mhz(j.hz);s.textContent=j.label+' · on air';$('mScanV').innerHTML=mhz(j.hz)+'<span> '+esc(j.label)+' · on air</span>'}
- else{v.textContent='Scanning';s.textContent=last?'last: '+last.label+' '+ago(last.end):'quiet';$('mScanV').innerHTML='Scanning<span> '+(j.channels||[]).length+' channels</span>'}
- var rows=hits.slice(-3).reverse().map(function(h){return '<div><b>'+mhz(h.hz)+'</b><span>'+esc(h.label)+' · '+ago(h.end||h.start)+'</span></div>'}).join('');
- $('mScanR').innerHTML=rows||'<div><span>nothing heard yet today</span></div>';
- var nl=(j.listeners||0)+(j.listeners_nr||0)+(j.listeners_ll||0)+(j.listeners_llnr||0);
- $('mScanS').textContent=(nl?nl+' listening now':'nobody listening right now')+(j.ll?' · low latency available':'')}).catch(function(){$('rptV').textContent='—';$('rptS').textContent='feed unreachable'})}
-function rttyMod(){get('rtty.json').then(function(j){var liveN=(j.stats||{}).live||0;
- $('mRttyV').textContent=cur==='RTTY'?(liveN+' signal'+(liveN==1?'':'s')+' on '+(j.band||'')):'Standing by';
- var q=(j.qsos||[])[0];var rows='';
- if(cur!=='RTTY')rows+='<div><b>Next window</b><span>W1AW 17:55 &amp; 20:55 local</span></div>';
- if(q)rows+='<div><b>Last QSO</b><span>'+esc(q.calls.join(' ↔ '))+'</span></div>';
- rows+='<div><b>Band</b><span>'+esc(j.band||'')+(j.freq?' · '+mhz(j.freq)+' MHz':'')+'</span></div>';
- $('mRttyR').innerHTML=rows}).catch(function(){})}
-function iss(){local('iss/aprs.json').then(function(r){return r.json()}).then(function(j){var p=(j.passes||[])[0],st=j.stats||{};
- $('mIssV').textContent=p?'Last pass '+hhmm(p.start):'No passes yet';
- $('mIssR').innerHTML='<div><b>Packets</b><span>'+(st.packets||0)+' relayed · '+(st.stations||0)+' stations</span></div><div><b>Passes</b><span>'+(st.passes||0)+' logged'+(p?' · '+p.max_el+'° max':'')+'</span></div>'}).catch(function(){})}
-function bull(){local('bulletins/bulletins.json').then(function(r){return r.json()}).then(function(j){var b=(j.bulletins||[])[0];if(!b)return;
- var d=new Date((+b.start)*1000);$('mBullV').textContent=esc(b.from)+' · '+d.toLocaleDateString([],{month:'short',day:'numeric'});
- $('mBullR').innerHTML='<div><b>'+esc(String(b.title).replace(/^ARRL /,'').split(' (')[0])+'</b><span>'+esc(b.band)+' '+esc(b.mode)+'</span></div><div><b>Copied</b><span>'+(j.bulletins||[]).length+' bulletins · '+esc(b.chars)+' chars last</span></div>'}).catch(function(){})}
-function firstImg(html){var m=html.match(/<img[^>]+src="?([^" >]+)/);return m?m[1]:null}
+
+// ---- Kentucky outline with a crosshair on Louisville (simplified border, lon/lat)
+var KY=[[-89.42,36.50],[-89.15,36.80],[-89.13,37.00],[-88.48,37.07],[-88.10,37.50],[-87.92,37.79],[-87.60,37.97],[-87.10,37.78],[-86.80,37.99],[-86.52,38.05],
+ [-86.33,38.17],[-86.03,38.00],[-85.90,38.22],[-85.65,38.33],[-85.43,38.52],[-85.17,38.69],[-84.80,38.79],[-84.55,39.10],[-84.23,38.91],[-83.85,38.75],
+ [-83.66,38.63],[-83.27,38.62],[-82.88,38.73],[-82.59,38.42],[-82.60,38.17],[-82.42,37.95],[-82.00,37.55],[-82.35,37.27],[-82.72,37.12],[-83.00,36.85],
+ [-83.67,36.60],[-84.35,36.59],[-85.29,36.63],[-86.08,36.63],[-87.85,36.63],[-88.07,36.68],[-88.05,36.50]];
+function kyXY(lon,lat){return [((lon+89.7)*25.3).toFixed(1),((39.25-lat)*31.5+3).toFixed(1)]}
+$('kyPath').setAttribute('d','M'+KY.map(function(p){return kyXY(p[0],p[1]).join(' ')}).join('L')+'Z');
+(function(){var c=kyXY(-85.76,38.25),x=+c[0],y=+c[1],g=$('kyX');sv('circle',{cx:x,cy:y,r:6},g);sv('circle',{cx:x,cy:y,r:1.6,fill:'var(--gold)'},g);
+ sv('path',{d:'M'+(x-11)+' '+y+'h7m8 0h7M'+x+' '+(y-11)+'v7m0 8v7'},g)})();
+
+// ---- slim status bar + footer
+var cur=null;
+function status(){get('station.json').then(function(st){
+ var age=Math.floor(Date.now()/1000)-(st.updated||0),on=st.updated&&age<=90;
+ $('status').className='status'+(on?'':' off');dot('stDot',on);dot('fDot',on);
+ $('fOkT').textContent=on?'Station online':'Station not reporting';
+ if(!on){$('stMode').textContent='Off air';$('stFreq').textContent='—';$('stBand').textContent='—';$('stDec').textContent='The hamSDR station is not reporting right now.';cur=null;return}
+ cur=st.mode;$('stMode').textContent=MODES[st.mode]||st.mode;$('stBand').textContent=(st.band||'—')+(st.vhflisten?' · VHF':'');
+ var a=st.adsb||{};$('fAll').textContent=(a.pos!=null?a.pos:a.planes||0);dot('adsbDot',true);
+ var n=((st.sat||{}).next||[])[0];$('satNext').textContent=st.sat&&st.sat.capturing?'Recording '+(st.sat.sat||'a pass')+' now':(n?'Next pass: '+n.sat+' in '+(n.in_min<60?n.in_min+' min':Math.round(n.in_min/60)+' h')+' · '+n.el+'° max':'');
+ if(st.mode==='FT8')get('ft8.json').then(function(j){$('stFreq').textContent=j.freq?mhz(j.freq)+' MHz':'—';var r=(j.feed||[])[0];
+  $('stDec').innerHTML=r?'Latest: <b>'+esc(r.de)+'</b>'+(r.to?' → '+esc(r.to):'')+(r.de_c?' · '+esc(r.de_c):'')+(r.dist?' · '+Math.round(r.dist).toLocaleString()+' mi':''):'listening…'}).catch(function(){});
+ else if(st.mode==='RTTY')get('rtty.json').then(function(j){$('stFreq').textContent=j.freq?mhz(j.freq)+' MHz':'—';var s=(j.sigs||[]).filter(function(x){return x.chars>0})[0];
+  $('stDec').innerHTML=s?'<b>'+(s.hz/1000).toFixed(1)+' kHz</b> '+esc(String(s.text||'').slice(-80)):'no RTTY on the band right now'}).catch(function(){});
+ else{$('stFreq').textContent='—';$('stDec').textContent=''}
+}).catch(function(){$('status').className='status off';$('stMode').textContent='Off air';$('stDec').textContent='Station feed unreachable.'})}
+function clock(){var d=new Date(),u=d.toUTCString();$('stUtc').textContent=u.slice(17,22);
+ $('fTime').textContent=d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric',timeZone:'UTC'})+'  '+u.slice(17,22)+' UTC'}
+
+// ---- GOES: products from the gallery page, latest full-size frame in the tile
+var PRODS=[['region.html','Eastern US'],['city-lights.html','Full disk'],['meso.html','Mesoscale'],['water-vapor.html','Water vapor'],['cloud-top-ir.html','Infrared'],['visible.html','Visible'],['false-color.html','False color']],goesMap={};
+function showProd(href){var p=goesMap[href];if(!p)return;var img=$('goesImg');img.src=p.full;img.className=/region|meso/.test(href)?'':'disk';
+ $('goesLink').href='goes/'+href;$('goesProd').textContent=p.name;var m=p.full.match(/(\d{4}-\d{2}-\d{2})_(\d{2})-(\d{2})/);
+ $('goesDate').textContent=m?m[1]:'';$('goesTime').textContent=m?m[2]+':'+m[3]+' UTC':'';
+ [].forEach.call($('prods').children,function(b){b.classList.toggle('on',b.dataset.h===href)})}
 function goes(){local('goes/').then(function(r){return r.text()}).then(function(t){
- var m=t.match(/\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}/g);var src=firstImg(t);
- if(m){var f=m.sort().pop(),hm=f.slice(11,16).replace('-',':');$('goesV').textContent='Frame '+hm+'z';$('goesCap').textContent='latest frame '+hm+'z · 1694.1 MHz HRIT'}
- if(src){var im=$('goesImg');im.src=src;im.hidden=false}}).catch(function(){})}
-function sstv(){local('sstv/rx/').then(function(r){return r.text()}).then(function(t){var src=firstImg(t);if(!src)return;
- var im=$('sstvImg');im.src='sstv/rx/'+src;im.hidden=false;var alt=t.match(/<img[^>]+alt="([^"]*)"/);if(alt)$('sstvCap').textContent=alt[1].replace('SSTV image received','Last picture')}).catch(function(){})}
-// Star Trek contacts, same as radar/ and the Pi console: cargo = Klingon Bird-of-Prey,
-// US military = Borg cube, everyone else = Federation saucer; brighter = higher.
+ var re=/<a[^>]*href="([^"]+\.html)"[^>]*>\s*<img[^>]*src="([^"]+)"[^>]*alt="([^"]*)"/g,m;
+ while((m=re.exec(t)))goesMap[m[1]]={full:m[2].replace(/-t\.jpg$/,'.jpg'),name:m[3].replace(/&middot;/g,'·')};
+ var box=$('prods'),first=$('prods').querySelector('.on');box.innerHTML='';
+ PRODS.forEach(function(p){if(!goesMap[p[0]])return;var b=document.createElement('button');b.type='button';b.dataset.h=p[0];b.innerHTML=esc(p[1])+'<span>&#9656;</span>';
+  b.onclick=function(){showProd(p[0])};box.appendChild(b)});
+ var a=document.createElement('a');a.className='cta open';a.href='goes/';a.textContent='All products ▸';box.appendChild(a);
+ showProd(first?first.dataset.h:'region.html')}).catch(function(){})}
+
+// ---- weather (APRS stations the Pi hears)
+function wx(){get('wx.json').then(function(j){var n=j.now;var fresh=n&&(Date.now()/1000-(j.updated||0))<300;dot('wxDot',fresh);
+ if(!n){$('wxSrc').textContent='No APRS weather station heard recently';return}
+ $('wxTemp').innerHTML=Math.round(n.temp_f)+'<small>&deg;F</small>';$('wxFeels').textContent=n.feels_f!=null?n.feels_f+'°':'—';
+ $('wxRh').textContent=n.rh!=null?n.rh+'%':'—';$('wxBaro').textContent=n.baro_inhg?n.baro_inhg.toFixed(2)+'"':'—';
+ $('wxWind').textContent=n.wind_mph?((n.wind_card||'')+' '+n.wind_mph+' mph'+(n.gust_mph>n.wind_mph?' g'+n.gust_mph:'')):'Calm';
+ $('wxLoHi').textContent=(n.lo_f!=null&&n.hi_f!=null)?n.lo_f+'° / '+n.hi_f+'°':'—';
+ $('wxSrc').textContent='APRS station '+n.station+' · '+n.dist_mi+' mi away · heard '+ago(Date.now()/1000-(n.age_s||0));
+ chart(j.hist||[],n)}).catch(function(){})}
+function chart(h,n){var g=$('wxChart');g.innerHTML='';var W=400,H=110,L=26,B=94,T=10,now=Date.now()/1000,t0=now-86400;
+ var temps=h.map(function(p){return p[1]});if(n.lo_f!=null)temps.push(n.lo_f);if(n.hi_f!=null)temps.push(n.hi_f);
+ var lo=Math.floor((Math.min.apply(null,temps)-2)/10)*10,hi=Math.ceil((Math.max.apply(null,temps)+2)/10)*10;if(hi-lo<20)hi=lo+20;
+ function X(t){return L+(t-t0)/86400*(W-L-6)}function Y(v){return B-(v-lo)/(hi-lo)*(B-T)}
+ [lo,(lo+hi)/2,hi].forEach(function(v){sv('line',{x1:L,x2:W-6,y1:Y(v),y2:Y(v),stroke:'#1a1a2a','stroke-width':1},g);var tx=sv('text',{x:L-4,y:Y(v)+3.5,'text-anchor':'end','font-size':10,fill:'#c9c'},g);tx.textContent=Math.round(v)+'°'});
+ for(var k=0;k<=24;k+=6){var t=t0+k*3600,tx=sv('text',{x:X(t),y:H-2,'text-anchor':k===24?'end':k===0?'start':'middle','font-size':10,fill:'#c9c'},g);tx.textContent=new Date(t*1000).toLocaleTimeString([],{hour:'numeric'}).replace(' ','').toLowerCase()}
+ var pts=h.filter(function(p){return p[0]>=t0});
+ if(pts.length>1){sv('polyline',{points:pts.map(function(p){return X(p[0]).toFixed(1)+','+Y(p[1]).toFixed(1)}).join(' '),fill:'none',stroke:'#f96','stroke-width':2,'stroke-linejoin':'round'},g);
+  pts.forEach(function(p,i){if(i%6===0)sv('circle',{cx:X(p[0]),cy:Y(p[1]),r:2,fill:'#f96'},g)})}
+ else{var tx2=sv('text',{x:(L+W)/2,y:(T+B)/2,'text-anchor':'middle','font-size':11,fill:'#c9c','letter-spacing':1},g);tx2.textContent='24-HOUR HISTORY STARTED · FILLS IN THROUGH THE DAY'}
+ if(pts.length)sv('circle',{cx:X(pts[pts.length-1][0]),cy:Y(pts[pts.length-1][1]),r:3.5,fill:'#fc6'},g)}
+
+// ---- flight radar: Star Trek contacts, same as radar/ and the Pi console
 var KLINGON=[[8,0],[3,1.5],[-3,9],[-6,4],[-4,1.4],[-7,0],[-4,-1.4],[-6,-4],[-3,-9],[3,-1.5]],
  SHADES={fed:[[80,120,175],[195,224,255]],klingon:[[78,150,66],[185,255,150]],military:[[150,36,36],[255,100,80]]},
  CARGO=['UPS','FDX','GTI','ABX','CKS','KFS','GEC','BOX','CLX','ATN','BCS','DHK','DAE','NCR','PAC','SOO','ICL','CJT'],MILC=['RCH','CNV','SPAR','PAT','EVAC','BOLT','GRIM','DOOM','SLAM'];
@@ -230,19 +364,83 @@ function faction(fl,hx){var f=(fl||'').trim().toUpperCase();if((hx||'').toLowerC
  return CARGO.some(function(x){return f.indexOf(x)===0})?'klingon':'fed'}
 function shade(fac,alt){var t=Math.max(0,Math.min(1,(typeof alt==='number'?alt:20000)/40000)),lo=SHADES[fac][0],hi=SHADES[fac][1];
  return 'rgb('+[0,1,2].map(function(i){return Math.round(lo[i]+(hi[i]-lo[i])*t)}).join(',')+')'}
-var SU=.58;function SP(f,r){return (r*SU).toFixed(2)+' '+(-f*SU).toFixed(2)}
+var SU=.42;function SP(f,r){return (r*SU).toFixed(2)+' '+(-f*SU).toFixed(2)}
 function shipSvg(fac){if(fac==='military'){var q=(5*SU).toFixed(2),i=(5*SU*.46).toFixed(2);
   return '<rect x="-'+q+'" y="-'+q+'" width="'+2*q+'" height="'+2*q+'" fill="currentColor"/><rect x="-'+i+'" y="-'+i+'" width="'+2*i+'" height="'+2*i+'" fill="none" stroke="#1e0606" stroke-width=".3"/>'}
  if(fac==='klingon')return '<path d="M'+KLINGON.map(function(p){return SP(p[0],p[1])}).join('L')+'Z" fill="currentColor"/>';
  return '<path d="M'+SP(1,0)+'L'+SP(-6,0)+'M'+SP(-1,3.2)+'L'+SP(-7,3.6)+'M'+SP(-1,-3.2)+'L'+SP(-7,-3.6)+'" stroke="currentColor" stroke-width="'+(2.6*SU).toFixed(2)+'" stroke-linecap="round" fill="none"/><circle cx="0" cy="'+(-3.5*SU).toFixed(2)+'" r="'+(4.6*SU).toFixed(2)+'" fill="currentColor"/>'}
 function radar(){get('planes.json').then(function(j){var ps=(j.planes||[]).filter(function(p){return p.dist!=null&&p.brg!=null});
- $('radarShips').innerHTML=ps.slice(0,40).map(function(p){var r=Math.min(p.dist,60)/60*45,a=(p.brg-90)*Math.PI/180,fac=faction(p.flight,p.hex),col=shade(fac,p.alt);
-  var x=(80+Math.cos(a)*r).toFixed(1),y=(50+Math.sin(a)*r).toFixed(1);
-  return '<g transform="translate('+x+' '+y+')'+(fac==='military'?'':' rotate('+(p.track||0)+')')+'" style="color:'+col+';filter:drop-shadow(0 0 1px '+col+')">'+shipSvg(fac)+'</g>'}).join('');
- $('radarCap').textContent=(ps.length?ps.length+' aircraft plotted':'nothing in view')+' · 60 mi rings'}).catch(function(){})}
-tick();clock();rpt();rttyMod();ft8Card();setInterval(ft8Card,15000);iss();bull();goes();sstv();radar();
-setInterval(tick,5000);setInterval(rpt,5000);setInterval(radar,5000);setInterval(rttyMod,30000);setInterval(clock,10000);setInterval(goes,300000);
-window.__now={showRtty:showRtty,showFt8:showFt8,setMode:setMode,MODES:MODES};   // dev hook for testing branches
+ $('radarShips').innerHTML=ps.slice(0,60).map(function(p){var r=Math.min(p.dist,60)/60*46,a=(p.brg-90)*Math.PI/180,fac=faction(p.flight,p.hex),col=shade(fac,p.alt);
+  return '<g transform="translate('+(50+Math.cos(a)*r).toFixed(1)+' '+(50+Math.sin(a)*r).toFixed(1)+')'+(fac==='military'?'':' rotate('+(p.track||0)+')')+'" style="color:'+col+';filter:drop-shadow(0 0 1px '+col+')">'+shipSvg(fac)+'</g>'}).join('');
+ $('fAll').textContent=ps.length;
+ var alts=ps.map(function(p){return p.alt}).filter(function(a){return typeof a==='number'});
+ $('fAlt').textContent=alts.length?(Math.round(alts.reduce(function(a,b){return a+b},0)/alts.length/100)*100).toLocaleString()+' ft':'—';
+ var nn=ps.slice().sort(function(a,b){return a.dist-b.dist})[0];
+ $('fNear').textContent=nn?(nn.flight||nn.hex||'unknown').trim():'none in view';
+ $('fNearS').textContent=nn?((typeof nn.alt==='number'?nn.alt.toLocaleString()+' ft · ':'')+nn.dist.toFixed(1)+' mi'):''}).catch(function(){})}
+
+// ---- maps: Robinson projection shared by FT8 and the greyline (same as ft8/)
+var RBX=[1,.9986,.9954,.99,.9822,.973,.96,.9427,.9216,.8962,.8679,.835,.7986,.7597,.7186,.6732,.6213,.5722,.5322],
+ RBY=[0,.062,.124,.186,.248,.31,.372,.434,.4958,.5571,.6176,.6769,.7346,.7903,.8435,.8936,.9394,.9761,1],HOME_LL=[38.2679,-85.6279];
+function proj(lat,lon){var a=Math.min(Math.abs(lat),90),i=Math.min(17,Math.floor(a/5)),t=a/5-i,X=RBX[i]+(RBX[i+1]-RBX[i])*t,Y=RBY[i]+(RBY[i+1]-RBY[i])*t;
+ return [180+.8487*67.52*X*lon*Math.PI/180,91.5-(lat<0?-1:1)*1.3523*67.52*Y]}
+function pth(pts,close){return pts.map(function(p,i){var q=proj(p[0],p[1]);return (i?'L':'M')+q[0].toFixed(1)+' '+q[1].toFixed(1)}).join('')+(close?'Z':'')}
+var edge=[],la;for(la=-90;la<=90;la+=3)edge.push([la,180]);for(la=90;la>=-90;la-=3)edge.push([la,-180]);
+function baseMap(svg){sv('path',{d:pth(edge,true),fill:'#0a1424',stroke:'#2b2b45','stroke-width':.6},svg);var land=sv('g',{},svg);var over=sv('g',{},svg);return {land:land,over:over}}
+var fm=baseMap($('ft8map')),gm=baseMap($('greyline')),H=proj(HOME_LL[0],HOME_LL[1]);
+local('ft8/land.json').then(function(r){return r.json()}).then(function(L){var d=L.map(function(r){return pth(r,true)}).join('');
+ sv('path',{d:d,fill:'#1c2a3a',stroke:'#3c5c78','stroke-width':.35},fm.land);sv('path',{d:d,fill:'#1c2a3a',stroke:'#3c5c78','stroke-width':.35},gm.land)}).catch(function(){});
+sv('circle',{cx:H[0],cy:H[1],r:2.2,fill:'#f96'},$('ft8map'));
+function ft8Card(){get('ft8.json').then(function(j){var rec=j.records||{};
+ if(j.freq)$('ft8Freq').innerHTML=mhz(j.freq)+' MHz &#9656;';
+ $('kQso').textContent=(j.qsos||[]).length;$('kCty').textContent=rec.countries||0;$('kBest').textContent=rec.furthest?Math.round(rec.furthest.dist).toLocaleString():'—';
+ var r=(j.feed||[]).filter(function(x){return x.ll})[0];fm.over.innerHTML='';
+ if(!r){$('ft8last').textContent='Nothing decoded yet.';return}
+ var P=proj(r.ll[0],r.ll[1]),mx=(H[0]+P[0])/2,my=Math.min(H[1],P[1])-Math.abs(P[0]-H[0])*.18-6;
+ sv('path',{d:'M'+H[0]+' '+H[1]+'Q'+mx+' '+my+' '+P[0]+' '+P[1],fill:'none',stroke:'#fc6','stroke-width':.9,'stroke-dasharray':'2 1.5',opacity:.85},fm.over);
+ sv('circle',{cx:P[0],cy:P[1],r:7,fill:'none',stroke:'#fc6','stroke-width':.6,opacity:.6},fm.over);sv('circle',{cx:P[0],cy:P[1],r:2.6,fill:'#fc6'},fm.over);
+ $('ft8last').innerHTML='<b style="color:var(--gold)">'+esc(r.de)+'</b> '+(r.to==='CQ'?'calling CQ':(r.to?'→ <b style="color:var(--gold)">'+esc(r.to)+'</b>':''))+' · <span style="color:var(--dim)">'+esc(r.de_c||'')+'</span>'+
+  (r.dist?' · <span style="color:var(--ice)">'+Math.round(r.dist).toLocaleString()+' mi</span>':'')+(r.snr!=null?' · '+(r.snr>0?'+':'')+r.snr+' dB':'')+' · <span style="color:var(--dim)">'+ago(r.ts)+'</span>'}).catch(function(){})}
+// greyline: the night side as a polygon from the subsolar point
+function greyline(){gm.over.innerHTML='';var d=new Date(),day=(d-Date.UTC(d.getUTCFullYear(),0,0))/864e5,g=2*Math.PI/365*(day-1+(d.getUTCHours()-12)/24);
+ var dec=0.006918-0.399912*Math.cos(g)+0.070257*Math.sin(g)-0.006758*Math.cos(2*g)+0.000907*Math.sin(2*g)-0.002697*Math.cos(3*g)+0.00148*Math.sin(3*g);
+ var eqt=229.18*(0.000075+0.001868*Math.cos(g)-0.032077*Math.sin(g)-0.014615*Math.cos(2*g)-0.040849*Math.sin(2*g));
+ var sunLon=-((d.getUTCHours()*60+d.getUTCMinutes()+eqt)/4-180),pts=[],lon;
+ for(lon=-180;lon<=180;lon+=3){var lat=Math.atan(-Math.cos((lon-sunLon)*Math.PI/180)/Math.tan(dec))*180/Math.PI;pts.push([lat,lon])}
+ var pole=dec>0?-90:90,poly=pts.concat([[pole,180],[pole,-180]]);
+ sv('path',{d:pth(poly,true),fill:'#000','fill-opacity':.55},gm.over);sv('path',{d:pth(pts,false),fill:'none',stroke:'#f96','stroke-width':1.1,opacity:.9},gm.over);
+ var S=proj(dec*180/Math.PI,((sunLon+540)%360)-180);sv('circle',{cx:S[0],cy:S[1],r:3.2,fill:'#fc6'},gm.over);sv('circle',{cx:H[0],cy:H[1],r:2.2,fill:'#9cf'},gm.over)}
+
+// ---- SSTV: three latest pictures
+function sstv(){local('sstv/rx/').then(function(r){return r.text()}).then(function(t){var re=/<a href="([^"]+)"[^>]*><img src="([^"]+)"[^>]*alt="([^"]*)"/g,m,out=[];
+ while((m=re.exec(t))&&out.length<3)out.push('<a href="sstv/rx/'+esc(m[1])+'"><img loading=lazy src="sstv/rx/'+esc(m[2])+'" alt="'+esc(m[3])+'"><span>'+esc(m[3].replace('SSTV image received ',''))+'</span></a>');
+ $('sstvThumbs').innerHTML=out.join('')}).catch(function(){})}
+
+// ---- repeater scanner table
+function rpt(){get('rpt.json').then(function(j){var on=j.state==='running'&&(j.now-(j.updated||0))<30,heard=j.heard||{},now=j.now||Date.now()/1000;dot('rptDot',on);
+ $('rptLive').textContent=on?(j.state==='paused'?'Paused':'Live'):'Off';
+ var chs=(j.channels||[]).map(function(c,i){var air=on&&j.label===c.label&&j.live;return {c:c,air:air,k:air?Infinity:(heard[c.label]||-1),i:i}});
+ chs.sort(function(a,b){return b.k-a.k||a.i-b.i});
+ $('rptRows').innerHTML=chs.slice(0,5).map(function(o){var t=heard[o.c.label];return '<tr'+(o.air?' class=air':'')+'><td>'+mhz(o.c.hz)+'</td><td class=lab>'+esc(o.c.label)+(o.c.place?' · '+esc(o.c.place):'')+'</td><td class=st>'+(o.air?'On air':(t?ago(t):'quiet'))+'</td></tr>'}).join('');
+ var nl=(j.listeners||0)+(j.listeners_nr||0)+(j.listeners_ll||0)+(j.listeners_llnr||0);
+ $('rptSub').textContent=!on?'Scanner off · satellite passes borrow the antenna':(j.label&&j.live?'Stopped on '+j.label:'Scanning '+(j.channels||[]).length+' channels')+' · '+(nl?nl+' listening':'nobody listening')}).catch(function(){})}
+
+// ---- RTTY skimmer + latest bulletin, ISS
+function rtty(){get('rtty.json').then(function(j){var n=((j.stats||{}).live)||0,live=cur==='RTTY';dot('rttyDot',live);
+ $('mRttyV').textContent=live?(n+' signal'+(n==1?'':'s')+' on '+(j.band||'')):'Standing by';var q=(j.qsos||[])[0],rows='';
+ if(!live)rows+='<div><b>Next window</b><span>W1AW 17:55 &amp; 20:55 local</span></div>';
+ if(q)rows+='<div><b>Last QSO</b><span>'+esc(q.calls.join(' ↔ '))+'</span></div>';
+ if(j.band)rows+='<div><b>Band</b><span>'+esc(j.band)+(j.freq?' · '+mhz(j.freq)+' MHz':'')+'</span></div>';$('mRttyR').innerHTML=rows}).catch(function(){})}
+function bull(){local('bulletins/bulletins.json').then(function(r){return r.json()}).then(function(j){var b=(j.bulletins||[])[0];if(!b)return;
+ $('mBullR').innerHTML='<div><b>Latest bulletin</b><span>'+esc(String(b.title).replace(/^ARRL /,'').split(' (')[0])+' · '+new Date((+b.start)*1000).toLocaleDateString([],{month:'short',day:'numeric'})+'</span></div>'}).catch(function(){})}
+function iss(){local('iss/aprs.json').then(function(r){return r.json()}).then(function(j){var p=(j.passes||[])[0],st=j.stats||{};
+ $('mIssV').textContent=p?'Last pass '+new Date(p.start*1000).toUTCString().slice(17,22)+'z':'No passes yet';
+ $('mIssR').innerHTML='<div><b>Packets</b><span>'+(st.packets||0)+' relayed · '+(st.stations||0)+' stations</span></div><div><b>Passes</b><span>'+(st.passes||0)+' logged'+(p?' · '+p.max_el+'° max':'')+'</span></div>'}).catch(function(){})}
+
+status();clock();goes();wx();radar();ft8Card();greyline();sstv();rpt();rtty();bull();iss();
+setInterval(status,5000);setInterval(clock,10000);setInterval(radar,5000);setInterval(rpt,5000);setInterval(ft8Card,15000);setInterval(wx,60000);
+setInterval(rtty,30000);setInterval(greyline,300000);setInterval(goes,600000);
+document.addEventListener('click',function(e){var d=document.querySelector('.nav details[open]');if(d&&!d.contains(e.target))d.removeAttribute('open')});
 })();
 </script>
 </body></html>
