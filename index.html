@@ -114,6 +114,9 @@ table.rpt td.st{text-align:right;color:var(--dim);letter-spacing:.12em;text-tran
 table.rpt tr.air td.st{color:#7fd7a0;font-weight:700}
 table.rpt tr.air td:first-child{color:var(--gold)}
 
+/* hamclock screenshot */
+.hcshot img{width:100%;height:auto;display:block;border-radius:10px;border:1px solid var(--line)}
+.hcshot:hover img{border-color:var(--pink)}
 /* hamclock legend */
 .legendlist{display:flex;flex-direction:column;gap:8px;justify-content:center;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink)}
 .legendlist i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:9px;vertical-align:-1px}
@@ -258,14 +261,9 @@ table.rpt tr.air td:first-child{color:var(--gold)}
     <div class=tab><svg class=ic viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>HamClock</div>
     <div class=livetab><span class=ldot></span>Live</div>
     <div class=body>
-      <div class=split>
-        <svg id=greyline class=mapsvg viewBox="0 0 360 183" role=img aria-label="World map with the day and night line"></svg>
-        <div class=legendlist>
-          <div><i style="background:var(--peri)"></i>Propagation</div><div><i style="background:var(--pink)"></i>Satellites</div>
-          <div><i style="background:var(--gold)"></i>Solar data</div><div><i style="background:var(--orange)"></i>Gray line</div><div><i style="background:var(--ice)"></i>DX map</div>
-          <a class=cta href="https://hamclock.w4ewb.com">Open HamClock &#9656;</a>
-        </div>
-      </div>
+      <a class=hcshot href="https://hamclock.w4ewb.com"><img src="img/hamclock.jpg" alt="HamClock: DX spots, solar activity, band conditions, grey line and space weather" loading=lazy width=1440 height=810></a>
+      <div class=sub>DX spots, solar activity, band conditions, grey line and space weather on the shack's LCARS wall display</div>
+      <a class=cta href="https://hamclock.w4ewb.com">Open HamClock &#9656;</a>
     </div>
   </section>
 
@@ -403,7 +401,7 @@ function radar(){get('planes.json').then(function(j){var ps=(j.planes||[]).filte
  $('fNear').textContent=nn?(nn.flight||nn.hex||'unknown').trim():'none in view';
  $('fNearS').textContent=nn?((typeof nn.alt==='number'?nn.alt.toLocaleString()+' ft · ':'')+nn.dist.toFixed(1)+' mi'):''}).catch(function(){})}
 
-// ---- maps: Robinson projection shared by FT8 and the greyline (same as ft8/)
+// ---- maps: Robinson projection for the FT8 card (same as ft8/)
 var RBX=[1,.9986,.9954,.99,.9822,.973,.96,.9427,.9216,.8962,.8679,.835,.7986,.7597,.7186,.6732,.6213,.5722,.5322],
  RBY=[0,.062,.124,.186,.248,.31,.372,.434,.4958,.5571,.6176,.6769,.7346,.7903,.8435,.8936,.9394,.9761,1],HOME_LL=[38.2679,-85.6279];
 function proj(lat,lon){var a=Math.min(Math.abs(lat),90),i=Math.min(17,Math.floor(a/5)),t=a/5-i,X=RBX[i]+(RBX[i+1]-RBX[i])*t,Y=RBY[i]+(RBY[i+1]-RBY[i])*t;
@@ -411,9 +409,9 @@ function proj(lat,lon){var a=Math.min(Math.abs(lat),90),i=Math.min(17,Math.floor
 function pth(pts,close){return pts.map(function(p,i){var q=proj(p[0],p[1]);return (i?'L':'M')+q[0].toFixed(1)+' '+q[1].toFixed(1)}).join('')+(close?'Z':'')}
 var edge=[],la;for(la=-90;la<=90;la+=3)edge.push([la,180]);for(la=90;la>=-90;la-=3)edge.push([la,-180]);
 function baseMap(svg){sv('path',{d:pth(edge,true),fill:'#0a1424',stroke:'#2b2b45','stroke-width':.6},svg);var land=sv('g',{},svg);var over=sv('g',{},svg);return {land:land,over:over}}
-var fm=baseMap($('ft8map')),gm=baseMap($('greyline')),H=proj(HOME_LL[0],HOME_LL[1]);
+var fm=baseMap($('ft8map')),H=proj(HOME_LL[0],HOME_LL[1]);
 local('ft8/land.json').then(function(r){return r.json()}).then(function(L){var d=L.map(function(r){return pth(r,true)}).join('');
- sv('path',{d:d,fill:'#1c2a3a',stroke:'#3c5c78','stroke-width':.35},fm.land);sv('path',{d:d,fill:'#1c2a3a',stroke:'#3c5c78','stroke-width':.35},gm.land)}).catch(function(){});
+ sv('path',{d:d,fill:'#1c2a3a',stroke:'#3c5c78','stroke-width':.35},fm.land)}).catch(function(){});
 sv('circle',{cx:H[0],cy:H[1],r:2.2,fill:'#f96'},$('ft8map'));
 function ft8Card(){get('ft8.json').then(function(j){var rec=j.records||{};
  if(j.freq)$('ft8Freq').innerHTML=mhz(j.freq)+' MHz &#9656;';
@@ -425,7 +423,7 @@ function ft8Card(){get('ft8.json').then(function(j){var rec=j.records||{};
  sv('circle',{cx:P[0],cy:P[1],r:7,fill:'none',stroke:'#fc6','stroke-width':.6,opacity:.6},fm.over);sv('circle',{cx:P[0],cy:P[1],r:2.6,fill:'#fc6'},fm.over);
  $('ft8last').innerHTML='<b style="color:var(--gold)">'+esc(r.de)+'</b> '+(r.to==='CQ'?'calling CQ':(r.to?'→ <b style="color:var(--gold)">'+esc(r.to)+'</b>':''))+' · <span style="color:var(--dim)">'+esc(r.de_c||'')+'</span>'+
   (r.dist?' · <span style="color:var(--ice)">'+Math.round(r.dist).toLocaleString()+' mi</span>':'')+(r.snr!=null?' · '+(r.snr>0?'+':'')+r.snr+' dB':'')+' · <span style="color:var(--dim)">'+ago(r.ts)+'</span>'}).catch(function(){})}
-// is the sun up at lat/lon right now? (same solar terms as the greyline)
+// is the sun up at lat/lon right now? (NOAA solar terms)
 function frameDate(u){var m=String(u).match(/(\d{4})-(\d{2})-(\d{2})_(\d{2})-(\d{2})/);return m?new Date(Date.UTC(+m[1],m[2]-1,+m[3],+m[4],+m[5])):new Date()}
 function sunPos(d){var day=(d-Date.UTC(d.getUTCFullYear(),0,0))/864e5,g=2*Math.PI/365*(day-1+(d.getUTCHours()-12)/24);
  var dec=0.006918-0.399912*Math.cos(g)+0.070257*Math.sin(g)-0.006758*Math.cos(2*g)+0.000907*Math.sin(2*g)-0.002697*Math.cos(3*g)+0.00148*Math.sin(3*g);
@@ -433,15 +431,6 @@ function sunPos(d){var day=(d-Date.UTC(d.getUTCFullYear(),0,0))/864e5,g=2*Math.P
  return {dec:dec,lon:-((d.getUTCHours()*60+d.getUTCMinutes()+eqt)/4-180)}}
 function sunUp(lat,lon,d){var s=sunPos(d||new Date()),r=Math.PI/180,h=(lon-s.lon)*r;
  return Math.sin(lat*r)*Math.sin(s.dec)+Math.cos(lat*r)*Math.cos(s.dec)*Math.cos(h)>Math.sin(-2*r)}   // a little after sunrise / before sunset
-// greyline: the night side as a polygon from the subsolar point
-function greyline(){gm.over.innerHTML='';var d=new Date(),day=(d-Date.UTC(d.getUTCFullYear(),0,0))/864e5,g=2*Math.PI/365*(day-1+(d.getUTCHours()-12)/24);
- var dec=0.006918-0.399912*Math.cos(g)+0.070257*Math.sin(g)-0.006758*Math.cos(2*g)+0.000907*Math.sin(2*g)-0.002697*Math.cos(3*g)+0.00148*Math.sin(3*g);
- var eqt=229.18*(0.000075+0.001868*Math.cos(g)-0.032077*Math.sin(g)-0.014615*Math.cos(2*g)-0.040849*Math.sin(2*g));
- var sunLon=-((d.getUTCHours()*60+d.getUTCMinutes()+eqt)/4-180),pts=[],lon;
- for(lon=-180;lon<=180;lon+=3){var lat=Math.atan(-Math.cos((lon-sunLon)*Math.PI/180)/Math.tan(dec))*180/Math.PI;pts.push([lat,lon])}
- var pole=dec>0?-90:90,poly=pts.concat([[pole,180],[pole,-180]]);
- sv('path',{d:pth(poly,true),fill:'#000','fill-opacity':.55},gm.over);sv('path',{d:pth(pts,false),fill:'none',stroke:'#f96','stroke-width':1.1,opacity:.9},gm.over);
- var S=proj(dec*180/Math.PI,((sunLon+540)%360)-180);sv('circle',{cx:S[0],cy:S[1],r:3.2,fill:'#fc6'},gm.over);sv('circle',{cx:H[0],cy:H[1],r:2.2,fill:'#9cf'},gm.over)}
 
 // ---- SSTV: three latest pictures
 function sstv(){local('sstv/rx/').then(function(r){return r.text()}).then(function(t){var re=/<a href="([^"]+)"[^>]*><img src="([^"]+)"[^>]*alt="([^"]*)"/g,m,out=[];
@@ -469,9 +458,9 @@ function iss(){local('iss/aprs.json').then(function(r){return r.json()}).then(fu
  $('mIssV').textContent=p?'Last pass '+new Date(p.start*1000).toUTCString().slice(17,22)+'z':'No passes yet';
  $('mIssR').innerHTML='<div><b>Packets</b><span>'+(st.packets||0)+' relayed · '+(st.stations||0)+' stations</span></div><div><b>Passes</b><span>'+(st.passes||0)+' logged'+(p?' · '+p.max_el+'° max':'')+'</span></div>'}).catch(function(){})}
 
-status();clock();goes();wx();radar();ft8Card();greyline();sstv();rpt();rtty();bull();iss();
+status();clock();goes();wx();radar();ft8Card();sstv();rpt();rtty();bull();iss();
 setInterval(status,5000);setInterval(clock,10000);setInterval(radar,5000);setInterval(rpt,5000);setInterval(ft8Card,15000);setInterval(wx,60000);
-setInterval(rtty,30000);setInterval(greyline,300000);setInterval(goes,600000);
+setInterval(rtty,30000);setInterval(goes,600000);
 document.addEventListener('click',function(e){var d=document.querySelector('.nav details[open]');if(d&&!d.contains(e.target))d.removeAttribute('open')});
 })();
 </script>
