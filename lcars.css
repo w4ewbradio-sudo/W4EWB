@@ -137,6 +137,9 @@ button{font:inherit;cursor:pointer}
 
 /* controls */
 .play{width:64px;height:64px;border-radius:50%;background:var(--orange);border:0;color:#000;font-size:26px;flex:none;box-shadow:0 0 22px var(--glow-o);display:inline-flex;align-items:center;justify-content:center}
+/* inline SVG icons (2026-10-19): iOS turns the ▶ character into the blue emoji button */
+.ico{width:1em;height:1em;fill:currentColor;vertical-align:-.14em;flex:none}
+.play .ico{width:30px;height:30px}
 .play:hover{filter:brightness(1.15)}.play.on{background:var(--gold);box-shadow:0 0 22px var(--glow)}
 .transport{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .sw{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;border:1px solid var(--lilac);color:var(--lilac);border-radius:12px;padding:6px 14px;

@@ -81,7 +81,7 @@
         <div class=left id=np><div class=lbl id=nplbl>Scanner</div><div class="val big" id=lab>&hellip;</div><div id=frq></div><div class=sub id=st>Loading</div></div>
         <div class=right>
           <div class=transport>
-            <button class=play id=play aria-label="Listen">&#9654;</button>
+            <button class=play id=play aria-label="Listen"><svg class=ico viewBox="0 0 24 24" aria-hidden=true><path d="M7 5.2v13.6a1.2 1.2 0 0 0 1.8 1l11-6.8a1.2 1.2 0 0 0 0-2L8.8 4.2A1.2 1.2 0 0 0 7 5.2z"/></svg></button>
             <button class="sw ll" id=ll title="Raw audio, about half a second behind the air">Low latency<small>~&frac12; s behind the air</small></button>
             <button class=sw id=nr title="RNNoise AI denoiser on the Pi">Denoise<small>RNNoise on the Pi</small></button>
             <button class=sw id=chime title="Ping when a repeater keys up">Chime<small>ping on key-up</small></button>
@@ -110,7 +110,7 @@
     <section class="panel l" aria-label="Help">
       <div class=tab>What the buttons do</div>
       <div class="body help"><details id=help open><summary>Listen, Low latency, Denoise, Chime</summary><dl>
-        <dt>&#9654; Listen</dt>
+        <dt>Listen</dt>
         <dd>Plays whichever repeater the scanner has stopped on. Between transmissions you'll hear silence while it keeps scanning.</dd>
         <dt>Low latency</dt>
         <dd>Normally the audio comes as a compressed stream that your browser buffers, so you hear things a few seconds after they happen. Low latency sends raw audio and plays it right away, about half a second behind the air. It uses about four times the data (roughly 60 MB an hour instead of 15) and stops if your phone locks or you switch apps, so leave it off for pocket listening. It may take a few seconds to start.</dd>
@@ -178,8 +178,8 @@ drawChime();
 function mediaInfo(title,sub){if(!('mediaSession' in navigator))return;try{navigator.mediaSession.metadata=new MediaMetadata({title:title,artist:sub,album:'W4EWB Repeater Scanner',
  artwork:[{src:'/icon-192.png',sizes:'192x192',type:'image/png'},{src:'/icon-512.png',sizes:'512x512',type:'image/png'}]})}catch(e){}}
 if('mediaSession' in navigator){try{navigator.mediaSession.setActionHandler('play',function(){if(avail)start()});navigator.mediaSession.setActionHandler('pause',stop);navigator.mediaSession.setActionHandler('stop',stop)}catch(e){}}
-function start(){if(ll&&llAvail)llStart();else{au.src=streamUrl();au.play().catch(function(){stop()})}playing=true;btn.classList.add('on');btn.innerHTML='&#9632;';btn.setAttribute('aria-label','Stop')}
-function stop(){llStop();au.pause();au.removeAttribute('src');au.load();playing=false;btn.classList.remove('on');btn.innerHTML='&#9654;';btn.setAttribute('aria-label','Listen')}
+function start(){if(ll&&llAvail)llStart();else{au.src=streamUrl();au.play().catch(function(){stop()})}playing=true;btn.classList.add('on');btn.innerHTML='<svg class=ico viewBox="0 0 24 24" aria-hidden=true><rect x="5.5" y="5.5" width="13" height="13" rx="3.5"/></svg>';btn.setAttribute('aria-label','Stop')}
+function stop(){llStop();au.pause();au.removeAttribute('src');au.load();playing=false;btn.classList.remove('on');btn.innerHTML='<svg class=ico viewBox="0 0 24 24" aria-hidden=true><path d="M7 5.2v13.6a1.2 1.2 0 0 0 1.8 1l11-6.8a1.2 1.2 0 0 0 0-2L8.8 4.2A1.2 1.2 0 0 0 7 5.2z"/></svg>';btn.setAttribute('aria-label','Listen')}
 btn.onclick=function(){if(playing)stop();else if(avail)start()};
 au.onerror=function(){if(playing){stop()}};
 au.onended=function(){if(playing){stop()}};
@@ -276,7 +276,7 @@ function show(j){
  mediaInfo(onAir?onAir+' \u00b7 '+mhz(j.hz):(off?'Scanner off':(j.state==='paused'?'Paused for a satellite pass':'Scanning')),onAir?'on air':'Louisville repeaters');
  if(view==='map')updateMap(chs,j,off,heard,now);
  var hs=j.hits||[];
- document.getElementById('hits').innerHTML=hs.length?hs.slice().reverse().map(function(h){return '<div><span>'+hm(h.start)+'</span><b>'+mhz(h.hz).replace(' MHz','')+'</b>'+esc(h.label)+'<em>'+(h.end?dur(h.end-h.start):'now \u25b6')+'</em></div>'}).join(''):'<div id=nohits>Nothing heard yet this session.</div>';
+ document.getElementById('hits').innerHTML=hs.length?hs.slice().reverse().map(function(h){return '<div><span>'+hm(h.start)+'</span><b>'+mhz(h.hz).replace(' MHz','')+'</b>'+esc(h.label)+'<em>'+(h.end?dur(h.end-h.start):'now')+'</em></div>'}).join(''):'<div id=nohits>Nothing heard yet this session.</div>';
 }
 function poll(){fetch(FEED+'rpt.json',{cache:'no-store'}).then(function(r){return r.json()}).then(show).catch(function(){document.getElementById('st').textContent='Status unavailable'}).then(function(){setTimeout(poll,2500)})}
 try{if(localStorage.getItem('rptView')==='map')setView('map')}catch(e){}

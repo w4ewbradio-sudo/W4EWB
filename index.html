@@ -13,6 +13,8 @@
 #now.off #modeV{color:#8e8ea8}
 .rows a{color:var(--peach)}
 .scope .dots b{transition:left 1s,top 1s}
+#ft8map{width:100%;height:auto;display:block;border-radius:10px;background:#02040a;border:1px solid var(--line)}
+#ft8last{font-size:15px}#ft8last b{color:var(--gold)}#ft8last .cc{color:var(--dim)}#ft8last .dist{color:var(--ice)}
 </style>
 </head><body>
 <div class=shell>
@@ -71,10 +73,11 @@
         <div class="val mid" id=mScanV>&mdash;</div>
         <div class=rows id=mScanR><div class=prose>The station scans the Louisville-area 2 m and 70 cm repeaters and streams whichever one is active.</div></div>
         <div class=sub id=mScanS>listen-only</div>
-        <a class="cta hot" href="repeaters/">&#9654; Listen live</a></div></section>
+        <a class="cta hot" href="repeaters/"><svg class=ico viewBox="0 0 24 24" aria-hidden=true style="width:.8em;height:.8em"><path d="M7 5.2v13.6a1.2 1.2 0 0 0 1.8 1l11-6.8a1.2 1.2 0 0 0 0-2L8.8 4.2A1.2 1.2 0 0 0 7 5.2z"/></svg> Listen live</a></div></section>
       <section class="panel g" id=mFt8><div class=tab>FT8 live</div><div class=body>
-        <div class="val mid" id=mFt8V>&mdash;</div>
-        <div class=rows id=mFt8R><div class=prose>Every FT8 transmission the station decodes, mapped live, with the stations that heard W4EWB.</div></div>
+        <svg id=ft8map viewBox="0 0 360 183" role=img aria-label="Map of the latest FT8 station heard"></svg>
+        <div id=ft8last class=prose>Every FT8 transmission the station decodes, mapped live.</div>
+        <div class=sub id=mFt8S></div>
         <a class=cta href="ft8/">Open map &#9656;</a></div></section>
       <section class="panel l" id=mRtty><div class=tab>RTTY &amp; PSK skimmer</div><div class=body>
         <div class="val mid" id=mRttyV>&mdash;</div>
@@ -145,11 +148,31 @@ function showFt8(j){if(!j||!j.updated){live.innerHTML='<span class=sub>Waiting f
   '<div class=sub>nothing decoded this cycle</div>';
  var rec=j.records||{};
  h+='</div><span class=sub>'+(j.n||0)+' decodes this cycle · '+(rec.countries||0)+' countries · <a href="ft8/">open FT8 live ▸</a></span>';live.innerHTML=h;
- $('mFt8V').textContent=(rec.countries||0)+' countr'+(rec.countries==1?'y':'ies')+' today';
- var rows='';if(rec.furthest)rows+='<div><b>Farthest today</b><span>'+esc(rec.furthest.call)+' · '+Math.round(rec.furthest.dist).toLocaleString()+' mi</span></div>';
- if(rec.best)rows+='<div><b>Best ever</b><span>'+esc(rec.best.call)+' · '+Math.round(rec.best.dist).toLocaleString()+' mi</span></div>';
- rows+='<div><b>QSOs seen</b><span>'+((j.qsos||[]).length)+' · spots '+(rec.spots||0)+'</span></div>';
- $('mFt8R').innerHTML=rows}
+}
+// ---- FT8 card: mini Robinson map (same projection as ft8/) + the latest station heard
+var NS='http://www.w3.org/2000/svg',RBX=[1,.9986,.9954,.99,.9822,.973,.96,.9427,.9216,.8962,.8679,.835,.7986,.7597,.7186,.6732,.6213,.5722,.5322],
+ RBY=[0,.062,.124,.186,.248,.31,.372,.434,.4958,.5571,.6176,.6769,.7346,.7903,.8435,.8936,.9394,.9761,1],HOME_LL=[38.2679,-85.6279];
+function proj(lat,lon){var a=Math.min(Math.abs(lat),90),i=Math.min(17,Math.floor(a/5)),t=a/5-i,X=RBX[i]+(RBX[i+1]-RBX[i])*t,Y=RBY[i]+(RBY[i+1]-RBY[i])*t;
+ return [180+.8487*67.52*X*lon*Math.PI/180,91.5-(lat<0?-1:1)*1.3523*67.52*Y]}
+function pth(pts,close){return pts.map(function(p,i){var q=proj(p[0],p[1]);return (i?'L':'M')+q[0].toFixed(1)+' '+q[1].toFixed(1)}).join('')+(close?'Z':'')}
+function sv(n,a,par){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);par.appendChild(e);return e}
+var fm=$('ft8map'),edge=[],la;for(la=-90;la<=90;la+=3)edge.push([la,180]);for(la=90;la>=-90;la-=3)edge.push([la,-180]);
+sv('path',{d:pth(edge,true),fill:'#0a1424',stroke:'#2b2b45','stroke-width':.6},fm);
+var gLand=sv('g',{},fm),gLink=sv('g',{},fm),H=proj(HOME_LL[0],HOME_LL[1]);
+sv('circle',{cx:H[0],cy:H[1],r:2.2,fill:'#f96'},fm);
+local('ft8/land.json').then(function(r){return r.json()}).then(function(L){sv('path',{d:L.map(function(r){return pth(r,true)}).join(''),fill:'#1c2a3a',stroke:'#3c5c78','stroke-width':.35},gLand)}).catch(function(){});
+function ft8Card(){get('ft8.json').then(function(j){
+ var r=(j.feed||[]).filter(function(x){return x.ll})[0],rec=j.records||{};
+ $('mFt8S').textContent=(rec.countries||0)+' countr'+(rec.countries==1?'y':'ies')+' today'+(rec.best?' · best ever '+rec.best.call+' '+Math.round(rec.best.dist).toLocaleString()+' mi':'');
+ gLink.innerHTML='';
+ if(!r){$('ft8last').textContent='Nothing decoded yet.';return}
+ var P=proj(r.ll[0],r.ll[1]),mx=(H[0]+P[0])/2,my=Math.min(H[1],P[1])-Math.abs(P[0]-H[0])*.18-6;
+ sv('path',{d:'M'+H[0]+' '+H[1]+'Q'+mx+' '+my+' '+P[0]+' '+P[1],fill:'none',stroke:'#fc6','stroke-width':.9,'stroke-dasharray':'2 1.5',opacity:.85},gLink);
+ sv('circle',{cx:P[0],cy:P[1],r:7,fill:'none',stroke:'#fc6','stroke-width':.6,opacity:.6},gLink);
+ sv('circle',{cx:P[0],cy:P[1],r:2.6,fill:'#fc6'},gLink);
+ var what=r.to==='CQ'?'calling CQ':(r.to?'→ <b>'+esc(r.to)+'</b>':'');
+ $('ft8last').innerHTML='<b>'+esc(r.de)+'</b> '+what+' · <span class=cc>'+esc(r.de_c||'')+'</span>'+(r.dist?' · <span class=dist>'+Math.round(r.dist).toLocaleString()+' mi</span>':'')+
+  (r.snr!=null?' · '+(r.snr>0?'+':'')+r.snr+' dB':'')+' · <span class=cc>'+ago(r.ts)+'</span>'}).catch(function(){})}
 function showPlain(m){live.innerHTML='<span class=lbl>'+esc(m[1])+'</span><span class=prose>'+esc(m[2])+'</span>';freqV.textContent=''}
 function sat(st){var v=$('satV'),s=$('satS');var x=st.sat||{};
  if(x.capturing){v.innerHTML='Capturing '+esc(x.sat||'pass');s.textContent='recording now'}
@@ -203,7 +226,7 @@ function radar(){get('planes.json').then(function(j){var ps=(j.planes||[]).filte
  $('radarDots').innerHTML=ps.slice(0,40).map(function(p){var r=Math.min(p.dist/60*0.3,0.47),a=(p.brg-90)*Math.PI/180;
   return '<b style="left:'+(50+Math.cos(a)*r*100).toFixed(1)+'%;top:'+(50+Math.sin(a)*r*100*1.6).toFixed(1)+'%"></b>'}).join('');
  $('radarCap').textContent=(ps.length?ps.length+' aircraft plotted':'nothing in view')+' · 60 mi rings'}).catch(function(){})}
-tick();clock();rpt();rttyMod();iss();bull();goes();sstv();radar();
+tick();clock();rpt();rttyMod();ft8Card();setInterval(ft8Card,15000);iss();bull();goes();sstv();radar();
 setInterval(tick,5000);setInterval(rpt,5000);setInterval(radar,5000);setInterval(rttyMod,30000);setInterval(clock,10000);setInterval(goes,300000);
 window.__now={showRtty:showRtty,showFt8:showFt8,setMode:setMode,MODES:MODES};   // dev hook for testing branches
 })();
