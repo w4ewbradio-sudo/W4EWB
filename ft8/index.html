@@ -3,58 +3,57 @@
 <title>W4EWB &middot; FT8 Live</title>
 <link rel="stylesheet" href="/lcars.css">
 <style>
-#mapwrap{padding:2px}
-#scope{width:100%;height:auto;display:block;border-radius:14px}
-#hb{height:4px;background:#111;border-radius:2px;margin:4px 2px;overflow:hidden}
+#mapwrap{padding:0}
+#scope{width:100%;height:auto;display:block;border-radius:10px}
+#hb{height:4px;background:#111;border-radius:2px;margin:0 0 6px;overflow:hidden}
 #hbfill{height:100%;background:var(--peri);width:0}
-#chips{display:flex;gap:8px;flex-wrap:wrap;padding:6px 2px;justify-content:center}
-.stat{background:var(--panel);border-radius:14px;padding:8px 14px;text-align:center;min-width:86px}
-.stat b{display:block;font-size:22px;color:var(--gold)}
-.stat span{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.1em}
-.stat small{display:block;color:var(--dim);font-size:11px}
+#chips{display:flex;gap:8px;flex-wrap:wrap;padding:8px 0 0;justify-content:center}
+.kpi{border:1px solid var(--line);border-radius:10px;background:#000;padding:8px 14px;text-align:center;min-width:86px}
+.kpi b{display:block;font-size:22px;color:var(--gold);font-variant-numeric:tabular-nums}
+.kpi span{font-size:10px;color:var(--orange);text-transform:uppercase;letter-spacing:.14em}
+.kpi small{display:block;color:var(--dim);font-size:11px}
 #rose{width:78px;height:78px}
-#stale{display:none;color:var(--red);text-align:center;text-transform:uppercase;
- letter-spacing:.1em;font-size:13px;padding:6px}
-#osd{position:fixed;top:16vh;left:50%;transform:translateX(-50%);z-index:40;
- background:#000;border:2px solid var(--gold);color:var(--gold);font-weight:700;
- font-size:16px;letter-spacing:.06em;padding:12px 22px;border-radius:10px;
- display:none;max-width:88vw;text-align:center;text-transform:uppercase}
-#lists{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;padding:4px 2px}
+#stale{display:none;color:var(--red);text-align:center;text-transform:uppercase;letter-spacing:.1em;font-size:13px;padding:6px}
+#osd{position:fixed;top:16vh;left:50%;transform:translateX(-50%);z-index:40;background:#000;border:2px solid var(--gold);color:var(--gold);font-weight:700;
+ font-size:16px;letter-spacing:.06em;padding:12px 22px;border-radius:10px;display:none;max-width:88vw;text-align:center;text-transform:uppercase}
 .mut{color:var(--dim);font-size:13px;padding:6px 0}
-.pane{background:var(--panel);border-radius:14px;padding:8px 12px}
-.pane h3{color:var(--orange);font-size:13px;text-transform:uppercase;
- letter-spacing:.1em;margin:2px 0 6px}
-.row{padding:4px 0;border-bottom:1px solid #221;font-size:14px;line-height:1.4}
-.call{color:#fff;font-weight:700}.cc{color:var(--dim)}
+.row{padding:4px 0;border-bottom:1px solid var(--line-soft);font-size:14px;line-height:1.4;color:var(--text-mid)}
+.cs{color:#fff;font-weight:700}.cc{color:var(--dim)}
 .dist{color:var(--ice)}.rep{color:var(--gold)}.kk{color:var(--red);font-size:11px}
-.tt{color:#875;font-size:11px}
+.tt{color:#a08a6a;font-size:11px;font-variant-numeric:tabular-nums}
 </style></head><body>
-<div class=lcars>
-  <div class=rail>
+<div class=shell>
+  <nav class=rail aria-label="Site sections">
     <div class=cap></div>
-    <a class="blk o" href="/">&#9666; W4EWB<small>Home</small></a>
-    <div class="blk p">FT8<small>Live</small></div>
-    <div class="blk l">14.074<small>MHz &middot; 20m</small></div>
-    <div class="blk s">hamSDR<small>RTL-SDR</small></div>
-    <div class="blk i">EM78<small>Louisville</small></div>
-    <div class=railfill></div>
-    <a class="blk g" href="/radar/">RADAR &#9656;<small>ADS-B</small></a>
-  </div>
-  <div class=col>
-    <div class=hdr><span class=title>FT8 Live</span><span class=sub>heard at the station</span></div>
+    <a class=rb href="/">Console</a>
+    <a class="rb on" href="/ft8/" aria-current=page>FT8</a>
+    <a class=rb href="/rtty/">Skimmer</a>
+    <a class=rb href="/radar/">Radar</a>
+    <a class=rb href="/iss/">ISS</a>
+    <div class=fill></div>
+  </nav>
+  <div class=main>
+    <header class=hdr>
+      <div class=call>FT8 live<small>W4EWB</small></div>
+      <div class=mission>Heard at the station<br>14.074 MHz &middot; 20 m &middot; reports to PSK Reporter</div>
+      <div class="stat g off" id=stat><span class=dot aria-hidden=true></span><span id=statT>Loading</span></div>
+    </header>
     <div class=strip>Every FT8 transmission the station decodes, mapped live &mdash; arcs are this cycle's reception, dashed paths are QSOs we're overhearing, orange diamonds are stations that heard W4EWB transmit</div>
-    <div class=content>
-      <div id=hb><div id=hbfill></div></div>
-      <div id=mapwrap><svg id=scope viewBox="0 0 360 183"></svg></div>
-      <div id=stale>Feed stale &mdash; the HF receiver is busy elsewhere (web SDR, sniffer&hellip;)</div>
-      <div id=chips></div>
-      <div id=lists>
-        <div class=pane><h3>Heard me <span style="color:var(--dim);font-size:10px">&middot; PSK Reporter</span></h3><div id=heard></div></div>
-        <div class=pane><h3>QSOs observed</h3><div id=qsos></div></div>
-        <div class=pane><h3>Latest decodes</h3><div id=feed></div></div>
+    <section class="panel g" aria-label="Reception map">
+      <div class=tab>Reception this cycle</div>
+      <div class=body>
+        <div id=hb><div id=hbfill></div></div>
+        <div id=mapwrap><svg id=scope viewBox="0 0 360 183"></svg></div>
+        <div id=stale>Feed stale &mdash; the HF receiver is busy elsewhere (web SDR, sniffer&hellip;)</div>
+        <div id=chips></div>
       </div>
+    </section>
+    <div class=deck id=lists>
+      <section class="panel" aria-label="Heard me"><div class=tab>Heard me &middot; PSK Reporter</div><div class=body><div id=heard></div></div></section>
+      <section class="panel l" aria-label="QSOs observed"><div class=tab>QSOs observed</div><div class=body><div id=qsos></div></div></section>
+      <section class="panel p" aria-label="Latest decodes"><div class=tab>Latest decodes</div><div class=body><div id=feed></div></div></section>
     </div>
-    <div class=foot>Receive-only monitor &middot; reports to PSK Reporter as W4EWB &middot; EM78 Louisville</div>
+    <footer class=foot aria-hidden=true><i style="width:120px;background:var(--orange)"></i><i style="width:30px;background:var(--peri)"></i><i style="width:60px;background:var(--peach)"></i><div class=end>Receive-only monitor &middot; reports to PSK Reporter as W4EWB &middot; EM78 Louisville</div></footer>
   </div>
 </div>
 <div id=osd></div>
@@ -226,27 +225,27 @@ function render(d){
  drawMap(d);
  var rc=d.records||{},f=rc.furthest,b=rc.best;
  document.getElementById('chips').innerHTML=
-  '<div class=stat>'+drawRose(rc.sectors||[])+'<span>heard from</span></div>'+
-  '<div class=stat><b>'+(rc.countries||0)+'</b><span>countries today</span></div>'+
-  '<div class=stat><b>'+(f?f.dist.toLocaleString():'&ndash;')+'</b><span>farthest mi</span>'+(f?'<small>'+esc(f.call)+(f.c&&f.c!='?'?' &middot; '+esc(f.c):'')+'</small>':'')+'</div>'+
-  '<div class=stat><b>'+(rc.qsos_done||0)+'</b><span>QSOs seen</span></div>'+
-  '<div class=stat><b>'+(rc.spots||0)+'</b><span>spots today</span></div>'+
-  '<div class=stat>'+spark(d.hist)+'<span>spots / cycle</span></div>'+
-  (b?'<div class=stat><b>'+b.dist.toLocaleString()+'</b><span>best ever mi</span><small>'+esc(b.call)+' &middot; '+esc(b.date)+'</small></div>':'')+
+  '<div class=kpi>'+drawRose(rc.sectors||[])+'<span>heard from</span></div>'+
+  '<div class=kpi><b>'+(rc.countries||0)+'</b><span>countries today</span></div>'+
+  '<div class=kpi><b>'+(f?f.dist.toLocaleString():'&ndash;')+'</b><span>farthest mi</span>'+(f?'<small>'+esc(f.call)+(f.c&&f.c!='?'?' &middot; '+esc(f.c):'')+'</small>':'')+'</div>'+
+  '<div class=kpi><b>'+(rc.qsos_done||0)+'</b><span>QSOs seen</span></div>'+
+  '<div class=kpi><b>'+(rc.spots||0)+'</b><span>spots today</span></div>'+
+  '<div class=kpi>'+spark(d.hist)+'<span>spots / cycle</span></div>'+
+  (b?'<div class=kpi><b>'+b.dist.toLocaleString()+'</b><span>best ever mi</span><small>'+esc(b.call)+' &middot; '+esc(b.date)+'</small></div>':'')+
   (function(){var s=(heardData&&heardData.spots)||[];if(!s.length)return '';
    var far=s.reduce(function(a,x){return (x.dist||0)>(a.dist||0)?x:a;},{});
-   return '<div class=stat><b>'+s.length+'</b><span>hearing me</span>'+
+   return '<div class=kpi><b>'+s.length+'</b><span>hearing me</span>'+
     (far.call?'<small>'+esc(far.call)+(far.dist?' &middot; '+far.dist.toLocaleString()+' mi':'')+'</small>':'')+'</div>';})();
  document.getElementById('qsos').innerHTML=(d.qsos||[]).slice(0,12).map(function(q){
   var ra=q.reports&&q.reports[q.a]?' <span class=rep>'+esc(q.reports[q.a])+'</span>':'';
   var rb=q.reports&&q.reports[q.b]?' <span class=rep>'+esc(q.reports[q.b])+'</span>':'';
-  return '<div class=row><span class=call>'+esc(q.a)+'</span> <span class=cc>'+esc(q.a_c)+'</span>'+ra+
-   ' ↔ <span class=call>'+esc(q.b)+'</span> <span class=cc>'+esc(q.b_c)+'</span>'+rb+
+  return '<div class=row><span class=cs>'+esc(q.a)+'</span> <span class=cc>'+esc(q.a_c)+'</span>'+ra+
+   ' ↔ <span class=cs>'+esc(q.b)+'</span> <span class=cc>'+esc(q.b_c)+'</span>'+rb+
    (q.kind&&q.kind!='grid'&&q.kind!='msg'?' <span class=kk>'+esc(q.kind)+'</span>':'')+
    ' <span class=tt>'+hhmm(q.last)+'</span></div>';
  }).join('');
  document.getElementById('feed').innerHTML=(d.feed||[]).slice(0,14).map(function(r){
-  return '<div class=row><span class=tt>'+hhmm(r.ts)+'</span> <span class=call>'+esc(r.de)+'</span> '+
+  return '<div class=row><span class=tt>'+hhmm(r.ts)+'</span> <span class=cs>'+esc(r.de)+'</span> '+
    '<span class=cc>'+esc(r.de_c&&r.de_c!='?'?r.de_c:'')+'</span>'+
    (r.dist?' <span class=dist>'+r.dist.toLocaleString()+' mi</span>':'')+
    (r.report?' <span class=rep>'+esc(r.report)+'</span>':'')+
@@ -283,7 +282,7 @@ function renderHeard(){
    fill:'none',stroke:'#f96','stroke-width':.5,opacity:.9},gHeard);
  });
  box.innerHTML=spots.slice(0,14).map(function(s){
-  return '<div class=row><span class=tt>'+hhmm(s.ts)+'</span> <span class=call>'+esc(s.call)+'</span> '+
+  return '<div class=row><span class=tt>'+hhmm(s.ts)+'</span> <span class=cs>'+esc(s.call)+'</span> '+
    '<span class=cc>'+esc(s.grid)+'</span>'+
    (s.dist?' <span class=dist>'+s.dist.toLocaleString()+' mi</span>':'')+
    (s.snr!=null?' <span class=rep>'+(s.snr>0?'+':'')+s.snr+' dB</span>':'')+'</div>';
@@ -295,10 +294,10 @@ function pollHeard(){
  }).catch(function(){});
 }
 pollHeard();setInterval(pollHeard,300000);
-var lastUpdated=0;
+var lastUpdated=0,lastCycle=0;
 function poll(){
  fetch(FEED).then(function(r){return r.json();}).then(function(d){
-  lastUpdated=d.updated||0;
+  lastUpdated=d.updated||0;lastCycle=d.cycle||0;
   if(d.feed)render(d);
  }).catch(function(){});
 }
@@ -308,6 +307,7 @@ poll();setInterval(poll,15000);
  var t=Date.now()/1000;
  document.getElementById('hbfill').style.width=((t%15)/15*100)+'%';
  if(lastUpdated)
-  document.getElementById('stale').style.display=(t-lastUpdated>150)?'block':'none';
+  var stale=(t-lastUpdated>150);document.getElementById('stale').style.display=stale?'block':'none';
+  document.getElementById('stat').className='stat g'+(stale?' off':'');document.getElementById('statT').textContent=stale?'Feed stale':'Decoding \u00b7 cycle '+lastCycle;
 })();
 </script></body></html>
