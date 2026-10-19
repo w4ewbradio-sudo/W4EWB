@@ -12,7 +12,7 @@
 #now.off .livedot{background:#4d4d70;box-shadow:none;animation:none}
 #now.off #modeV{color:#8e8ea8}
 .rows a{color:var(--peach)}
-.scope .dots b{transition:left 1s,top 1s}
+#radarShips g{transition:transform 1s}
 #ft8map{width:100%;height:auto;display:block;border-radius:10px;background:#02040a;border:1px solid var(--line)}
 #ft8last{font-size:15px}#ft8last b{color:var(--gold)}#ft8last .cc{color:var(--dim)}#ft8last .dist{color:var(--ice)}
 </style>
@@ -88,7 +88,7 @@
         <div class=rows><div><b><a href="goes/forecast.html">Louisville forecast &#9656;</a></b><span>built from our own captures</span></div><div><b><a href="wx/">Meteor-M2 archive &#9656;</a></b><span>Jul–Sep 2026 · retired</span></div></div>
         <a class=cta href="goes/">Open gallery &#9656;</a></div></section>
       <section class="panel p" id=mRadar><div class=tab>Flight radar</div><div class=body>
-        <div class=scope aria-label="Radar scope"><i style="width:30%"></i><i style="width:60%"></i><i style="width:90%"></i><div class=dots id=radarDots></div><span id=radarCap>1090 MHz · 60 mi rings</span></div>
+        <div class=scope aria-label="Radar scope"><svg id=miniRadar viewBox="0 0 160 100" style="position:absolute;inset:0;width:100%;height:100%"><circle cx=80 cy=50 r=15 fill=none stroke="#2b2b45" stroke-width=.5 /><circle cx=80 cy=50 r=30 fill=none stroke="#2b2b45" stroke-width=.5 /><circle cx=80 cy=50 r=45 fill=none stroke="#2b2b45" stroke-width=.5 /><circle cx=80 cy=50 r=1.3 fill="#f96" /><g id=radarShips></g></svg><span id=radarCap>1090 MHz · 60 mi rings</span></div>
         <a class=cta href="radar/">Open scope &#9656;</a></div></section>
       <section class="panel s" id=mSstv><div class=tab>SSTV gallery</div><div class=body>
         <div class=pic><img id=sstvImg alt="" hidden><span id=sstvCap>Slow-scan TV off the HF bands</span></div>
@@ -221,10 +221,24 @@ function goes(){local('goes/').then(function(r){return r.text()}).then(function(
  if(src){var im=$('goesImg');im.src=src;im.hidden=false}}).catch(function(){})}
 function sstv(){local('sstv/rx/').then(function(r){return r.text()}).then(function(t){var src=firstImg(t);if(!src)return;
  var im=$('sstvImg');im.src='sstv/rx/'+src;im.hidden=false;var alt=t.match(/<img[^>]+alt="([^"]*)"/);if(alt)$('sstvCap').textContent=alt[1].replace('SSTV image received','Last picture')}).catch(function(){})}
+// Star Trek contacts, same as radar/ and the Pi console: cargo = Klingon Bird-of-Prey,
+// US military = Borg cube, everyone else = Federation saucer; brighter = higher.
+var KLINGON=[[8,0],[3,1.5],[-3,9],[-6,4],[-4,1.4],[-7,0],[-4,-1.4],[-6,-4],[-3,-9],[3,-1.5]],
+ SHADES={fed:[[80,120,175],[195,224,255]],klingon:[[78,150,66],[185,255,150]],military:[[150,36,36],[255,100,80]]},
+ CARGO=['UPS','FDX','GTI','ABX','CKS','KFS','GEC','BOX','CLX','ATN','BCS','DHK','DAE','NCR','PAC','SOO','ICL','CJT'],MILC=['RCH','CNV','SPAR','PAT','EVAC','BOLT','GRIM','DOOM','SLAM'];
+function faction(fl,hx){var f=(fl||'').trim().toUpperCase();if((hx||'').toLowerCase().indexOf('ae')===0||MILC.some(function(x){return f.indexOf(x)===0}))return 'military';
+ return CARGO.some(function(x){return f.indexOf(x)===0})?'klingon':'fed'}
+function shade(fac,alt){var t=Math.max(0,Math.min(1,(typeof alt==='number'?alt:20000)/40000)),lo=SHADES[fac][0],hi=SHADES[fac][1];
+ return 'rgb('+[0,1,2].map(function(i){return Math.round(lo[i]+(hi[i]-lo[i])*t)}).join(',')+')'}
+var SU=.42;function SP(f,r){return (r*SU).toFixed(2)+' '+(-f*SU).toFixed(2)}
+function shipSvg(fac){if(fac==='military'){var q=(5*SU).toFixed(2),i=(5*SU*.46).toFixed(2);
+  return '<rect x="-'+q+'" y="-'+q+'" width="'+2*q+'" height="'+2*q+'" fill="currentColor"/><rect x="-'+i+'" y="-'+i+'" width="'+2*i+'" height="'+2*i+'" fill="none" stroke="#1e0606" stroke-width=".3"/>'}
+ if(fac==='klingon')return '<path d="M'+KLINGON.map(function(p){return SP(p[0],p[1])}).join('L')+'Z" fill="currentColor"/>';
+ return '<path d="M'+SP(1,0)+'L'+SP(-6,0)+'M'+SP(-1,3.2)+'L'+SP(-7,3.6)+'M'+SP(-1,-3.2)+'L'+SP(-7,-3.6)+'" stroke="currentColor" stroke-width="'+(2.6*SU).toFixed(2)+'" stroke-linecap="round" fill="none"/><circle cx="0" cy="'+(-3.5*SU).toFixed(2)+'" r="'+(4.6*SU).toFixed(2)+'" fill="currentColor"/>'}
 function radar(){get('planes.json').then(function(j){var ps=(j.planes||[]).filter(function(p){return p.dist!=null&&p.brg!=null});
- var R=90;// 60-mile rings: 30 % / 60 % / 90 % of half the box
- $('radarDots').innerHTML=ps.slice(0,40).map(function(p){var r=Math.min(p.dist/60*0.3,0.47),a=(p.brg-90)*Math.PI/180;
-  return '<b style="left:'+(50+Math.cos(a)*r*100).toFixed(1)+'%;top:'+(50+Math.sin(a)*r*100*1.6).toFixed(1)+'%"></b>'}).join('');
+ $('radarShips').innerHTML=ps.slice(0,40).map(function(p){var r=Math.min(p.dist,60)/60*45,a=(p.brg-90)*Math.PI/180,fac=faction(p.flight,p.hex),col=shade(fac,p.alt);
+  var x=(80+Math.cos(a)*r).toFixed(1),y=(50+Math.sin(a)*r).toFixed(1);
+  return '<g transform="translate('+x+' '+y+')'+(fac==='military'?'':' rotate('+(p.track||0)+')')+'" style="color:'+col+';filter:drop-shadow(0 0 1px '+col+')">'+shipSvg(fac)+'</g>'}).join('');
  $('radarCap').textContent=(ps.length?ps.length+' aircraft plotted':'nothing in view')+' · 60 mi rings'}).catch(function(){})}
 tick();clock();rpt();rttyMod();ft8Card();setInterval(ft8Card,15000);iss();bull();goes();sstv();radar();
 setInterval(tick,5000);setInterval(rpt,5000);setInterval(radar,5000);setInterval(rttyMod,30000);setInterval(clock,10000);setInterval(goes,300000);
