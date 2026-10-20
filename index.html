@@ -53,6 +53,8 @@ svg.ic{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;str
 /* tiles: our framed panel, with a hanging LIVE tab mirrored on the right */
 .tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .tile{position:relative}
+.tile[data-go]{cursor:pointer;transition:filter .15s}
+.tile[data-go]:hover{filter:brightness(1.08)}
 .tile .tab{display:flex;align-items:center;gap:7px}
 .tile .tab svg.ic{width:14px;height:14px}
 .livetab{position:absolute;top:0;right:12px;padding:4px 11px 5px;border:2px solid var(--fc);border-top:none;border-radius:0 0 9px 9px;background:var(--panel);
@@ -104,6 +106,7 @@ svg.ic{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;str
 .thumbs a{display:flex;flex-direction:column;gap:5px;min-width:0}
 .thumbs img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;border:1px solid var(--line);background:#000;display:block}
 .thumbs span{color:var(--lilac);font-size:11px;letter-spacing:.12em;text-transform:uppercase;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:900px){.thumbs a:nth-child(n+4){display:none}}  /* desktop shows 2 rows of 3, phones 1 */
 
 /* repeater table */
 table.rpt{width:100%;border-collapse:collapse;font-size:15px;font-variant-numeric:tabular-nums}
@@ -184,7 +187,7 @@ table.rpt tr.air td:first-child{color:var(--gold)}
   <span><span class=k>UTC</span><span class=v id=stUtc>--:--</span></span>
 </div>
 
-<section class="panel g tile" aria-label="GOES-19 weather satellite">
+<section class="panel g tile" aria-label="GOES-19 weather satellite" data-go="goes/">
   <div class=tab><svg class=ic viewBox="0 0 24 24"><rect x="9" y="9" width="6" height="6" rx="1"/><path d="M9 12H3m18 0h-6M12 9V5m0 14v-4"/></svg>GOES-19 weather satellite</div>
   <div class=livetab><a href="goes/" class=wide>Live imagery &#9656;</a><span class="ldot"></span>Live</div>
   <div class=body>
@@ -197,7 +200,7 @@ table.rpt tr.air td:first-child{color:var(--gold)}
 </section>
 
 <div class=tiles>
-  <section class="panel s tile" aria-label="Louisville weather">
+  <section class="panel s tile" aria-label="Louisville weather" data-go="goes/forecast.html">
     <div class=tab><svg class=ic viewBox="0 0 24 24"><path d="M7 18h10a4 4 0 0 0 .5-8 6 6 0 0 0-11.5 1.5A3.3 3.3 0 0 0 7 18z"/></svg>Louisville weather</div>
     <div class=livetab><span class="ldot off" id=wxDot></span>Live</div>
     <div class=body>
@@ -211,7 +214,7 @@ table.rpt tr.air td:first-child{color:var(--gold)}
     </div>
   </section>
 
-  <section class="panel p tile" aria-label="Flight radar">
+  <section class="panel p tile" aria-label="Flight radar" data-go="radar/">
     <div class=tab><svg class=ic viewBox="0 0 24 24"><path d="M10.5 21l1.5-5 6.5 2.5 1-1.5-6-4.5.5-6c0-1.5-2-1.5-2 0l-.5 6-6 4.5 1 1.5 6.5-2.5z" transform="rotate(45 12 12)"/></svg>Flight radar &middot; ADS-B</div>
     <div class=livetab><span class="ldot off" id=adsbDot></span>Live</div>
     <div class=body>
@@ -227,7 +230,7 @@ table.rpt tr.air td:first-child{color:var(--gold)}
     </div>
   </section>
 
-  <section class="panel g tile" aria-label="FT8">
+  <section class="panel g tile" aria-label="FT8" data-go="ft8/">
     <div class=tab><svg class=ic viewBox="0 0 24 24"><path d="M4 12h1m3-5v10m4-13v16m4-12v8m4-5v2"/></svg>FT8 dashboard</div>
     <div class=livetab><a href="ft8/" id=ft8Freq>14.074 MHz &#9656;</a></div>
     <div class=body>
@@ -237,7 +240,7 @@ table.rpt tr.air td:first-child{color:var(--gold)}
     </div>
   </section>
 
-  <section class="panel l tile" aria-label="SSTV gallery">
+  <section class="panel l tile" aria-label="SSTV gallery" data-go="sstv/rx/">
     <div class=tab><svg class=ic viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="16" cy="9" r="1.5"/></svg>SSTV gallery</div>
     <div class=livetab><span class=ldot></span>Live</div>
     <div class=body>
@@ -247,7 +250,7 @@ table.rpt tr.air td:first-child{color:var(--gold)}
     </div>
   </section>
 
-  <section class="panel tile" aria-label="Repeater scanner">
+  <section class="panel tile" aria-label="Repeater scanner" data-go="repeaters/">
     <div class=tab><svg class=ic viewBox="0 0 24 24"><path d="M12 10v11M8 21h8"/><path d="M8.5 6.5a5 5 0 0 1 7 0M6 4a8.5 8.5 0 0 1 12 0"/><circle cx="12" cy="9" r="1.2"/></svg>Repeater scanner</div>
     <div class=livetab><span class="ldot off" id=rptDot></span><span id=rptLive>Live</span></div>
     <div class=body>
@@ -257,7 +260,7 @@ table.rpt tr.air td:first-child{color:var(--gold)}
     </div>
   </section>
 
-  <section class="panel k tile" aria-label="HamClock">
+  <section class="panel k tile" aria-label="HamClock" data-go="https://hamclock.w4ewb.com">
     <div class=tab><svg class=ic viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>HamClock</div>
     <div class=livetab><span class=ldot></span>Live</div>
     <div class=body>
@@ -267,7 +270,7 @@ table.rpt tr.air td:first-child{color:var(--gold)}
     </div>
   </section>
 
-  <section class="panel l tile" aria-label="RTTY and PSK skimmer">
+  <section class="panel l tile" aria-label="RTTY and PSK skimmer" data-go="rtty/">
     <div class=tab><svg class=ic viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h1m3 0h1m3 0h2M7 14h10"/></svg>RTTY &amp; PSK skimmer</div>
     <div class=livetab><span class="ldot off" id=rttyDot></span>Live</div>
     <div class=body>
@@ -278,7 +281,7 @@ table.rpt tr.air td:first-child{color:var(--gold)}
     </div>
   </section>
 
-  <section class="panel tile" aria-label="Heard via the ISS">
+  <section class="panel tile" aria-label="Heard via the ISS" data-go="iss/">
     <div class=tab><svg class=ic viewBox="0 0 24 24"><rect x="10" y="10" width="4" height="4"/><path d="M2 8h6v8H2zM16 8h6v8h-6zM8 12h2m4 0h2"/></svg>Heard via the ISS</div>
     <div class=livetab><a href="iss/">APRS log &#9656;</a></div>
     <div class=body>
@@ -434,7 +437,7 @@ function sunUp(lat,lon,d){var s=sunPos(d||new Date()),r=Math.PI/180,h=(lon-s.lon
 
 // ---- SSTV: three latest pictures
 function sstv(){local('sstv/rx/').then(function(r){return r.text()}).then(function(t){var re=/<a href="([^"]+)"[^>]*><img src="([^"]+)"[^>]*alt="([^"]*)"/g,m,out=[];
- while((m=re.exec(t))&&out.length<3)out.push('<a href="sstv/rx/'+esc(m[1])+'"><img loading=lazy src="sstv/rx/'+esc(m[2])+'" alt="'+esc(m[3])+'"><span>'+esc(m[3].replace('SSTV image received ',''))+'</span></a>');
+ while((m=re.exec(t))&&out.length<6)out.push('<a href="sstv/rx/'+esc(m[1])+'"><img loading=lazy src="sstv/rx/'+esc(m[2])+'" alt="'+esc(m[3])+'"><span>'+esc(m[3].replace('SSTV image received ',''))+'</span></a>');
  $('sstvThumbs').innerHTML=out.join('')}).catch(function(){})}
 
 // ---- repeater scanner table
@@ -463,5 +466,15 @@ setInterval(status,5000);setInterval(clock,10000);setInterval(radar,5000);setInt
 setInterval(rtty,30000);setInterval(goes,600000);
 document.addEventListener('click',function(e){var d=document.querySelector('.nav details[open]');if(d&&!d.contains(e.target))d.removeAttribute('open')});
 })();
+</script>
+<script>
+// Whole tiles are links (2026-10-20, Eric): a click anywhere on a tile opens its page,
+// except on the tile's own links, buttons and controls, or while selecting text.
+document.addEventListener('click',function(e){
+ var t=e.target.closest&&e.target.closest('.tile[data-go]');if(!t||e.defaultPrevented||e.button!==0)return;
+ if(e.target.closest('a,button,input,select,textarea,audio,video,summary,label'))return;
+ if(String(window.getSelection&&window.getSelection())!=='')return;
+ var u=t.getAttribute('data-go');if(e.ctrlKey||e.metaKey||e.shiftKey)window.open(u,'_blank');else location.href=u;
+});
 </script>
 </body></html>
