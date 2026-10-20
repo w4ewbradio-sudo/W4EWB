@@ -170,6 +170,7 @@ button{font:inherit;cursor:pointer}
 .b.on{background:var(--gold);border-color:var(--gold);color:#000;box-shadow:0 0 12px var(--glow)}.b.on small{color:#000}
 .hchip{display:inline-flex;align-items:center;height:28px;padding:0 12px;border-radius:4px;color:#000;font-weight:700;font-size:11px;letter-spacing:.12em;text-transform:uppercase;background:var(--lilac)}
 .hchip.last{border-radius:4px 14px 14px 4px}
+.hchip.hot{background:var(--red)!important;color:#fff}
 .health{margin-left:auto;display:flex;gap:6px;align-items:center}
 
 /* receiver board + scopes (Pi console; harmless on the public side) */
@@ -246,7 +247,8 @@ button{font:inherit;cursor:pointer}
   .board{grid-template-columns:repeat(2,minmax(0,1fr))}
   .strip-row .panel{flex:1 1 140px}
   .modes{grid-template-columns:repeat(3,minmax(0,1fr))}
-  .health{display:none}
+  .health{order:9;flex:1 0 100%;margin-left:0;flex-wrap:wrap;gap:4px}
+  .health .hchip{height:22px;padding:0 8px;font-size:10px;letter-spacing:.08em}
   .card img{height:200px}
   .foot:not(:has(.end)){padding-left:16px;background:var(--lilac)}
 }
