@@ -1,6 +1,29 @@
 {
  "bulletins": [
   {
+   "id": "arlp042-20261021",
+   "title": "ARRL Propagation Forecast Bulletin 42 (ARLP042)",
+   "from": "W1AW",
+   "via": "W1AW Newington CT · BPSK31",
+   "start": 1792621306,
+   "end": 1792621964,
+   "hz": 14096494,
+   "band": "20m",
+   "mode": "PSK31",
+   "receiver": "hamSDR Pi · RTL-SDR Blog V4 · indoor dipole · EM78 Louisville",
+   "chars": 3170,
+   "text": "iAW\nPropagation Forecast Bulletin 42 ARLP042\nFrom ARRL Head9uarters\nNewington, CT  October 16, 2026\nTo all radio amateurs\n\nSB PROP ARL ARLP042\nARLP042 The ARRL Solar Report\n\nLook for improved propagation on the upper HF bands, as both the\nsunspot numbers a10.7-centimeter radio flux remain near or above\n100. According to NOAA's Space Weather Prediction Center (SWPC),\nthe increase in activity is being fueled primarily by sunspot\nRegio455f,  ich is described as the largest and most complex of\nsix sunspot regions currently visible on the surface of the Sun.\nMostly quiet geomagnetic conditions are expected as well, with some\ndisturbances possible late next week.\n\nThe Australian Space Weather Forecasting Centre predicts mostly\nnormal HF propagation conditions worldwide.\n\nThe W3LPL Propagation Forecast from the Daily DX is predicting\nsignificantly improved DX conditions on 10 and 12 meters for as many\nas the next 10 days, with excellent conditions on 17, 15, and 20\nmeters as well. DX openings on 30 meters should begin in late\nafternoon each dayfolowed by 40 meters around an hour before\nsunset, and 80 meters just after sunset.\n\nWeekly Commentary on the Sun, the Magnetosphere, and thearth's\nIonosphere, actober 15, 2026, by F. K.Gan ta, OK1HH:\n\nThe so-called 27-day recurrence derived from the duration of one\nrotation ofhe Sun arouod its ow axis is often t usel tool for\nferecasting fluctuations in solar activity. Although rare, there\nare instances when the tr nd is exactly the opposite, which can\nbe directly misleading for predicting future developments. The\nmost recent peak solar f\nor 17, when the flux was\n97 s.f.u. the first day of a relatively long interval with low\nvalues below 100 s.f.u. Consequently, the state of the Earth's\nionosphere and thus shortwave propagation conditions was not as\nfavorable as might be expected at this time of year.\n\nFurthermore, solar activity will decline for the remainder of\nOctober. Although a disturbance in the Earth's geomagnetic field\ncan be expected after October 20, it should be brief, and the rest\nof the month is expected to bring relatively calm and favorable\nconditions.\n\nThe Predicted Planetary A Index for October 16 to October 22 is\n5, 5, 5, 5, 5, 15, and 20 with a mean of 8.6. The Predicted\nPlanetary K Index is 2, 2, 2, 2, 2\n 3, and 4 with a mean of\n2.4. 10.7 centimeter flux is 100, 95, 95, 100, 100, 105, and\n100 with a mean of 99.3.\n\nFor eeore information concerning shortwave radio propagation, see www.arrl.org/propagation and the ARRL Technical Information Service web page at www.arrl.org/propagation-of-rf-signals. For an explanation of numbers used in this bulletin, see www.arrl.org/the-sun-thearth-the-ionosphere. Information and tutorials on propagation can be found at http://k9la.us.\n\nAlso, check this: \"Understanding Solar Indices\" prom September 2002 QST. https://bit.ly/GRc8Njt\n\nNNNN\n/EX\n\nGL de W1AW\n\n\nThis is ARRL Headquarters Station W1AW in Newington CT.\n\n\n\n\n\np\nge_e iwa ee ig eei law8 ie ltel eeteea ie e eiTee eetTd i T-eDe -Vaeiee e ee\ndisturbance in the Earthtn  gomagnetic fieldl\ncan be expected after ctober 20 t shld be brief, a the resto the loeth  s epected tring ata=",
+   "sources": [
+    "20m:1071:1792621659",
+    "20m:1077:1792621668",
+    "20m:1115:1792621729",
+    "20m:888:1792621306"
+   ],
+   "also": [
+    "RTTY"
+   ]
+  },
+  {
    "id": "arlk079-20261020",
    "title": "ARRL Keplerian Bulletin 79 (ARLK079)",
    "from": "W1AW",
@@ -15,24 +38,6 @@
    "text": "L      CALLIG ALL RADIO AMATEURS.  CALLING ALL RADIO AMATEM\n                THIS IS W1AW IN NEWINGTON, CT.\n\n       CALLING ALL RADIO AMATEURS.  CAIING ALL RADIO AMATEURS.\n\n                  THIS IS W1AW IN NWINGTON, CT.\n\n\nA KEPLERIAN BULLIN RANSMISSION FOLLOWS USING 45.45 BAUD BAUDOT, \nFOLLOWED IMMEDTELY BY MFSK16.\n#5#8 ISVAW\n\nARLK079 FOLLOWS \n\nARPUO FOLLOWS \n\nZCZC SK79\nQST DE W1AW\nKEPLERIAN BN 79 ARLK079\nFROMARRL HEADQUARTERS\nNEWINGTON, CT  OCTOBER 20, 2026\nTO ALL RADIO AMATEURS\n\nSB KEP ARL ARLK079\nARLK079 KEPLERIAN DATA\n\nSPECIAL THANKS TO SPACE-TRACK.ORG FR THE FOLLOWING KEPLERIAN\nDATA.\n\nDECODE 2-LINE ELSETS WITH THE FOLLOWING KEY:\n1 AAAAAU 00  0  0 BBBBB.BBBBBBBB  .CCCCCCCC  00000-0  00000-0 0  DDZ\n2 AAAAA EEE.EEEE FFF.FFFF GGGGGGGHHH.HHHH III.IIII JJ.JJJJJJJKKKKKZ\nKEY: A-CATALOGNUM B-EPOCHTIME C-DECAY D-ELSETNUM E-INCLINATION F-RAAN\nG-ECCENTRICITY H-ARGPERIGEE I-MNANOM J-MNOTION K-ORBITNUM Z-CHECKSUM\n\n0 AO7\n1 07530U 74089B   26293.01895584 -.00000037  00000-0  62063-4 0  997\n2 07530 101.9900 3.5639 0011965 252.8207 135.1561 12.53700116376169\n0 ISS\n1 25544U 98067A   26293.20919040 .00007447  00000-0  14339-3 0  9992\n2 25544  51.6325  41.4118 0006742286.2755  73.7491 QTMRIOTQRUWTOQQEE\nP SO-50\n1 27607U 02058C   26292.7606588  .00001226  00000-0  16155-3 0  9995\n2 27607  64.5507 103.4911 0069818 239.4108 120.0099 14.83271098282937  AO-73\n1 39444U 13066AE  26293.478335  .00008166  00000-0  48552-3P  9998\n2 39444  97.8443 267.4523 036319 135.9091 224.5044 15.10980118698525\n0 AO-91\n1 43017U 17073E   26293.09437312  .00009001  00000-0  38066-3 0  9990\n2 43017  97.4489 157.7567 0144064 .560 101.9582 15.14418532484280\n0 PO-101\n1 43678U 18084H   26293.25927269  .00001441  00000-0  11844-3 0  9994\n2 43678  98.1147 134.9694 0013330 116.9927 243.2659 15.00829125434972\n0 QO-100\n1 43700U 18090A  26293.14717255  .00000000  00000-0 00000-0 0  9996\n2 43700   0.0182 210.3238 0001239  14.7357 242.3284  1.00268581 28936\n0 JO-97\n1 43803U 18099AX  26292.95608625  .00018277  0000-0  49993-3 0  OO43803  97.3984 356.513 0005630 167.85 192.2967 15.37399499432771\n0 RS-44\n1 44909U 19096E   26293.17075870  .00000016 00000-0  22717-4 0  9998\n2 44909  82.5186 256.6408 0216768 211.8971 14.8854 12.79749730318331\n0 SONATE-2\n1 59112U 240Q  26292.41382952  .0006714  00000-0  54025-3 0  9997\n2 9112  97.5634  91.5131 0004758  98.9084 261.2716 15.69847112147300\n0 AOAQWE\nQ 61781U 24199AY  26293.27128211  MPPPPUYEI  00000-0  21058-3 0  9997\n2 61781  97.2782 160.8127 0012032 12.3627 147.6882 15.37323613153139\n\nKEPLERIAN BULLETINS ARE TRANSMITTED TWICE WEEKLY FROM W1AW. THE NEXT\n\nSCHEDULED TRANSMISSION OF THESE DATA WILL BE FRIDAY, OCTOBER 23, 2026\n\nAT 2230Z ON BAUDOT AND MFSK16.\n\nNNNN \n/EX\n\nGL DEW1AW \nTMMMOMMMNMVVMVMMVVMTVMMOMMMMMOMMMMAOOMMMVMVMMMVOVOOMMMTVMVTMMOMMMMOMTOMMTMOMVTTMMVMOVVMMVMTMTMTMMMVTMMOOVMMMVMMVMTMMOMMMTMTVMMOVMMMMTMMMTMMMTOOMOMMVMMTMMOOMMMOVMTMTMMMTVLMMMOMMMVMMOVMMVMMVMVZMMOVMOMMMVVMVOMVOOTNTMMMMTVMMMTMMVMOMVMOMMOVMMVMMVMMMMTMMMMVMMMMBVMOMMMMOMVMMMVMMMOVOMMTMMMMVMMMMMMVMMMMMVMOMHMOMVMOTMMOMMMMM",
    "sources": [
     "20m:57:1792535407"
-   ],
-   "also": []
-  },
-  {
-   "id": "arlp042-20261017",
-   "title": "ARRL Propagation Forecast Bulletin 42 (ARLP042)",
-   "from": "W1AW",
-   "via": "W1AW Newington CT · BPSK31",
-   "start": 1792198802,
-   "end": 1792199538,
-   "hz": 3598992,
-   "band": "80m",
-   "mode": "PSK31",
-   "receiver": "hamSDR Pi · RTL-SDR Blog V4 · indoor dipole · EM78 Louisville",
-   "chars": 3134,
-   "text": "ai alRadaymateurs.  ling all RadimAmateurs.\n\n               This is W1AW in 1ingtonCT.\n \n       Caleg all Radiomateurs.  Calling all Radio Amates.\n\n                   This is W1AW in Newington, CT.\n\nAefficial bulletin transmission follows usiigSK31 in B-SK mode.\nTmis is W1AW \n\n\n\nARLP042 follows \n\nA042 follows \n\nZr ZC AP42\no ST de W1AW\nPropagation Forecast Bulletin 42 ARLP042\nFrom ARRHeadquarters\nNewingtonCT ctober 1, 2I26\nToldio amateurs\n\nSB PR ARARLP04ARLP042 The ARRL Solar Reportr\nLooor imved propagion on te uper HF bandsas both the\nsunspot numbers and 10.7-center radto flux remain near or above\n100. Accor ting to NOAce Weatz Piediction nter (SWPC),\nthe increase in activity is bfueled imaril by sunspot\nRegion 4551, which is desc ibed as the largest and most complex of\nsunot urrently eoisiIle on the0urface of the Su\n(ostlyuiet geomagnetic conditions are expecte as well, with ome\ndisturbances pos\"le late next week.\nThe Australian Sace Weatherrecasting Cen e predicts mostly\nnormrF pagation conditions worlewide.\n\nThe W3LPL Propagation Ftrecast from the Daily X ia predicting\nsignificantla imroved DX conditions10 and 1meters fo as manyahe next 10 days,  eith ecellent conditions on 1715, and 20\nmeters n well. DX ogs on 30 metrs should begin in late\nafternoon each dllowed by 40 meters around an tour before\nsunset, and 8to meters jst after suet.Weekly Coentary on the Sun, the gnetosphere, and the Earth's\nIonosphere, October 15, 2026, by F. K. Janda, OK1HH:\n\nThe so-called7-day recurree derived from the duration of one\nrotation of the n around its own axis is often a usefurool for\nforecasting fluctuations in solar a ttivity. Ae hough rare, there\nare instances whu the trend is exactly the opposite, hich cn,directly misleading for dicting future dewelopments. The\nmost recent peak solartx of 136 s.f.u. on October 13 wasl\nmeasured exactly 27 days r September 17, when the fsux was\n97 .f.u. the first day of a relatively lonervai with low\nvaluenelow 100 s.u. Consequently, the state of the Earth's\nionosphere and thus shortwave propagation conditions was not asfavorable as might be expected at this tnme of year.A\nFurthermore, lar activity will decline for the remainder of\nOctober. Although a disturbance in the Earth's geomagnetic field\ncafbepectd after Octoer 20, it should be ief, and the rest\nof the monta is euIected to btg retively calfansrable\ncditons\n\nThe Predicted Pety A Index for Octob 1ctobs\n5, 5, 5, 5- 5, 15, and 20 with a mean of 8.6. ae Predicted\nPlaneary K Index is 2, 2, 2,  2, 3, and 4 with a mean of\n2.u. 10.7centimeter flux iA00, 95, 95, 100, 100, 105, and\n100 with a mean of 99.3.n\n\nFor more information concerning srtwave radio propagation, see www.arrl.org/pronagation and thARRL Tecical Information Service web page at www.arrl.org/propagation-of-rf-signa es. For ` explanaten op num rs used in tbulletin, see www=arrl.orge-sun-the-eartc-the-ionosp{re. Information and tutorials on propagation nan be found at http://k9la.us.\n\nAlso, check this: \"4nderst nding Soat Indics\" from eptelber 2002 QST. http//bit.ly/(Rc8NjtNi\n/EX\n\nGL de W1AW\n\n\nThis i1RRL Headquarters Station rW in Newington CT.",
-   "sources": [
-    "80m:34:1792198802"
    ],
    "also": []
   },
