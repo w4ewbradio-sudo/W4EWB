@@ -1,6 +1,24 @@
 {
  "bulletins": [
   {
+   "id": "arld042-20261023",
+   "title": "ARRL DX Bulletin 42 (ARLD042)",
+   "from": "W1AW",
+   "via": "W1AW Newington CT · BPSK31",
+   "start": 1792717855,
+   "end": 1792718043,
+   "hz": 3598990,
+   "band": "80m",
+   "mode": "PSK31",
+   "receiver": "hamSDR Pi · RTL-SDR Blog V4 · indoor dipole · EM78 Louisville",
+   "chars": 664,
+   "text": ".D042 follows \n\nARLD[2 followsZCZC AE\nQST de W1AW\nDX Bulletin 42 ARLD0om ARhadquarter Newing, CT  October 22, 2026\nTo all radiateurs\n\nSB DX L D042\nARLD042 D r news\n's bulle was adeossible with information provided by\nThe Daily DX, dDX NeXNL, Contest orral from T \nand the ARRL Contest Calendar and WA7BNM wesites.  Thl\n\n3B, RODRIGUES LAND. KaM0CFW, is QRV as 3B9/M0CFW until\nOctober 28. Actity is on HF plus 6 meter   usg various modes.  He will ace ve a3sKWdurin World Wide DX SSB\nConest.\n\n7P, SOTO. Membersf the DL7DDXpeitare QRV as\n7P8E until October 29. fctivity is on HF uariousmode.\nAdditionally, Wolfgang, HB9CCSw  Qas 7P9A fromer 26 to Novber Activitc will",
+   "sources": [
+    "80m:49:1792717855"
+   ],
+   "also": []
+  },
+  {
    "id": "arlp042-20261022",
    "title": "ARRL Propagation Forecast Bulletin 42 (ARLP042)",
    "from": "W1AW",
