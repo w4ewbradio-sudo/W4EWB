@@ -1,6 +1,32 @@
 {
- "updated": 1793086728.7822268,
+ "updated": 1793104493.370209,
  "passes": [
+  {
+   "base": "ISS_20261027_122837_el41",
+   "start": 1793104093.449743,
+   "max_el": 41,
+   "count": 3,
+   "packets": [
+    {
+     "src": "K9JKM",
+     "path": "CQ,RS0ISS*",
+     "info": "=4211.29N/08827.08W-Greetings from EN52",
+     "lat": 42.1882,
+     "lon": -88.4513,
+     "km": 497
+    },
+    {
+     "src": "K9JKM",
+     "path": "CQ,RS0ISS*",
+     "info": "CQ Live op in EN52 IL"
+    },
+    {
+     "src": "K9JKM",
+     "path": "CQ,RS0ISS*",
+     "info": "CQ Live op in EN52 IL"
+    }
+   ]
+  },
   {
    "base": "ISS_20261027_073636_el21",
    "start": 1793086572.376055,
@@ -352,8 +378,8 @@
   }
  ],
  "stats": {
-  "passes": 44,
-  "packets": 7,
+  "passes": 45,
+  "packets": 10,
   "stations": 4
  }
 }
