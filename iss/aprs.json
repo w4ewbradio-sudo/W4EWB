@@ -1,6 +1,24 @@
 {
- "updated": 1793170382.6095984,
+ "updated": 1793187980.8719628,
  "passes": [
+  {
+   "base": "ISS_20261028_114132_el27",
+   "start": 1793187669.050474,
+   "max_el": 27,
+   "count": 2,
+   "packets": [
+    {
+     "src": "RS0ISS",
+     "path": "0P0PS4,APRSAT",
+     "info": "'v&<0x1c>l <0x1c>SI]ARISS-International Space Station=<0x0d>"
+    },
+    {
+     "src": "RS0ISS",
+     "path": "0P0PS4,APRSAT",
+     "info": "'v&<0x1c>l <0x1c>SI]ARISS-International Space Station=<0x0d>"
+    }
+   ]
+  },
   {
    "base": "ISS_20261028_064750_el29",
    "start": 1793170046.845475,
@@ -398,8 +416,8 @@
   }
  ],
  "stats": {
-  "passes": 47,
-  "packets": 11,
+  "passes": 48,
+  "packets": 13,
   "stations": 4
  }
 }
