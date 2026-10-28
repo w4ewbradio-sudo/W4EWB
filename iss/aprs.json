@@ -1,6 +1,24 @@
 {
- "updated": 1793187980.8719628,
+ "updated": 1793193830.3436751,
  "passes": [
+  {
+   "base": "ISS_20261028_131800_el35",
+   "start": 1793193456.368277,
+   "max_el": 35,
+   "count": 2,
+   "packets": [
+    {
+     "src": "N1RCN",
+     "path": "APRS,RS0ISS*",
+     "info": ":ALL      :73 via ISS"
+    },
+    {
+     "src": "N1RCN",
+     "path": "APRS,RS0ISS*",
+     "info": "cq de n1rcn EL97<0x20>"
+    }
+   ]
+  },
   {
    "base": "ISS_20261028_114132_el27",
    "start": 1793187669.050474,
@@ -416,8 +434,8 @@
   }
  ],
  "stats": {
-  "passes": 48,
-  "packets": 13,
+  "passes": 49,
+  "packets": 15,
   "stations": 4
  }
 }
