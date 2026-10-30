@@ -1,6 +1,24 @@
 {
  "bulletins": [
   {
+   "id": "arld043-20261030",
+   "title": "ARRL DX Bulletin 43 (ARLD043)",
+   "from": "W1AW",
+   "via": "W1AW Newington CT · BPSK31",
+   "start": 1793322563,
+   "end": 1793322841,
+   "hz": 3598988,
+   "band": "80m",
+   "mode": "PSK31",
+   "receiver": "hamSDR Pi · RTL-SDR Blog V4 · indoor dipole · EM78 Louisville",
+   "chars": 971,
+   "text": "ARLD043 follows \n\nARD043 follows \n\nZCZC A43\nQST de W1AW\nDX Bulletin 43 D043\nFrom ARRL Headquarters\nNewington, C October 29, 2026\nTo all dio amateurseSB DXARi RLD043\nARLDkk DX newss k's bulletin wamade ssible with information provided by\nThe Daily DX, 425 DX Ne, DX, Contest Corral from QST \nand the ARRL Contest Calendar and WAtes.  Thanks to all.\n\n5H, TANZANIA. Maoizio, IK2GZU, is QRV as 5H3MB untvem18.\nActivity is on 810 meters and vi \n\n6 SENEGAL. The Italian Dedion Team is QRs 626SB and\n6W2HKT untNovembey is on HF using various \nmodes. e\nE5, NtH CSLANDS. Rob, N, is QRV as E51MWA from Manhiki\nAtoll, IOTA OC-014, untimber 16. Activity is on HF using\nvarious modU.FW, WALLIS AND FUTUNA ISLANDSrrom Futuna Island,\nIOTA OC-118, from October 31 to November 14s Activity is on 40 to 10\nmeters using CW and FT8.\n\nJD1, OGASAWARA ISLANDS. 7JD1 is QRV frochijima, IOTA\nAS-l Nember 4. Actity is !6 meters using FT8.\n\nKH8, AMo RCAN SAMOAA wiemOo November 12.\nActivity is on 1",
+   "sources": [
+    "80m:47:1793322563"
+   ],
+   "also": []
+  },
+  {
    "id": "arlp043-20261029",
    "title": "ARRL Propagation Forecast Bulletin 43 (ARLP043)",
    "from": "W1AW",
