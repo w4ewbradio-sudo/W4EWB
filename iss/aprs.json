@@ -1,6 +1,48 @@
 {
- "updated": 1793617415.0653455,
+ "updated": 1793700961.8387067,
  "passes": [
+  {
+   "base": "ISS_20261103_100906_el70",
+   "start": 1793700522.651251,
+   "max_el": 70,
+   "count": 5,
+   "packets": [
+    {
+     "src": "W7BAZ",
+     "path": "T3PT9P,RS0ISS*,SGATE,WIDE2-1,APRSAT",
+     "info": "`p6gl <0x1c>YY`Hello from EN73uc         _1<0x0d>"
+    },
+    {
+     "src": "K2ERK",
+     "path": "CQ,RS0ISS*",
+     "info": "=4010.03N/07416.63Wy  -CQ SAT- FN20ue",
+     "lat": 40.1672,
+     "lon": -74.2772,
+     "km": 1000
+    },
+    {
+     "src": "K2ERK",
+     "path": "CQ,RS0ISS*",
+     "info": "=4010.03N/07416.63Wy  -CQ SAT- FN20ue",
+     "lat": 40.1672,
+     "lon": -74.2772,
+     "km": 1000
+    },
+    {
+     "src": "RS0ISS",
+     "path": "0P0PS7,APRSAT",
+     "info": "'v&<0x1c>l <0x1c>SI]ARISS-International Space Station=<0x0d>"
+    },
+    {
+     "src": "K2ERK",
+     "path": "CQ,RS0ISS*",
+     "info": "=4010.03N/07416.63Wy  -CQ SAT- FN20ue",
+     "lat": 40.1672,
+     "lon": -74.2772,
+     "km": 1000
+    }
+   ]
+  },
   {
    "base": "ISS_20261102_105642_el65",
    "start": 1793616978.099911,
@@ -528,8 +570,8 @@
   }
  ],
  "stats": {
-  "passes": 59,
-  "packets": 19,
-  "stations": 4
+  "passes": 60,
+  "packets": 24,
+  "stations": 6
  }
 }
