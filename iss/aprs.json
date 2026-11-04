@@ -1,6 +1,19 @@
 {
- "updated": 1793761064.3573172,
+ "updated": 1793766709.603691,
  "passes": [
+  {
+   "base": "ISS_20261104_042946_el20",
+   "start": 1793766562.535158,
+   "max_el": 20,
+   "count": 1,
+   "packets": [
+    {
+     "src": "K9JKM",
+     "path": "CQ,RS0ISS*",
+     "info": "CQ Live op in EN52 IL"
+    }
+   ]
+  },
   {
    "base": "ISS_20261104_025105_el54",
    "start": 1793760641.700884,
@@ -566,18 +579,11 @@
    "max_el": 28,
    "count": 0,
    "packets": []
-  },
-  {
-   "base": "ISS_20261007_201200_el38",
-   "start": 1791403896.584698,
-   "max_el": 38,
-   "count": 0,
-   "packets": []
   }
  ],
  "stats": {
   "passes": 60,
-  "packets": 25,
+  "packets": 26,
   "stations": 6
  }
 }
