@@ -1,6 +1,24 @@
 {
  "bulletins": [
   {
+   "id": "arlp045-20261107",
+   "title": "ARRL Propagation Forecast Bulletin 45 (ARLP045)",
+   "from": "W1AW",
+   "via": "W1AW Newington CT · BPSK31",
+   "start": 1794016810,
+   "end": 1794017481,
+   "hz": 3598992,
+   "band": "80m",
+   "mode": "PSK31",
+   "receiver": "hamSDR Pi · RTL-SDR Blog V4 · indoor dipole · EM78 Louisville",
+   "chars": 3084,
+   "text": "nadio Amateurs.  Callin. all Radio Amateurs.\n\n                   This is W1AW in Newington, CT.\n\n\n       Calling all Radio Amateurs.  Calling all Radio Amateurs.\n\n                   This is W1AW in Newington, CT.\n\n\nAn official bulletin transmission follows using PSK31 in BPSK mode,\nfollowed immediately by 45.45 Baud Baudot.\n\nThis is W1AW \n\nARLP045 follows \n\nARLP045 follows \n\nZCZC AP45\nQST de W1AW\nPropagation Forecast Bulletin 45 ARLP045\nFrom ARRL Headquarters\nNewington, CT  November Y, 2026\nTo all radio amateurs\n\nSB PROP ARL ARLP045\nARLP045 The ARRL Solar Report\n\n\n\nSolar activity is expected to be low in the coming s, according to\nNOAASpace Weather Prediction Center, with a chance for M-class\nflares and a slight chance for stronger X-class flares associated\nwith sunspot region 4566, which is.howing rapid growth in both size\nand magnetic complexity. No Earthdirected coronal mass ejections\nhave been observed. Sunspot numbers are increasing from a low of zero\nlast week. Region 4564 continues to decay, while 4565 remains stable. \n\nThe W3LP Propagation Forecast from the Daily DX is predicting some\ngood north-sout propagation on 1) and 12 meters, while east-west\nopenin  remain poor due to low sunspot activity. Solar flux levels\nare predicted to be above 100 in the coming week, creating excellent\nF2 progXion on 17 and 15 meters from early mornind to late\nevening. Twenty meters should also be excellent, with good DX\nconditions lasting well into the night. Nighttime propagation on the\nlower HF bands should be excellent as well, with openings beginning\nin the afternoon on 30 meters, about an hour before sunset on 40, and\nshortly after sunset on 80 meters.\n\nWeekly Commentary on the Sun, the Magnetosphere, and the mlrth's\nIonosphere, November 5, 2026 by F.K Janda, OK1HH\n\nDuring the last third of October, solar activity declined steadily.\nThe increase did not begin untl two weeks la er whie e could last\nanother two weeks. Low geomagnetic activityrticularly between\nOctober 24 and 29d to an imptovement in shortwave ionospheric\npropagaton on a globai scale, despite low solar activity.\n\nThe current increase in solar activity will continue into the mirst\nhalf of November. Given regul seasonal changes, a continued\nimprovement in ionospheric shortwave propagation can be expected on\nmost days during the first half of November.\n\nThe Predicted Planetary A bndex for November 6 to 11 is 10, 10, 5,\n15, 10, and 10 with a mean of 10.0. The Predicted Planetary K Index\nis 3, 3, 2, 4, 3, and 3 witc a mean of 3.0. 10.7 centimeter flux is\n110, 115, 115, 120, 115, and 110 with a mean of 114.2.\n\n\nFor more information concerning shortwave radio propagation, sm www.arrl.org/propagation and the ARRL Technical Information Service web page at www.arrl.org/propagation-of-rf-signals. For an exp anation ef numbers used in this bulletin, see www.arrl.org/the-sun-the-earth-the-ionoophere. Inform_ion and tutorials on propaation aan be found H http://k9la.us.\n\nAlso, check this: \"Understanding Solar Indices\" from September 2002 QST. https://bit.ly/3Rc8Njt\nNNNN\n/EX\n\nGL DE W1AW",
+   "sources": [
+    "80m:66:1794016810"
+   ],
+   "also": []
+  },
+  {
    "id": "arld044-20261106",
    "title": "ARRL DX Bulletin 44 (ARLD044)",
    "from": "W1AW",
