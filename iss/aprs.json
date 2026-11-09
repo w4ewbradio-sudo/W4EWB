@@ -1,6 +1,40 @@
 {
- "updated": 1794207920.7244444,
+ "updated": 1794213775.0484576,
  "passes": [
+  {
+   "base": "ISS_20261109_083706_el35",
+   "start": 1794213402.123494,
+   "max_el": 35,
+   "count": 4,
+   "packets": [
+    {
+     "src": "RS0ISS",
+     "path": "0P0PS5,APRSAT",
+     "info": "'v&<0x1c>l <0x1c>SI]ARISS-International Space Station=<0x0d>"
+    },
+    {
+     "src": "WA0D-2",
+     "path": "CQ,RS0ISS*",
+     "info": "!3257.90NI09715.42W# Daily robot CMDs to STAR: 00FF00FF3909370102FF00FF00<0x0d>",
+     "lat": 32.965,
+     "lon": -97.257,
+     "km": 1204
+    },
+    {
+     "src": "WA0D-2",
+     "path": "CQ,RS0ISS*",
+     "info": "!3257.90NI09715.42W# Welcome aboard ISS RS0ISS on Monday, November 9. 73's...<0x0d>",
+     "lat": 32.965,
+     "lon": -97.257,
+     "km": 1204
+    },
+    {
+     "src": "RS0ISS",
+     "path": "0P0PS5,APRSAT",
+     "info": "'v&<0x1c>l <0x1c>SI]ARISS-International Space Station=<0x0d>"
+    }
+   ]
+  },
   {
    "base": "ISS_20261109_070042_el26",
    "start": 1794207618.211287,
@@ -629,18 +663,11 @@
    "max_el": 48,
    "count": 0,
    "packets": []
-  },
-  {
-   "base": "ISS_20261012_125904_el31",
-   "start": 1791809920.423617,
-   "max_el": 31,
-   "count": 0,
-   "packets": []
   }
  ],
  "stats": {
   "passes": 60,
-  "packets": 36,
-  "stations": 7
+  "packets": 40,
+  "stations": 8
  }
 }
