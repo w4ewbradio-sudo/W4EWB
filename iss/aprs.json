@@ -1,6 +1,13 @@
 {
- "updated": 1794547703.2009053,
+ "updated": 1794553568.6518953,
  "passes": [
+  {
+   "base": "ISS_20261113_070257_el36",
+   "start": 1794553353.260238,
+   "max_el": 36,
+   "count": 0,
+   "packets": []
+  },
   {
    "base": "ISS_20261113_052635_el26",
    "start": 1794547571.93876,
@@ -621,37 +628,11 @@
    "max_el": 29,
    "count": 0,
    "packets": []
-  },
-  {
-   "base": "ISS_20261019_171300_el20",
-   "start": 1792429956.059235,
-   "max_el": 20,
-   "count": 3,
-   "packets": [
-    {
-     "src": "KC5ILO-10",
-     "path": "3S3U2X,RS0ISS*,DP0SNX",
-     "info": "`{[|l <0x1c>>/]\"56}=<0x0d>"
-    },
-    {
-     "src": "N1RCN",
-     "path": "APRS,RS0ISS*",
-     "info": ":KC5ILO-10:Hello from EL97"
-    },
-    {
-     "src": "N1RCN",
-     "path": "APRS,RS0ISS*",
-     "info": "=2758.45N/08142.30Wr  N1RCN  EL97",
-     "lat": 27.9742,
-     "lon": -81.705,
-     "km": 1201
-    }
-   ]
   }
  ],
  "stats": {
   "passes": 60,
-  "packets": 37,
-  "stations": 8
+  "packets": 34,
+  "stations": 7
  }
 }
