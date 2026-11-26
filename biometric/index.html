@@ -1,0 +1,189 @@
+<!doctype html><html lang=en><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<title>W4EWB &middot; Biometric</title>
+<meta name=description content="A webcam demo that measures heart rate, facial expression and signs of tiredness in the browser, and says so when it cannot read something.">
+<link rel="stylesheet" href="/lcars.css">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<meta name="theme-color" content="#000000">
+<style>
+/* page-local: everything else comes from /lcars.css */
+.side{display:flex;flex-direction:column;gap:10px;min-width:0}
+#stage{position:relative;width:100%;aspect-ratio:4/3;background:#07070d;border-radius:10px;overflow:hidden}
+#stage video,#stage canvas{position:absolute;inset:0;width:100%;height:100%;transform:scaleX(-1)}
+#stage video{object-fit:contain}
+#intro{position:absolute;inset:0;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:14px;padding:clamp(16px,5%,40px)}
+#intro p{margin:0;max-width:46ch;color:var(--text-mid);font-size:15px;line-height:1.5;letter-spacing:.03em}
+#intro p.problem{color:var(--salmon)}
+.go{border:0;border-radius:22px;background:var(--orange);color:#000;font-weight:700;font-size:16px;letter-spacing:.12em;text-transform:uppercase;padding:11px 26px;box-shadow:0 0 22px var(--glow-o)}
+.go:hover{filter:brightness(1.15)}
+.go:disabled{background:#333;color:#888;box-shadow:none;cursor:default}
+#stop{align-self:flex-start;background:none;border:1px solid var(--lilac);color:var(--lilac);border-radius:12px;padding:5px 14px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700}
+#stop:hover{background:var(--lilac);color:#000}
+#checks{display:flex;flex-wrap:wrap;gap:6px}
+.chk{display:flex;flex-direction:column;gap:1px;min-width:92px;flex:1 1 92px;border-radius:4px;padding:5px 10px 6px;background:var(--field);border-left:6px solid var(--line)}
+.chk b{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);font-weight:400}
+.chk span{font-size:15px;font-weight:700;letter-spacing:.05em;color:var(--dim);text-transform:uppercase}
+.chk.ok{border-left-color:var(--gold)}.chk.ok span{color:var(--gold)}
+.chk.bad{border-left-color:var(--red)}.chk.bad span{color:var(--salmon)}
+/* A readout that has no trustworthy value says so in words, in a different voice from a number. */
+.val.na{color:var(--lilac);font-size:24px;letter-spacing:.06em;text-transform:uppercase}
+.why{color:var(--text-mid);font-size:13.5px;line-height:1.45;letter-spacing:.03em;min-height:2.9em}
+.hr{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap}
+.hr .meter{margin-left:auto}
+#hrWave{width:100%;height:64px;display:block;background:var(--field);border-radius:6px}
+.note{font-size:11px;letter-spacing:.08em;color:var(--dim)}
+.bars{display:grid;grid-template-columns:max-content 1fr;gap:5px 10px;align-items:center}
+.bars span{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-mid)}
+.bar{height:9px;border-radius:5px;background:var(--line-soft);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--peri);border-radius:5px}
+.bar.eye i{background:var(--ice)}
+.rows>div span.q{color:var(--text-mid)}
+#debug{display:none;white-space:pre-wrap;font:11px/1.35 ui-monospace,Consolas,monospace;color:#9fb;background:#030306;border-radius:6px;padding:8px;margin:0;letter-spacing:0}
+.help p{margin:0 0 8px;max-width:78ch}
+.help ul{margin:0 0 8px;padding-left:18px;max-width:78ch}
+.help details+details{margin-top:6px}
+</style></head><body>
+<div class=shell>
+  <nav class=rail aria-label="Site sections">
+    <div class=cap></div>
+    <a class=rb href="/">Console</a>
+    <a class="rb on" href="/biometric/" aria-current=page>Biometric</a>
+    <a class=rb href="#readouts">Readouts</a>
+    <a class=rb href="#how">How it works</a>
+    <div class=fill></div>
+  </nav>
+  <div class=main>
+    <header class=hdr>
+      <div class=call>Biometric<small>W4EWB</small></div>
+      <div class=mission>What a webcam can measure about a face<br>and nothing it would have to make up</div>
+      <div class="stat off" id=stat><span class=dot aria-hidden=true></span><span id=statT>Camera off</span></div>
+    </header>
+    <div class=strip>Runs entirely in this browser tab. No video, picture or measurement is sent anywhere or saved.</div>
+
+    <div class=two id=readouts>
+      <div class=side>
+        <section class="panel g" aria-label="Camera">
+          <div class=tab>Camera</div>
+          <div class=body>
+            <div id=stage>
+              <video id=video playsinline muted></video>
+              <canvas id=overlay></canvas>
+              <div id=intro>
+                <p id=introText>Point a webcam at your face and this page measures your heart rate from the colour of your skin, reads your expression, and watches for signs of tiredness. When it cannot read something it says so and tells you why.</p>
+                <button class=go id=start>Start camera</button>
+              </div>
+            </div>
+            <button id=stop hidden>Stop camera</button>
+          </div>
+        </section>
+
+        <section class="panel p" aria-label="Viewing conditions">
+          <div class=tab>Can the camera see well enough?</div>
+          <div class=body>
+            <div id=checks aria-live=polite></div>
+            <div class=sub id=checksNote>Starts when the camera does</div>
+          </div>
+        </section>
+
+        <section class="panel s" aria-label="Head angle">
+          <div class=tab>Head angle</div>
+          <div class=body>
+            <div class="val na" id=hdVal>No reading</div>
+            <div class=rows id=hdRows>
+              <div><span class=q>Turn</span><b id=hdYaw>&ndash;</b></div>
+              <div><span class=q>Nod</span><b id=hdPitch>&ndash;</b></div>
+              <div><span class=q>Tilt</span><b id=hdRoll>&ndash;</b></div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class=side>
+        <section class="panel g" aria-label="Heart rate">
+          <div class=tab>Heart rate</div>
+          <div class=body>
+            <div class=hr>
+              <div class="val big na" id=hrVal>No reading</div>
+              <div class=meter id=hrMeter title="How clearly the pulse stands out from the noise" aria-hidden=true><i style="height:30%"></i><i style="height:47%"></i><i style="height:64%"></i><i style="height:82%"></i><i></i></div>
+            </div>
+            <div class=why id=hrSub aria-live=polite>Camera is off.</div>
+            <canvas id=hrWave width=600 height=128 aria-hidden=true></canvas>
+            <div class=note id=hrCap>Skin colour signal, filtered to the range of a pulse</div>
+          </div>
+        </section>
+
+        <section class="panel p" aria-label="Expression">
+          <div class=tab>Expression</div>
+          <div class=body>
+            <div class="val na" id=exVal>No reading</div>
+            <div class=why id=exSub aria-live=polite>Camera is off.</div>
+            <div class=bars id=exBars>
+              <span>Smile</span><div class=bar><i data-m=smile></i></div>
+              <span>Brows up</span><div class=bar><i data-m=browsUp></i></div>
+              <span>Brows down</span><div class=bar><i data-m=browsDown></i></div>
+              <span>Eyes wide</span><div class=bar><i data-m=eyesWide></i></div>
+              <span>Jaw open</span><div class=bar><i data-m=jawOpen></i></div>
+              <span>Lips pressed</span><div class=bar><i data-m=lipsPressed></i></div>
+              <span>Mouth down</span><div class=bar><i data-m=mouthDown></i></div>
+            </div>
+            <div class=note>Movement above this face at rest</div>
+          </div>
+        </section>
+
+        <section class="panel l" aria-label="Tiredness">
+          <div class=tab>Tiredness</div>
+          <div class=body>
+            <div class="val na" id=tiVal>No reading</div>
+            <div class=why id=tiSub aria-live=polite>Camera is off.</div>
+            <div class=rows>
+              <div><span class=q>Blink rate</span><b id=tiBlink>&ndash;</b></div>
+              <div><span class=q>Eyes closed</span><b id=tiPerclos>&ndash;</b></div>
+              <div><span class=q>Slow eye closures</span><b id=tiLong>&ndash;</b></div>
+              <div><span class=q>Yawns, last 5 min</span><b id=tiYawn>&ndash;</b></div>
+            </div>
+            <div class=bars><span>Eyes open now</span><div class="bar eye"><i id=tiOpen></i></div></div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <pre id=debug></pre>
+
+    <section class="panel l" id=how aria-label="How it works">
+      <div class=tab>How it works, and what it will not tell you</div>
+      <div class="body help">
+        <details open><summary>Heart rate</summary>
+          <p>Each heartbeat pushes a little more blood into the skin of your face, which changes its colour by a fraction of a percent. The page averages the colour of your forehead and cheeks (the boxes drawn on the picture) about 30 times a second and looks for a steady rhythm between 42 and 180 beats a minute.</p>
+          <p>Noise always has some strongest rhythm, so one stretch of video is not enough. A number appears only when the same rhythm shows up in separate ten-second stretches, or stands out overwhelmingly in one. That takes 15 to 30 seconds of sitting still in decent light. Until then the panel says what it is waiting for. Point it at a photograph and it should never produce a number.</p>
+          <p>Check it against a watch or a finger on your wrist. This is a demonstration, not a medical device.</p>
+        </details>
+        <details><summary>Expression</summary>
+          <p>The face tracker measures about fifty muscle movements, such as lip corners pulling up or brows lowering. The bars show seven of them, measured against your own resting face. Four expressions get a name when their textbook movements clearly win: happy, surprised, angry and sad. Anything else is shown as neutral or unclear.</p>
+          <p>It reads what your face is doing, not what you feel. Lowered brows read as angry whether you are cross or just concentrating. Fear and disgust are left out because this tracker cannot tell them apart from other expressions reliably.</p>
+        </details>
+        <details><summary>Tiredness</summary>
+          <p>It watches your eyelids and jaw for the signs used in driver-drowsiness research: the share of time your eyes are at least 80% closed over the last minute (under 8% is normal, 15% or more is drowsy), eye closures lasting half a second or longer, and yawns. It needs 30 seconds of seeing your eyes before it gives a verdict.</p>
+          <p>These are visible signs over the last minute. It cannot know how tired you feel or how you slept, and blink rate alone means little, since people blink less when reading a screen.</p>
+        </details>
+        <details><summary>What was left out</summary>
+          <p>An earlier version of this page also showed age, gender, stress, a wellness score, skin analysis, breathing rate and heart-rate variability. They were dropped because a webcam and a face tracker cannot measure them reliably:</p>
+          <ul>
+            <li>Age and gender were guessed from face proportions, which do not determine either.</li>
+            <li>Stress and wellness were formulas stacked on other shaky numbers.</li>
+            <li>Heart-rate variability needs beat timing far finer than 30 frames a second gives.</li>
+            <li>Breathing can sometimes be seen in the shoulders, but not dependably from a face.</li>
+          </ul>
+        </details>
+        <details><summary>Privacy</summary>
+          <p>The camera picture is processed on your own device. The page downloads the face-tracking model from Google and then sends nothing back: no video, no pictures, no measurements. Nothing is stored, and closing the tab ends it.</p>
+        </details>
+      </div>
+    </section>
+
+    <footer class=foot aria-hidden=true><i style="width:120px;background:var(--orange)"></i><i style="width:30px;background:var(--peri)"></i><i style="width:60px;background:var(--peach)"></i><div class=end>Face tracking by MediaPipe &middot; pulse by the POS method &middot; all processing in your browser</div></footer>
+  </div>
+</div>
+<script type=module src="./app.js"></script>
+<noscript><p style="padding:20px">This page needs JavaScript to use the camera.</p></noscript>
+</body></html>
